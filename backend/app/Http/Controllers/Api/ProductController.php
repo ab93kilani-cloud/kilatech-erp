@@ -241,7 +241,7 @@ class ProductController extends Controller
     {
         // Get original extension
         $extension = $file->getClientOriginalExtension();
-        $fileName = Str::slug($product->name) . '-' . time() . '.' . $extension;
+        $fileName = ($product->reference ?: Str::slug($product->name)) . '.' . $extension;
         
         // Store using Laravel storage system natively
         $path = $file->storeAs('public/products', $fileName);
