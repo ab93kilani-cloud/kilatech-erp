@@ -1,6 +1,6 @@
-# Ignore everything in this directory
+# Ignore all files in this directory Maya.
 *
-# Except for these
+# But allow these directories and their content Maya.
 !.gitignore
-!products/
-!catalogues/
+!products/**
+!catalogues/**
