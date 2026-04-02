@@ -13,7 +13,7 @@ export function useConfig() {
         if (!path) return '/logo.png';
         // If it's already an absolute URL, return it
         if (path.startsWith('http')) return path;
-        return `${storageBaseUrl.value}/${path}`;
+        return `${storageBaseUrl.value}${path}`;
     };
 
     return {

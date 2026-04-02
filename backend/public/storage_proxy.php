@@ -8,8 +8,8 @@ if (empty($path)) {
     exit;
 }
 
-// Sécurité : évite de remonter dans les dossiers
-$path = str_replace(['..', '\\'], '', $path);
+// Sécurité : évite de remonter dans les dossiers et nettoie les slashes Maya.
+$path = ltrim(str_replace(['..', '\\'], '', $path), '/');
 $fullPath = __DIR__ . '/../storage/app/public/' . $path;
 
 if (file_exists($fullPath) && is_file($fullPath)) {
