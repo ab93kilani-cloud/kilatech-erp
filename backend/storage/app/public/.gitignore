@@ -1,2 +1,6 @@
+# Ignore everything in this directory
 *
+# Except for these
 !.gitignore
+!products/
+!catalogues/
