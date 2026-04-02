@@ -45,6 +45,17 @@ const getImageUrl = (path: string | null) => {
     return getStorageUrl(path)
 }
 
+const deleteProduct = async (id: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce produit ? Cette action est irréversible.')) return
+    
+    try {
+        await api.delete(`/products/${id}`)
+        products.value = products.value.filter(p => p.id !== id)
+    } catch (e: any) {
+        alert(e.response?.data?.message || 'Erreur lors de la suppression du produit.')
+    }
+}
+
 onMounted(() => {
     fetchProducts()
 })
@@ -138,7 +149,12 @@ onMounted(() => {
                   </td>
 
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                    <router-link :to="{ name: 'catalog.edit', params: { id: product.id } }" class="text-brand-600 hover:text-brand-900 cursor-pointer font-bold">Modifier</router-link>
+                    <div class="flex items-center justify-end gap-3">
+                        <router-link :to="{ name: 'catalog.edit', params: { id: product.id } }" class="text-brand-600 hover:text-brand-900 font-bold">Modifier</router-link>
+                        <button @click="deleteProduct(product.id)" class="text-red-400 hover:text-red-600 transition-colors" title="Supprimer le produit">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
                   </td>
                 </tr>
                 <tr v-if="products.length === 0">
