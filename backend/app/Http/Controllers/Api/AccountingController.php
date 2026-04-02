@@ -1,0 +1,98 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Invoice;
+use App\Models\PurchaseOrder;
+use App\Models\Supplier;
+use App\Models\BankStatement;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use ZipArchive;
+
+class AccountingController extends Controller
+{
+    public function dashboard(Request $request)
+    {
+        $quarter = $request->query('quarter', ceil(date('n') / 3));
+        $year = $request->query('year', date('Y'));
+
+        $months = match((int)$quarter) {
+            1 => [1, 2, 3],
+            2 => [4, 5, 6],
+            3 => [7, 8, 9],
+            4 => [10, 11, 12],
+            default => [1, 2, 3]
+        };
+
+        $salesInvoices = Invoice::whereYear('created_at', $year)
+            ->whereIn(\DB::raw('MONTH(created_at)'), $months)
+            ->with('order.client')
+            ->get();
+
+        $purchaseInvoices = \App\Models\Receipt::whereYear('receipt_date', $year)
+            ->whereIn(\DB::raw('MONTH(receipt_date)'), $months)
+            ->whereNotNull('invoice_path')
+            ->with(['purchaseOrder.supplier'])
+            ->get();
+
+        $bankStatements = BankStatement::whereYear('created_at', $year)
+            ->whereIn('month', $months)
+            ->with('uploader')
+            ->get();
+
+        $suppliersMissingCertificates = Supplier::whereNull('tax_certificate_path')
+            ->orWhere('tax_certificate_expires_at', '<', now())
+            ->get();
+
+        $suppliersWithCertificates = Supplier::whereNotNull('tax_certificate_path')
+            ->get();
+
+        return response()->json([
+            'sales_invoices' => $salesInvoices,
+            'purchase_invoices' => $purchaseInvoices,
+            'bank_statements' => $bankStatements,
+            'suppliers_missing_certificates' => $suppliersMissingCertificates,
+            'suppliers_with_certificates' => $suppliersWithCertificates
+        ]);
+    }
+
+    public function uploadBankStatement(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:pdf',
+            'month' => 'required|integer|between:1,12',
+            'year' => 'required|integer',
+        ]);
+
+        $path = $request->file('file')->store('bank_statements', 'public');
+
+        $statement = BankStatement::create([
+            'file_path' => $path,
+            'month' => $request->month,
+            'year' => $request->year,
+            'uploaded_by' => auth()->id(),
+        ]);
+
+        return response()->json($statement, 201);
+    }
+
+    public function uploadSupplierCertificate(Request $request, $supplierId)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:pdf',
+            'expires_at' => 'required|date',
+        ]);
+
+        $supplier = Supplier::findOrFail($supplierId);
+        $path = $request->file('file')->store('supplier_certificates', 'public');
+
+        $supplier->update([
+            'tax_certificate_path' => $path,
+            'tax_certificate_expires_at' => $request->expires_at,
+        ]);
+
+        return response()->json($supplier);
+    }
+}
