@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import api from '@/plugins/axios'
+import { useConfig } from '@/composables/useConfig'
+
+const { getImageUrl: getStorageUrl } = useConfig()
 
 const products = ref<any[]>([])
 const isLoading = ref(true)
@@ -16,10 +19,9 @@ const articles = ref<any[]>([])
 const isLoadingArticles = ref(false)
 const missingSearches = ref<any[]>([])
 
-const getImageUrl = (path: string) => {
+const getImageUrl = (path: string | null) => {
   if (!path) return undefined
-  if (path.startsWith('http')) return path
-  return `http://localhost:8000/storage/${path}`
+  return getStorageUrl(path)
 }
 
 const publishToSocial = async (text: string, platform: string) => {

@@ -2,37 +2,39 @@
 import { ref, onMounted } from 'vue'
 import api from '@/plugins/axios'
 import { useSEO } from '@/composables/useSEO'
+import { useConfig } from '@/composables/useConfig'
 
+const { getImageUrl: getStorageUrl } = useConfig()
 const { updateSEO } = useSEO()
 
 const articles = ref<any[]>([])
 const isLoading = ref(true)
 
 const getImageUrl = (article: any) => {
-    if (article.image) return article.image
-    if (article.product && article.product.image_path) {
-        return `http://localhost:8000/storage/${article.product.image_path}`
-    }
-    return '/images/blog_placeholder.png'
+  if (article.image) return article.image
+  if (article.product && article.product.image_path) {
+    return getStorageUrl(article.product.image_path)
+  }
+  return '/images/blog_placeholder.png'
 }
 
 const fetchArticles = async () => {
-    try {
-        const res = await api.get('/public/articles?category=blog')
-        articles.value = res.data
-    } catch (e) {
-        console.error('Failed to load blog posts')
-    } finally {
-        isLoading.value = false
-    }
+  try {
+    const res = await api.get('/public/articles?category=blog')
+    articles.value = res.data
+  } catch (e) {
+    console.error('Failed to load blog posts')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 onMounted(() => {
-    fetchArticles()
-    updateSEO({
-        title: 'Blog Médical & Expertise | Kilatech',
-        description: 'Retrouvez nos guides d\'experts, conseils et nouveautés sur le matériel médical au Maroc.'
-    })
+  fetchArticles()
+  updateSEO({
+    title: 'Blog Médical & Expertise | Kilatech',
+    description: "Retrouvez nos guides d'experts, conseils et nouveautés sur le matériel médical au Maroc."
+  })
 })
 </script>
 

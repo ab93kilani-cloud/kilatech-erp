@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import api from '@/plugins/axios'
+import { useConfig } from '@/composables/useConfig'
+
+const { getImageUrl } = useConfig()
 
 interface Catalogue {
     id: number;
@@ -24,10 +27,6 @@ const fetchCatalogues = async () => {
     } finally {
         isLoading.value = false
     }
-}
-
-const getDownloadUrl = (path: string) => {
-    return `http://localhost:8000/storage/${path}`
 }
 
 onMounted(fetchCatalogues)
@@ -67,7 +66,7 @@ onMounted(fetchCatalogues)
             <h3 class="text-xl font-black text-gray-900 group-hover:text-brand-600 transition-colors mb-2 line-clamp-2">{{ cat.title }}</h3>
             <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-8">Format PDF • {{ new Date(cat.created_at).toLocaleDateString() }}</p>
             
-            <a :href="getDownloadUrl(cat.file_path)" target="_blank" class="w-full flex items-center justify-center gap-3 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-brand-600 hover:shadow-xl hover:shadow-brand-200 transition-all active:scale-95">
+            <a :href="getImageUrl(cat.file_path)" target="_blank" class="w-full flex items-center justify-center gap-3 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-brand-600 hover:shadow-xl hover:shadow-brand-200 transition-all active:scale-95">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Télécharger
             </a>

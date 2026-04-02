@@ -3,7 +3,9 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/plugins/axios'
 import { useSEO } from '@/composables/useSEO'
+import { useConfig } from '@/composables/useConfig'
 
+const { getImageUrl: getStorageUrl } = useConfig()
 const { updateSEO } = useSEO()
 
 const route = useRoute()
@@ -14,7 +16,7 @@ const getImageUrl = (item: any) => {
     if (!item) return '/images/blog_placeholder.png'
     if (item.image) return item.image
     if (item.product && item.product.image_path) {
-        return `http://localhost:8000/storage/${item.product.image_path}`
+        return getStorageUrl(item.product.image_path)
     }
     return '/images/blog_placeholder.png'
 }

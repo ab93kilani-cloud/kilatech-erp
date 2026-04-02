@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useCartStore } from '@/stores/cart'
+import { useConfig } from '@/composables/useConfig'
+
+const { getImageUrl } = useConfig()
 
 const props = defineProps<{
   product: any;
@@ -13,7 +16,6 @@ const cartStore = useCartStore()
 const selectedVariant = ref(props.product?.variants?.[0] || null)
 const quantity = ref(1)
 
-import { watch } from 'vue'
 watch(() => props.product, (newProduct) => {
   selectedVariant.value = newProduct?.variants?.[0] || null
   quantity.value = 1
@@ -23,11 +25,6 @@ const displayPrice = computed(() => {
   if (!selectedVariant.value) return 0
   return parseFloat(selectedVariant.value.public_price || 0)
 })
-
-const getImageUrl = (path: string | null) => {
-  if (!path) return '/logo.png'
-  return `http://localhost:8000/storage/${path}`
-}
 
 const handleAddToCart = () => {
   if (!selectedVariant.value) return

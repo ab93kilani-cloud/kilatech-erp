@@ -5,8 +5,10 @@ import { useSEO } from '@/composables/useSEO'
 import { useCartStore } from '@/stores/cart'
 import ProductModal from '@/components/public/ProductModal.vue'
 import CartDrawer from '@/components/public/CartDrawer.vue'
+import { useConfig } from '@/composables/useConfig'
 
 const { updateSEO } = useSEO()
+const { getImageUrl } = useConfig()
 
 interface Variant {
   id: number;
@@ -73,11 +75,6 @@ const filteredProducts = computed(() => {
         return matchesSearch && matchesCategory
     })
 })
-
-const getImageUrl = (path: string | null) => {
-    if (!path) return '/logo.png' 
-    return `http://localhost:8000/storage/${path}`
-}
 
 const handleImageError = (e: Event) => {
     const target = e.target as HTMLImageElement;

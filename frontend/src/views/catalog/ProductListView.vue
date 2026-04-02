@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import api from '@/plugins/axios'
+import { useConfig } from '@/composables/useConfig'
+
+const { getImageUrl: getStorageUrl } = useConfig()
 
 interface Product {
   id: number;
@@ -39,7 +42,7 @@ const fetchProducts = async () => {
 
 const getImageUrl = (path: string | null) => {
     if (!path) return 'https://via.placeholder.com/150?text=Pas+d%27image'
-    return `http://localhost:8000/storage/${path}`
+    return getStorageUrl(path)
 }
 
 onMounted(() => {

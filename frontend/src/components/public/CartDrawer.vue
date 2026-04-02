@@ -2,6 +2,9 @@
 import { ref } from 'vue'
 import { useCartStore } from '@/stores/cart'
 import api from '@/plugins/axios'
+import { useConfig } from '@/composables/useConfig'
+
+const { getImageUrl: getStorageUrl, apiBaseUrl } = useConfig()
 
 const props = defineProps<{
   show: boolean;
@@ -27,7 +30,7 @@ const errors = ref<Record<string, string[]>>({})
 
 const getImageUrl = (path: string | null) => {
   if (!path) return '/logo.png'
-  return `http://localhost:8000/storage/${path}`
+  return getStorageUrl(path)
 }
 
 const isValidEmail = (email: string) => {
@@ -91,7 +94,7 @@ const handleSubmit = async () => {
 
 const downloadQuote = () => {
   if (!quoteResult.value) return
-  window.open(`http://localhost:8000/api/public/quotes/${quoteResult.value.id}/pdf`, '_blank')
+  window.open(`${apiBaseUrl}/public/quotes/${quoteResult.value.id}/pdf`, '_blank')
 }
 </script>
 
