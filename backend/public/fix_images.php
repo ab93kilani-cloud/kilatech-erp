@@ -4,12 +4,13 @@
  */
 header('Content-Type: text/plain');
 
-$target = __DIR__ . '/storage/app/public';
-$link = __DIR__ . '/../storage';
+// Nous sommes dans api/public Maya.
+$target = __DIR__ . '/../storage/app/public';
+$link = __DIR__ . '/../../storage';
 
 echo "Tentative de création du lien symbolique...\n";
-echo "Cible : $target\n";
-echo "Lien : $link\n\n";
+echo "Cible (api/storage/app/public) : $target\n";
+echo "Lien (public_html/storage) : $link\n\n";
 
 if (file_exists($link)) {
     if (is_link($link)) {
