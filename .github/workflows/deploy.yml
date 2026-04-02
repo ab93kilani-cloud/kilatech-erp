@@ -1,0 +1,58 @@
+name: Deploy Hybrid Application (Vue.js + Laravel) to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛒 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🛠️ Build Frontend (Vue.js)
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: 🚀 Copy Frontend to Hostinger (public_html)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_IP }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          port: 65002
+          source: "frontend/dist/*"
+          target: "domains/kilatech.ma/public_html"
+          strip_components: 2
+
+      - name: 🚀 Copy Backend to Hostinger (api)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_IP }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          port: 65002
+          source: "backend/*"
+          target: "domains/kilatech.ma/public_html/api"
+          strip_components: 1
+
+      - name: ⚙️ Install Composer & Migrate Database on Hostinger
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_IP }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          port: 65002
+          script: |
+            cd domains/kilatech.ma/public_html/api
+            /opt/alt/php82/usr/bin/php /usr/local/bin/composer install --no-dev --optimize-autoloader
+            /opt/alt/php82/usr/bin/php artisan migrate --force
