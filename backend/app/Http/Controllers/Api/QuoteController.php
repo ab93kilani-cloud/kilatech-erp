@@ -213,8 +213,8 @@ class QuoteController extends Controller
      */
     public function update(Request $request, Quote $quote)
     {
-        if ($quote->status !== 'draft') {
-            return response()->json(['message' => 'Seul un devis brouillon peut être modifié.'], 400);
+        if (!in_array($quote->status, ['draft', 'À confirmer'])) {
+            return response()->json(['message' => 'Seul un devis brouillon ou en attente peut être modifié.'], 400);
         }
 
         $request->validate([
@@ -270,8 +270,8 @@ class QuoteController extends Controller
      */
     public function destroy(Quote $quote)
     {
-        if ($quote->status !== 'draft') {
-            return response()->json(['message' => 'Seul un devis brouillon peut être supprimé.'], 400);
+        if (!in_array($quote->status, ['draft', 'À confirmer'])) {
+            return response()->json(['message' => 'Seul un devis brouillon ou en attente peut être supprimé.'], 400);
         }
 
         DB::beginTransaction();
