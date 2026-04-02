@@ -5,7 +5,8 @@ export function useConfig() {
 
     // Extract base URL without /api suffix
     const storageBaseUrl = computed(() => {
-        return apiBaseUrl.replace('/api', '') + '/storage';
+        // En cas d'échec du lien symbolique, on utilise le proxy Maya.
+        return apiBaseUrl + '/storage_proxy.php?path=';
     });
 
     const getImageUrl = (path: string | null) => {
