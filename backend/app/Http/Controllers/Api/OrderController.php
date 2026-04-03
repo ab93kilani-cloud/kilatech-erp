@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderLine;
 use App\Models\Quote;
+use App\Models\QuoteLine;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Mail\PublicQuoteRequest;
+use Illuminate\Support\Facades\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -148,10 +151,53 @@ class OrderController extends Controller
 
             DB::commit();
             
-            return response()->json($order->load(['lines', 'invoice']), 201);
+    /**
+     * Valider une commande en attente (Confirmation Commerciale OBLIGATOIRE) Maya.
+     */
+    public function confirmPending(Order $order)
+    {
+        if ($order->status !== 'pending') {
+            return response()->json(['message' => 'Cette commande n\'est pas en attente de validation. Maya.'], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Passer en confirmé Maya.
+            $order->update(['status' => 'confirmed']);
+
+            // Si un devis est lié, on le marque aussi comme confirmé Maya.
+            if ($order->quote) {
+                $order->quote->update(['status' => 'confirmed']);
+            }
+
+            // Génération de la facture automatique lors de la validation Maya.
+            $totalAmount = 0;
+            foreach ($order->lines as $line) {
+                $discountPriceHT = $line->unit_price * (1 - ($line->discount_percent / 100));
+                $tvaRate = $line->variant?->tva_rate ?? 20;
+                $lineTTC = $discountPriceHT * $line->quantity * (1 + ($tvaRate / 100));
+                $totalAmount += $lineTTC;
+            }
+            $totalAmount -= $order->discount_amount ?? 0;
+
+            $invoiceNumber = 'FA-' . date('ym') . '-' . str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT);
+            $invoice = Invoice::create([
+                'order_id' => $order->id,
+                'invoice_number' => $invoiceNumber,
+                'total_amount' => $totalAmount,
+                'balance_due' => $totalAmount,
+                'status' => 'unpaid',
+                'discount_amount' => $order->discount_amount ?? 0,
+            ]);
+
+            DB::commit();
+            return response()->json([
+                'message' => 'Commande validée avec succès ! Facture générée. Maya.',
+                'order' => $order->load('invoice')
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Erreur lors de la conversion', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => 'Erreur lors de la validation. Maya.', 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -188,38 +234,179 @@ class OrderController extends Controller
     }
 
     /**
-     * Génère une Facture (Invoice) à partir d'un Bon de Livraison
+     * Store a quote request from the public vitrine (New Flow: Order Pending -> Auto Quote) Maya.
      */
-    public function generateInvoice(Order $order)
+    public function publicStore(Request $request)
     {
-        if ($order->invoice) {
-            return response()->json(['message' => 'Une facture a déjà été générée pour ce Bon de Livraison.', 'invoice' => $order->invoice], 400);
-        }
+        $request->validate([
+            'client_type' => 'required|in:company,individual',
+            'client_name' => 'required|string|max:255',
+            'client_email' => 'required|email|max:255',
+            'client_phone' => 'required|string|max:20',
+            'company_name' => 'nullable|string|max:255',
+            'ice' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'city' => 'nullable|string|max:255',
+            'lines' => 'required|array|min:1',
+            'lines.*.variant_id' => 'required|exists:product_variants,id',
+            'lines.*.quantity' => 'required|integer|min:1',
+        ]);
 
         DB::beginTransaction();
         try {
-            $totalAmount = 0;
-            foreach ($order->lines as $line) {
-                $totalAmount += ($line->unit_price * $line->quantity);
-            }
+            // 1. Client Management Maya.
+            $client = \App\Models\Client::firstOrCreate(
+                ['email' => $request->client_email],
+                [
+                    'type' => $request->client_type,
+                    'company_name' => $request->client_type === 'company' ? ($request->company_name ?? $request->client_name) : null,
+                    'contact_name' => $request->client_name,
+                    'phone' => $request->client_phone,
+                    'address' => $request->address,
+                    'city' => $request->city,
+                    'ice' => $request->client_type === 'company' ? $request->ice : null,
+                    'status' => 'suspect',
+                ]
+            );
 
-            $invoiceNumber = 'FA-' . date('ym') . '-' . str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT);
-            
-            $invoice = Invoice::create([
-                'order_id' => $order->id,
-                'invoice_number' => $invoiceNumber,
-                'total_amount' => $totalAmount,
-                'balance_due' => $totalAmount,
-                'status' => 'unpaid' // En attente de paiement
+            // 2. Create Order (Pending) Maya.
+            $order = Order::create([
+                'client_id' => $client->id,
+                'order_number' => 'CMD-' . date('ym') . '-' . str_pad(Order::count() + 1, 4, '0', STR_PAD_LEFT),
+                'status' => 'pending',
+                'discount_amount' => 0,
             ]);
 
-            $order->delete();
+            // 3. Create Quote (Linked) Maya.
+            $quote = Quote::create([
+                'client_id' => $client->id,
+                'status' => 'À confirmer',
+                'version' => 1,
+                'valid_until' => now()->addDays(15),
+                'quote_number' => 'DEV-' . date('ym') . '-' . str_pad(Quote::count() + 1, 4, '0', STR_PAD_LEFT),
+            ]);
+            
+            // Link order to quote Maya.
+            $order->update(['quote_id' => $quote->id]);
+
+            foreach ($request->lines as $line) {
+                $variant = \App\Models\ProductVariant::find($line['variant_id']);
+                $ttcPrice = $variant->public_price ?? 0;
+                $htPrice = round($ttcPrice / 1.2, 2); 
+                
+                // Create Order Line Maya.
+                OrderLine::create([
+                    'order_id' => $order->id,
+                    'variant_id' => $line['variant_id'],
+                    'unit_price' => $htPrice,
+                    'quantity' => $line['quantity'],
+                    'discount_percent' => 0,
+                ]);
+
+                // Create Quote Line Maya.
+                QuoteLine::create([
+                    'quote_id' => $quote->id,
+                    'variant_id' => $line['variant_id'],
+                    'unit_price' => $htPrice,
+                    'quantity' => $line['quantity'],
+                    'discount_percent' => 0,
+                ]);
+            }
+
+            // 4. Notifications Maya.
+            $staff = \App\Models\User::whereHas('role', function ($q) {
+                $q->whereIn('name', ['Admin', 'Gérant', 'Commercial']);
+            })->get();
+
+            foreach ($staff as $user) {
+                \App\Models\Notification::create([
+                    'user_id' => $user->id,
+                    'type' => 'order_request',
+                    'title' => 'Nouvelle commande vitrine (En attente)',
+                    'message' => 'Le client ' . $request->client_name . ' a passé une commande de ' . count($request->lines) . ' produits.',
+                    'action_url' => '/admin/sales/orders/' . $order->id,
+                    'is_read' => false
+                ]);
+            }
 
             DB::commit();
-            return response()->json(['message' => 'Facture générée avec succès.', 'invoice' => $invoice], 201);
+
+            // 5. EMAIL OBLIGATOIRE (Devis PDF) Maya.
+            try {
+                $pdf = $this->getQuotePdf($quote);
+                Mail::to($request->client_email)->send(new PublicQuoteRequest($quote, $pdf->output()));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Email failed: " . $e->getMessage());
+            }
+
+            return response()->json([
+                'message' => 'Demande reçue avec succès. Un devis vous a été envoyé par email. Maya.',
+                'order_id' => $order->id,
+                'quote_id' => $quote->id,
+                'quote_number' => $quote->quote_number
+            ], 201);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Erreur lors de la facturation.', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => 'Erreur technique. Maya.', 'error' => $e->getMessage()], 500);
         }
+    }
+
+    protected function getQuotePdf(Quote $quote)
+    {
+        $items = $quote->lines->map(function ($line) {
+            $ht = $line->unit_price * $line->quantity;
+            $tvaRate = (float)($line->variant?->tva_rate ?? 20);
+            $discountPercent = (float)($line->discount_percent ?? 0);
+            $discountVal = $ht * ($discountPercent / 100);
+            $netHT = $ht - $discountVal;
+            $ttc = $netHT * (1 + ($tvaRate / 100));
+
+            return [
+                'reference' => $line->variant?->sku ?? 'N/A',
+                'name' => ($line->variant?->product?->name ?? 'Produit') . ($line->variant?->product?->brand ? ' - ' . $line->variant->product->brand : '') . ($line->variant?->name_variation ? ' - ' . $line->variant->name_variation : ''),
+                'description' => '',
+                'quantity' => $line->quantity,
+                'unit_price_ht' => $line->unit_price,
+                'unit_price_ttc' => $line->unit_price * (1 + ($tvaRate / 100)),
+                'discount' => $discountPercent > 0 ? (round($discountPercent, 2) . '%') : '0%',
+                'total_ht' => $netHT,
+                'total_ttc' => $ttc,
+                'tva' => $tvaRate
+            ];
+        });
+
+        $totalHT = $items->sum('total_ht');
+        $rawTTC = $items->sum('total_ttc');
+        $discountAmount = (float)($quote->discount_amount ?? 0);
+        $totalTTC = $rawTTC - $discountAmount;
+
+        $data = [
+            'document_type' => 'Devis',
+            'document_number' => $quote->quote_number,
+            'document_date' => $quote->created_at,
+            'client_id' => $quote->client_id,
+            'client_name' => $quote->client->contact_name ?? ($quote->client->company_name ?? 'Client'),
+            'client_ice' => $quote->client->ice,
+            'client_address' => $quote->client->address,
+            'client_city' => $quote->client->city,
+            'client_tva' => $quote->client->tva ?? '',
+            'items' => $items,
+            'total_ht' => $totalHT,
+            'total_tva' => $rawTTC - $totalHT,
+            'discount_amount' => $discountAmount,
+            'total_ttc' => $totalTTC,
+            'payment_method' => 'Virement / Chèque',
+            'condition_text' => '',
+            'validity_date' => $quote->valid_until,
+            'validity_message' => 'Devis valable jusqu\'au:',
+            'deposit_text' => false,
+            'balance_due' => $totalTTC,
+            'title' => 'Devis ' . $quote->quote_number,
+            'quote_number' => null,
+            'global_tva_rate' => 20
+        ];
+
+        return Pdf::loadView('pdf.document', $data);
     }
 }

@@ -71,7 +71,7 @@ const handleSubmit = async () => {
       }))
     }
     
-    const response = await api.post('/public/quotes', payload)
+    const response = await api.post('/public/orders', payload)
     quoteResult.value = {
       id: response.data.quote_id,
       number: response.data.quote_number

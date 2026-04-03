@@ -20,7 +20,7 @@ Route::get('/public/articles', [\App\Http\Controllers\Api\ArticleController::cla
 Route::get('/public/articles/{slug}', [\App\Http\Controllers\Api\ArticleController::class, 'publicShow']);
 Route::get('/public/catalogues', [\App\Http\Controllers\Api\CatalogueController::class, 'index']);
 Route::post('/public/search-miss', [\App\Http\Controllers\Api\MissingSearchController::class, 'log']);
-Route::post('/public/quotes', [\App\Http\Controllers\Api\QuoteController::class, 'publicStore']);
+Route::post('/public/orders', [\App\Http\Controllers\Api\OrderController::class, 'publicStore']);
 Route::get('/public/quotes/{id}/pdf', [\App\Http\Controllers\Api\QuoteController::class, 'generatePDF']);
 
 // TEST ROUTE PUBLIC
@@ -83,6 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('quotes', \App\Http\Controllers\Api\QuoteController::class);
         
         Route::post('orders/from-quote', [\App\Http\Controllers\Api\OrderController::class, 'storeFromQuote']);
+        Route::post('orders/{order}/confirm-pending', [\App\Http\Controllers\Api\OrderController::class, 'confirmPending']);
         Route::post('orders/{order}/revert', [\App\Http\Controllers\Api\OrderController::class, 'revertToQuote']);
         Route::post('orders/{order}/generate-invoice', [\App\Http\Controllers\Api\OrderController::class, 'generateInvoice']);
         Route::get('orders/{order}/pdf', [\App\Http\Controllers\Api\OrderController::class, 'generatePDF']);

@@ -239,21 +239,24 @@ class ProductController extends Controller
      */
     private function processAndStoreImage($file, Product $product)
     {
-        // 1. Définition du nom de fichier Maya.
         $extension = $file->getClientOriginalExtension();
         $fileName = Str::slug($product->name) . '-' . time() . '.' . $extension;
         
-        // 2. Stockage Privé (Laravel standard) Maya.
-        $path = $file->storeAs('public/products', $fileName);
+        // 1. Stockage standard dans le disque 'public' de Laravel (storage/app/public/products) Maya.
+        $path = $file->storeAs('products', $fileName, 'public');
         
-        // 3. Stockage Miroir Public (Hostinger Workaround) Maya.
-        $mirrorPath = public_path('storage/products');
-        if (!is_dir($mirrorPath)) {
-            mkdir($mirrorPath, 0755, true);
+        // 2. Fallback Hostinger : Si le lien symbolique n'existe pas, on copie dans /public/storage. Maya.
+        $publicStoragePath = public_path('storage/products');
+        if (!is_dir($publicStoragePath)) {
+            mkdir($publicStoragePath, 0755, true);
         }
-        copy(storage_path('app/' . $path), $mirrorPath . '/' . $fileName);
         
-        // 4. Mise à jour de la base de données Maya.
+        // On vérifie si c'est un lien symbolique ou un dossier réel Maya.
+        if (!is_link(public_path('storage'))) {
+            copy(storage_path('app/public/products/' . $fileName), $publicStoragePath . '/' . $fileName);
+        }
+        
+        // 3. Mise à jour DB avec le chemin relatif standard Maya.
         $product->update(['image_path' => 'products/' . $fileName]);
     }
 }
