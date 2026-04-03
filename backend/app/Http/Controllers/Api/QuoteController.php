@@ -65,19 +65,25 @@ class QuoteController extends Controller
             'document_number' => $quote->quote_number,
             'document_date' => $quote->created_at,
             'client_id' => $quote->client_id,
-            'client_name' => $quote->client->company_name ?? $quote->client->contact_name,
+            'client_name' => $quote->client->contact_name ?? ($quote->client->company_name ?? 'Client'),
             'client_ice' => $quote->client->ice,
             'client_address' => $quote->client->address,
             'client_city' => $quote->client->city,
+            'client_tva' => $quote->client->tva ?? '',
             'items' => $items,
             'total_ht' => $totalHT,
             'total_tva' => $rawTTC - $totalHT,
             'discount_amount' => $discountAmount,
             'total_ttc' => $totalTTC,
             'payment_method' => 'Virement / Chèque',
+            'condition_text' => '',
             'validity_date' => $quote->valid_until,
+            'validity_message' => 'Devis valable jusqu\'au:',
+            'deposit_text' => false,
             'balance_due' => $totalTTC,
-            'title' => 'Devis ' . $quote->quote_number
+            'title' => 'Devis ' . $quote->quote_number,
+            'quote_number' => null, // Optionnel mais attendu par la vue
+            'global_tva_rate' => 20
         ];
 
         return Pdf::loadView('pdf.document', $data);
