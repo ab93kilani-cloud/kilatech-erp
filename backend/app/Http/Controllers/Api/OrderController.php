@@ -377,7 +377,7 @@ class OrderController extends Controller
             ]);
             return response()->json([
                 'debug' => true,
-                'error' => $e->getMessage(),
+                'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => explode("\n", $e->getTraceAsString())

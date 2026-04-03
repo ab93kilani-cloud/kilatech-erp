@@ -184,15 +184,26 @@
     @endif
 
     @php
-        $logoPath = public_path('images/logo.png');
-        $logoData = base64_encode(file_get_contents($logoPath));
-        $logoSrc = 'data:image/png;base64,' . $logoData;
+        $logoSrc = null;
+        try {
+            $logoPath = public_path('images/logo.png');
+            if (file_exists($logoPath)) {
+                $logoData = base64_encode(file_get_contents($logoPath));
+                $logoSrc = 'data:image/png;base64,' . $logoData;
+            }
+        } catch (\Exception $e) {
+            $logoSrc = null;
+        }
     @endphp
 
     <table class="header-table">
         <tr>
             <td class="logo-box">
-                <img src="{{ $logoSrc }}" alt="Kilatech Logo">
+                @if($logoSrc)
+                    <img src="{{ $logoSrc }}" alt="Kilatech Logo">
+                @else
+                    <h2 style="color: #003366; margin: 0;">KILATECH</h2>
+                @endif
             </td>
             <td class="company-brief">
                 <strong>SARLAU KILATECH</strong>
