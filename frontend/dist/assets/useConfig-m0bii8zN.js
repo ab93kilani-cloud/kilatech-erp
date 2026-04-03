@@ -1,0 +1,1 @@
+import{n as o}from"./index-CFsx0OIW.js";function a(){const r="https://kilatech.ma/api",e=o(()=>r+"/storage_proxy.php?path=");return{getImageUrl:t=>t?t.startsWith("http")?t:`${e.value}${t}`:"/logo.png",storageBaseUrl:e,apiBaseUrl:r}}export{a as u};

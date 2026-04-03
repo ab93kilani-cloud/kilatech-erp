@@ -22,6 +22,8 @@ interface Product {
     id: number;
     sku: string;
     name_variation: string;
+    cost_price: string | number;
+    public_price: string | number;
   }[];
 }
 
@@ -130,21 +132,39 @@ onMounted(() => {
                     <div v-if="!product.supplier && !product.brand" class="text-xs text-gray-400 italic">Non spécifié</div>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
-                    {{ product.cost_price ? Number(product.cost_price).toFixed(2) + ' MAD' : '-' }}
+                    <span v-if="product.cost_price && Number(product.cost_price) > 0">
+                        {{ Number(product.cost_price).toFixed(2) }} MAD
+                    </span>
+                    <span v-else-if="product.variants.length > 0 && product.variants[0]?.cost_price">
+                        {{ Number(product.variants[0].cost_price).toFixed(2) }} MAD
+                    </span>
+                    <span v-else class="text-gray-400">-</span>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm font-medium text-blue-700">
-                    {{ product.public_price ? Number(product.public_price).toFixed(2) + ' MAD' : '-' }}
+                    <span v-if="product.public_price && Number(product.public_price) > 0">
+                        {{ Number(product.public_price).toFixed(2) }} MAD
+                    </span>
+                    <span v-else-if="product.variants.length > 0 && product.variants[0]?.public_price">
+                        {{ Number(product.variants[0].public_price).toFixed(2) }} MAD
+                    </span>
+                    <span v-else class="text-gray-400">-</span>
                   </td>
-                  <td class="px-3 py-4 text-sm text-gray-500 max-w-sm">
-                    <div class="flex flex-wrap gap-2">
-                      <div v-for="variant in product.variants" :key="variant.id" class="inline-flex items-center group rounded border px-2 py-1 text-xs font-medium bg-blue-50 text-blue-800 border-blue-200">
-                        <span class="mr-2">{{ variant.sku }} <span v-if="variant.name_variation" class="opacity-70">({{ variant.name_variation }})</span></span>
+                  <td class="px-3 py-4 text-sm text-gray-500">
+                    <div class="flex flex-col gap-1">
+                      <div v-for="variant in product.variants" :key="variant.id" class="flex items-center justify-between group rounded border border-gray-100 bg-gray-50 px-2 py-1.5 hover:bg-white hover:shadow-sm transition-all">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase leading-none">{{ variant.sku }}</span>
+                            <span class="text-sm font-semibold text-gray-700">{{ variant.name_variation || 'Standard' }}</span>
+                        </div>
                         
-                        <router-link :to="{ name: 'purchases.create', query: { variant_id: variant.id } }" title="Créer une commande pour ce produit" class="p-1 rounded bg-white text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors shadow-sm ml-auto">
-                           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                        </router-link>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-medium text-blue-600 bg-blue-50 px-1 rounded" v-if="variant.public_price">{{ Number(variant.public_price).toFixed(0) }} MAD</span>
+                            <router-link :to="{ name: 'purchases.create', query: { variant_id: variant.id } }" title="Commander" class="p-1 rounded bg-white text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            </router-link>
+                        </div>
                       </div>
-                      <span v-if="!product.variants.length" class="text-gray-400 italic">Aucune variante</span>
+                      <span v-if="!product.variants.length" class="text-gray-400 italic text-xs">Aucune variante</span>
                     </div>
                   </td>
 
