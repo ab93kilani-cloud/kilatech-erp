@@ -106,31 +106,6 @@ const closeModal = () => {
     form.value = { name: '', email: '', phone: '', address: '', ice: '', rc: '', if: '', patente: '' }
 }
 
-const handleFileUpload = async (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    const file = target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-        isLoading.value = true;
-        await api.post('/suppliers/import', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
-        alert('Import Excel terminé avec succès !');
-        fetchSuppliers();
-    } catch (e: any) {
-        alert('Erreur: Le fichier Excel est invalide ou mal formaté.');
-    } finally {
-        isLoading.value = false;
-        // Reset l'input file
-        target.value = '';
-    }
-}
 
 const uploadCertificate = async (event: Event, supplierId: number) => {
     const target = event.target as HTMLInputElement;
