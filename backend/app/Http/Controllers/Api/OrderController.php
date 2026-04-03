@@ -254,12 +254,16 @@ class OrderController extends Controller
 
         DB::beginTransaction();
         try {
+            \Illuminate\Support\Facades\Log::info('Maya Debug: Step 1 - Client Management');
             // 1. Client Management Maya.
+            // Fallback pour company_name si individuel (évite erreur NOT NULL si migration non faite) Maya.
+            $companyName = $request->client_type === 'company' ? ($request->company_name ?? $request->client_name) : $request->client_name;
+
             $client = \App\Models\Client::firstOrCreate(
                 ['email' => $request->client_email],
                 [
                     'type' => $request->client_type,
-                    'company_name' => $request->client_type === 'company' ? ($request->company_name ?? $request->client_name) : null,
+                    'company_name' => $companyName,
                     'contact_name' => $request->client_name,
                     'phone' => $request->client_phone,
                     'address' => $request->address,
@@ -269,28 +273,34 @@ class OrderController extends Controller
                 ]
             );
 
+            \Illuminate\Support\Facades\Log::info('Maya Debug: Step 2 - Order Creation');
             // 2. Create Order (Pending) Maya.
             $order = Order::create([
                 'client_id' => $client->id,
-                'order_number' => 'CMD-' . date('ym') . '-' . str_pad(Order::count() + 1, 4, '0', STR_PAD_LEFT),
+                'order_number' => 'CMD-' . date('ym') . '-' . str_pad(Order::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT),
                 'status' => 'pending',
                 'discount_amount' => 0,
             ]);
 
+            \Illuminate\Support\Facades\Log::info('Maya Debug: Step 3 - Quote Creation');
             // 3. Create Quote (Linked) Maya.
             $quote = Quote::create([
                 'client_id' => $client->id,
                 'status' => 'À confirmer',
                 'version' => 1,
                 'valid_until' => now()->addDays(15),
-                'quote_number' => 'DEV-' . date('ym') . '-' . str_pad(Quote::count() + 1, 4, '0', STR_PAD_LEFT),
+                'quote_number' => 'DEV-' . date('ym') . '-' . str_pad(Quote::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT),
             ]);
             
             // Link order to quote Maya.
             $order->update(['quote_id' => $quote->id]);
 
+            \Illuminate\Support\Facades\Log::info('Maya Debug: Step 4 - Lines Processing');
             foreach ($request->lines as $line) {
                 $variant = \App\Models\ProductVariant::find($line['variant_id']);
+                if (!$variant) {
+                     throw new \Exception("Variant ID " . $line['variant_id'] . " non trouvé.");
+                }
                 $ttcPrice = $variant->public_price ?? 0;
                 $htPrice = round($ttcPrice / 1.2, 2); 
                 
@@ -313,6 +323,7 @@ class OrderController extends Controller
                 ]);
             }
 
+            \Illuminate\Support\Facades\Log::info('Maya Debug: Step 5 - Notifications');
             // 4. Notifications Maya.
             $staff = \App\Models\User::whereHas('role', function ($q) {
                 $q->whereIn('name', ['Admin', 'Gérant', 'Commercial']);
@@ -331,24 +342,46 @@ class OrderController extends Controller
 
             DB::commit();
 
-            // 5. EMAIL OBLIGATOIRE (Devis PDF) Maya.
+            \Illuminate\Support\Facades\Log::info('Maya Debug: Step 6 - PDF & Email');
+            $mailSent = false;
+            $mailError = null;
+
+            // 5. EMAIL (Devis PDF) - Non bloquant Maya.
             try {
                 $pdf = $this->getQuotePdf($quote);
-                Mail::to($request->client_email)->send(new PublicQuoteRequest($quote, $pdf->output()));
+                $pdfContent = $pdf->output();
+                \Illuminate\Support\Facades\Log::info('Maya Debug: Step 6.1 - PDF Generated');
+                
+                Mail::to($request->client_email)->send(new PublicQuoteRequest($quote, $pdfContent));
+                \Illuminate\Support\Facades\Log::info('Maya Debug: Step 6.2 - Email Sent');
+                $mailSent = true;
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error("Email failed: " . $e->getMessage());
+                $mailError = $e->getMessage();
+                \Illuminate\Support\Facades\Log::error("Maya Email Error: " . $mailError);
             }
 
             return response()->json([
-                'message' => 'Demande reçue avec succès. Un devis vous a été envoyé par email. Maya.',
+                'message' => 'Demande reçue avec succès. ' . ($mailSent ? 'Un devis vous a été envoyé par email.' : 'Note : Échec de l\'envoi de l\'email, mais votre devis est prêt.'),
                 'order_id' => $order->id,
                 'quote_id' => $quote->id,
-                'quote_number' => $quote->quote_number
+                'quote_number' => $quote->quote_number,
+                'mail_sent' => $mailSent,
+                'mail_error' => $mailError // Utile pour le debug sans faire planter la requête Maya.
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Erreur technique. Maya.', 'error' => $e->getMessage()], 500);
+            \Illuminate\Support\Facades\Log::error('Maya Critical Error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            return response()->json([
+                'debug' => true,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => explode("\n", $e->getTraceAsString())
+            ], 500);
         }
     }
 
