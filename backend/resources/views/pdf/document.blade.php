@@ -230,17 +230,15 @@
     <table class="content-table">
         <thead>
             <tr>
-                <th style="width: 15%">Référence</th>
-                <th style="width: 45%">Désignation</th>
-                <th class="text-center" style="width: 10%">Quantité</th>
-                <th class="text-right" style="width: 15%">P.U HT (MAD)</th>
-                <th class="text-right" style="width: 15%">Total HT</th>
+                <th style="width: 55%">Désignation</th>
+                <th class="text-center" style="width: 13%">Quantité</th>
+                <th class="text-right" style="width: 16%">P.U HT (MAD)</th>
+                <th class="text-right" style="width: 16%">Total HT</th>
             </tr>
         </thead>
         <tbody>
             @foreach($items as $item)
             <tr>
-                <td style="font-family: monospace;">{{ $item['reference'] }}</td>
                 <td>
                     <div style="font-weight: 800; color: #0f172a;">{{ $item['name'] }}</div>
                     @if(!empty($item['description']))

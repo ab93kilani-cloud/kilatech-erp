@@ -83,7 +83,7 @@ const handleAddToCart = () => {
                   <label class="text-xs font-bold text-gray-400 uppercase tracking-widest">Choisir une variante</label>
                   <select v-model="selectedVariant" class="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500 font-medium text-sm">
                     <option v-for="v in product.variants" :key="v.id" :value="v">
-                      {{ v.name_variation }} ({{ v.sku }})
+                      {{ v.name_variation || 'Modèle Standard' }}
                     </option>
                   </select>
                 </div>
