@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('suppliers/import', [\App\Http\Controllers\Api\SupplierController::class, 'import']);
     Route::apiResource('suppliers', \App\Http\Controllers\Api\SupplierController::class);
     Route::apiResource('product-suppliers', \App\Http\Controllers\Api\ProductSupplierController::class);
+    Route::apiResource('categories', \App\Http\Controllers\Api\CategoryController::class)->only(['index', 'store']);
 
     // Procurement & Inventory
     Route::post('purchase-orders/{purchaseOrder}/confirm', [\App\Http\Controllers\Api\PurchaseOrderController::class, 'confirm']);

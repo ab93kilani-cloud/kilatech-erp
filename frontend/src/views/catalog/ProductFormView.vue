@@ -28,7 +28,19 @@ const product = ref({
 
 const autoReferenceDisplay = ref('Chargement...')
 
+const categories = ref<any[]>([])
+const isCategoryModalOpen = ref(false)
+const newCategoryName = ref('')
+const isCreatingCategory = ref(false)
+
 const suppliers = ref<any[]>([])
+const supplierSearchQuery = ref('')
+const filteredSuppliers = computed(() => {
+    if (!supplierSearchQuery.value) return suppliers.value
+    return suppliers.value.filter(s => s.name.toLowerCase().includes(supplierSearchQuery.value.toLowerCase()))
+})
+
+const brands = ref<string[]>([]) // List of unique brands from existing products
 
 const imageFile = ref<File | null>(null)
 
@@ -59,6 +71,42 @@ const fetchSuppliers = async () => {
         suppliers.value = res.data;
     } catch (e) {
         console.error('Failed to load suppliers');
+    }
+}
+
+const fetchCategories = async () => {
+    try {
+        const res = await api.get('/categories');
+        categories.value = res.data;
+    } catch (e) {
+        console.error('Failed to load categories');
+    }
+}
+
+const fetchBrands = async () => {
+    try {
+        const res = await api.get('/products'); // We fetch all products to extract unique brands
+        const uniqueBrands = new Set(res.data.map((p: any) => p.brand).filter(Boolean));
+        brands.value = Array.from(uniqueBrands) as string[];
+    } catch (e) {
+        console.error('Failed to load brands');
+    }
+}
+
+const createCategory = async () => {
+    if (!newCategoryName.value) return;
+    isCreatingCategory.value = true;
+    try {
+        const res = await api.post('/categories', { name: newCategoryName.value });
+        categories.value.push(res.data);
+        categories.value.sort((a, b) => a.name.localeCompare(b.name));
+        product.value.category = res.data.name; // On sélectionne la nouvelle catégorie Maya.
+        isCategoryModalOpen.value = false;
+        newCategoryName.value = '';
+    } catch (e: any) {
+        alert(e.response?.data?.message || 'Erreur lors de la création de la catégorie.');
+    } finally {
+        isCreatingCategory.value = false;
     }
 }
 
@@ -127,6 +175,8 @@ const fetchAutoReference = async () => {
 
 onMounted(() => {
     fetchSuppliers();
+    fetchCategories();
+    fetchBrands();
     if (isEditing.value) {
         fetchProductData();
     } else {
@@ -243,54 +293,36 @@ const saveProduct = async () => {
                 </div>
 
                 <div class="sm:col-span-3">
-                    <label class="block text-sm font-medium leading-6 text-gray-900">Famille (Catégorie) *</label>
-                    <div class="mt-2">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium leading-6 text-gray-900">Famille (Catégorie) *</label>
+                        <button @click="isCategoryModalOpen = true" type="button" class="text-xs text-brand-600 font-bold hover:underline">+ Nouvelle Catégorie</button>
+                    </div>
+                    <div>
                         <select v-model="product.category" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
                             <option value="" disabled>-- Sélectionner une catégorie --</option>
-                            <option value="Anesthésiologie/Réanimation">Anesthésiologie/Réanimation</option>
-                            <option value="Appareils de bien-être ou de fitness">Appareils de bien-être ou de fitness</option>
-                            <option value="Cardiologie">Cardiologie</option>
-                            <option value="Chirurgie/d'Opération">Chirurgie/d'Opération</option>
-                            <option value="Cliniques mobiles">Cliniques mobiles</option>
-                            <option value="Consommables/Approvisionnements">Consommables/Approvisionnements</option>
-                            <option value="Cosmétologie/Dermatologie">Cosmétologie/Dermatologie</option>
-                            <option value="Équipement d'urologie">Équipement d'urologie</option>
-                            <option value="Équipement de Prothésiste Dentaire">Équipement de Prothésiste Dentaire</option>
-                            <option value="Équipement de stérilisation">Équipement de stérilisation</option>
-                            <option value="Équipement Dentaire">Équipement Dentaire</option>
-                            <option value="Equipement endoscopique">Equipement endoscopique</option>
-                            <option value="Équipement hospitalier">Équipement hospitalier</option>
-                            <option value="Equipement Neurologique">Equipement Neurologique</option>
-                            <option value="Equipement ORL">Equipement ORL</option>
-                            <option value="Equipement pour Imagerie Médicale">Equipement pour Imagerie Médicale</option>
-                            <option value="Equipement Veterinaire">Equipement Veterinaire</option>
-                            <option value="Formation médicale">Formation médicale</option>
-                            <option value="Informatique médicale, Télémédecine">Informatique médicale, Télémédecine</option>
-                            <option value="Laboratoire">Laboratoire</option>
-                            <option value="Logiciel médical">Logiciel médical</option>
-                            <option value="Obstétrique/Gynécologie">Obstétrique/Gynécologie</option>
-                            <option value="Ophtalmologie">Ophtalmologie</option>
-                            <option value="Pédiatrie">Pédiatrie</option>
-                            <option value="Physiothérapie">Physiothérapie</option>
-                            <option value="Soins /Réhabilitation">Soins /Réhabilitation</option>
+                            <option v-for="cat in categories" :key="cat.id" :value="cat.name">{{ cat.name }}</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="sm:col-span-3">
-                    <label class="block text-sm font-medium leading-6 text-gray-900">Fournisseur</label>
-                    <div class="mt-2">
+                    <label class="block text-sm font-medium leading-6 text-gray-900">Fournisseur (Rechercher)</label>
+                    <div class="mt-2 space-y-2">
+                        <input v-model="supplierSearchQuery" type="text" placeholder="Taper pour chercher..." class="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-brand-500 sm:text-xs px-2">
                         <select v-model="product.supplier_id" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
-                            <option value="">-- Aucun / Sélectionner --</option>
-                            <option v-for="sup in suppliers" :key="sup.id" :value="sup.id">{{ sup.name }}</option>
+                            <option value="">-- {{ filteredSuppliers.length }} trouvé(s) --</option>
+                            <option v-for="sup in filteredSuppliers" :key="sup.id" :value="sup.id">{{ sup.name }}</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="sm:col-span-3">
-                    <label class="block text-sm font-medium leading-6 text-gray-900">Marque Fabriquante</label>
+                    <label class="block text-sm font-medium leading-6 text-gray-900">Marque Fabriquante (Proposer)</label>
                     <div class="mt-2">
-                        <input v-model="product.brand" type="text" placeholder="Ex: Siemens, Philips, etc." class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
+                        <input v-model="product.brand" list="brands-list" type="text" placeholder="Ex: Siemens, Philips, etc." class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
+                        <datalist id="brands-list">
+                            <option v-for="b in brands" :key="b" :value="b">{{ b }}</option>
+                        </datalist>
                     </div>
                 </div>
 
@@ -363,6 +395,27 @@ const saveProduct = async () => {
             </div>
         </div>
 
+      </div>
+
+      <!-- Modal Nouvelle Catégorie Maya -->
+      <div v-if="isCategoryModalOpen" class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center">
+          <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="isCategoryModalOpen = false"></div>
+          <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6">
+            <div>
+              <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Créer une Famille Maya</h3>
+              <input v-model="newCategoryName" type="text" placeholder="Nom de la catégorie..." class="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-3 py-2 border">
+            </div>
+            <div class="mt-5 sm:mt-6 flex gap-3">
+              <button @click="createCategory" :disabled="isCreatingCategory" class="inline-flex w-full justify-center rounded-md border border-transparent bg-brand-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-brand-700 sm:text-sm">
+                {{ isCreatingCategory ? '...' : 'Ajouter' }}
+              </button>
+              <button @click="isCategoryModalOpen = false" class="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 sm:text-sm">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="flex items-center justify-end gap-x-6 border-t border-gray-900/10 px-4 py-4 sm:px-8 bg-gray-50">
