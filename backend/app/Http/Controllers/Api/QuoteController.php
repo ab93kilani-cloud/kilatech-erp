@@ -27,7 +27,12 @@ class QuoteController extends Controller
     public function generatePDF($id)
     {
         $quote = Quote::withTrashed()->with(['client', 'lines.variant.product'])->findOrFail($id);
+        $pdf = $this->getQuotePdf($quote);
+        return $pdf->download($quote->quote_number . '.pdf');
+    }
 
+    protected function getQuotePdf(Quote $quote)
+    {
         $items = $quote->lines->map(function ($line) {
             $ht = $line->unit_price * $line->quantity;
             $tvaRate = (float)($line->variant?->tva_rate ?? 20);
@@ -39,7 +44,7 @@ class QuoteController extends Controller
             return [
                 'reference' => $line->variant?->sku ?? 'N/A',
                 'name' => ($line->variant?->product?->name ?? 'Produit') . ($line->variant?->product?->brand ? ' - ' . $line->variant->product->brand : '') . ($line->variant?->name_variation ? ' - ' . $line->variant->name_variation : ''),
-                'description' => '', // Selon besoin
+                'description' => '',
                 'quantity' => $line->quantity,
                 'unit_price_ht' => $line->unit_price,
                 'unit_price_ttc' => $line->unit_price * (1 + ($tvaRate / 100)),
@@ -64,23 +69,18 @@ class QuoteController extends Controller
             'client_ice' => $quote->client->ice,
             'client_address' => $quote->client->address,
             'client_city' => $quote->client->city,
-            'client_tva' => $quote->client->tva ?? '',
             'items' => $items,
             'total_ht' => $totalHT,
             'total_tva' => $rawTTC - $totalHT,
             'discount_amount' => $discountAmount,
             'total_ttc' => $totalTTC,
             'payment_method' => 'Virement / Chèque',
-            'condition_text' => '',
             'validity_date' => $quote->valid_until,
-            'validity_message' => 'Devis valable jusqu\'au:',
-            'deposit_text' => false,
             'balance_due' => $totalTTC,
             'title' => 'Devis ' . $quote->quote_number
         ];
 
-        $pdf = Pdf::loadView('pdf.document', $data);
-        return $pdf->download($quote->quote_number . '.pdf');
+        return Pdf::loadView('pdf.document', $data);
     }
 
     public function store(Request $request)
@@ -379,9 +379,10 @@ class QuoteController extends Controller
 
             // Envoi automatique du devis par Email Maya.
             try {
-                Mail::to($request->client_email)->send(new PublicQuoteRequest($quote));
+                $pdf = $this->getQuotePdf($quote);
+                Mail::to($request->client_email)->send(new PublicQuoteRequest($quote, $pdf->output()));
             } catch (\Exception $e) {
-                // On ne bloque pas si l'email échoue (ex: SMTP non configuré) Maya.
+                // On ne bloque pas si l'email échoue Maya.
                 \Illuminate\Support\Facades\Log::error("Email failed: " . $e->getMessage());
             }
 
