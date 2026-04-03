@@ -10,8 +10,8 @@ use App\Models\OrderLine;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Mail\PublicQuoteRequest;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class QuoteController extends Controller
 {
