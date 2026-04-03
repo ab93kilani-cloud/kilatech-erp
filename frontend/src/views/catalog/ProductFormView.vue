@@ -173,6 +173,14 @@ const fetchAutoReference = async () => {
     }
 }
 
+// Auto-sélection si un seul résultat Maya.
+import { watch } from 'vue'
+watch(filteredSuppliers, (newVal) => {
+    if (newVal.length === 1 && supplierSearchQuery.value !== '') {
+        product.value.supplier_id = newVal[0].id
+    }
+})
+
 onMounted(() => {
     fetchSuppliers();
     fetchCategories();
@@ -306,12 +314,13 @@ const saveProduct = async () => {
                 </div>
 
                 <div class="sm:col-span-3">
-                    <label class="block text-sm font-medium leading-6 text-gray-900">Fournisseur (Rechercher)</label>
+                    <label class="block text-sm font-medium leading-6 text-gray-900">Fournisseur (Chercher & Sélectionner)</label>
                     <div class="mt-2 space-y-2">
-                        <input v-model="supplierSearchQuery" type="text" placeholder="Taper pour chercher..." class="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-brand-500 sm:text-xs px-2">
+                        <input v-model="supplierSearchQuery" type="text" placeholder="Taper le nom du fournisseur..." class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-brand-500 sm:text-xs px-2">
                         <select v-model="product.supplier_id" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
-                            <option value="">-- {{ filteredSuppliers.length }} trouvé(s) --</option>
+                            <option value="">-- Sélectionner dans la liste filtrée --</option>
                             <option v-for="sup in filteredSuppliers" :key="sup.id" :value="sup.id">{{ sup.name }}</option>
+                            <option v-if="filteredSuppliers.length === 0" disabled>Aucun résultat pour "{{ supplierSearchQuery }}"</option>
                         </select>
                     </div>
                 </div>
