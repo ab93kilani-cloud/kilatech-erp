@@ -8,6 +8,8 @@ use App\Models\QuoteLine;
 use App\Models\Order;
 use App\Models\OrderLine;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Mail\PublicQuoteRequest;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -374,8 +376,17 @@ class QuoteController extends Controller
             }
 
             DB::commit();
+
+            // Envoi automatique du devis par Email Maya.
+            try {
+                Mail::to($request->client_email)->send(new PublicQuoteRequest($quote));
+            } catch (\Exception $e) {
+                // On ne bloque pas si l'email échoue (ex: SMTP non configuré) Maya.
+                \Illuminate\Support\Facades\Log::error("Email failed: " . $e->getMessage());
+            }
+
             return response()->json([
-                'message' => 'Devis généré avec succès',
+                'message' => 'Devis généré avec succès et envoyé par email.',
                 'quote_id' => $quote->id,
                 'quote_number' => $quote->quote_number
             ], 201);
