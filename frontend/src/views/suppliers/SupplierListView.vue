@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import api from '@/plugins/axios'
 
 interface Supplier {
@@ -19,6 +19,17 @@ interface Supplier {
 const suppliers = ref<Supplier[]>([])
 const isLoading = ref(true)
 const error = ref('')
+const searchQuery = ref('')
+
+const filteredSuppliers = computed(() => {
+    if (!searchQuery.value) return suppliers.value
+    const query = searchQuery.value.toLowerCase()
+    return suppliers.value.filter(s => 
+        s.name.toLowerCase().includes(query) || 
+        (s.email && s.email.toLowerCase().includes(query)) ||
+        (s.phone && s.phone.includes(query))
+    )
+})
 
 const isModalOpen = ref(false)
 const isSubmitting = ref(false)
@@ -177,14 +188,18 @@ onMounted(() => {
     <div class="sm:flex sm:items-center mb-8">
       <div class="sm:flex-auto">
         <h1 class="text-2xl font-semibold text-gray-900">Fournisseurs Matériel B2B</h1>
-        <p class="mt-2 text-sm text-gray-700">Gérez vos fabricants locaux ou internationaux. Vous pouvez importer des listes Excel.</p>
+        <p class="mt-2 text-sm text-gray-700">Gérez vos fabricants locaux ou internationaux.</p>
       </div>
       <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center gap-3">
-        <!-- Bouton Upload caché, déclenché via label -->
-        <label class="cursor-pointer inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
-          <span>Importer Excel</span>
-          <input type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="handleFileUpload" />
-        </label>
+        <!-- Barre de recherche Maya -->
+        <div class="relative rounded-md shadow-sm max-w-xs">
+          <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <svg class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <input v-model="searchQuery" type="text" class="block w-full rounded-md border-gray-300 pl-10 focus:border-brand-500 focus:ring-brand-500 sm:text-sm border py-2" placeholder="Rechercher...">
+        </div>
         
         <button @click="closeModal(); isModalOpen = true" type="button" class="inline-flex items-center justify-center rounded-md border border-transparent bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 sm:w-auto">
           Nouveau Fournisseur
@@ -211,7 +226,7 @@ onMounted(() => {
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
-                <tr v-for="supplier in suppliers" :key="supplier.id">
+                <tr v-for="supplier in filteredSuppliers" :key="supplier.id">
                   <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">{{ supplier.name }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     <div>{{ supplier.phone || '-' }}</div>
