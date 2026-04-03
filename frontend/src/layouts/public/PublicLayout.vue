@@ -1,10 +1,3 @@
-<script setup lang="ts">
-import { useAuthStore } from '@/stores/auth'
-import { computed } from 'vue'
-
-const authStore = useAuthStore()
-const isAuthenticated = computed(() => authStore.isAuthenticated)
-</script>
 
 <template>
   <div class="min-h-screen bg-gray-50 flex flex-col pt-28">
@@ -52,13 +45,7 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
              </svg>
            </button>
            
-           <router-link v-if="!isAuthenticated" :to="{ name: 'login' }" class="text-xs font-bold text-brand-700 bg-brand-50 px-3 py-1.5 rounded hover:bg-brand-100 transition-colors">
-             Admin
-           </router-link>
-           
-           <router-link v-else :to="{ name: 'dashboard' }" class="text-xs font-bold text-brand-700 bg-brand-50 px-3 py-1.5 rounded hover:bg-brand-100 transition-colors">
-             Dashboard
-           </router-link>
+           <!-- Accès Admin masqué Maya -->
         </div>
       </nav>
     </header>
