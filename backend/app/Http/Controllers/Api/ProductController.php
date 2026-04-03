@@ -239,14 +239,21 @@ class ProductController extends Controller
      */
     private function processAndStoreImage($file, Product $product)
     {
-        // Get original extension
+        // 1. Définition du nom de fichier Maya.
         $extension = $file->getClientOriginalExtension();
         $fileName = Str::slug($product->name) . '-' . time() . '.' . $extension;
         
-        // Store using Laravel storage system natively
+        // 2. Stockage Privé (Laravel standard) Maya.
         $path = $file->storeAs('public/products', $fileName);
         
-        // Update database with relative path
+        // 3. Stockage Miroir Public (Hostinger Workaround) Maya.
+        $mirrorPath = public_path('storage/products');
+        if (!is_dir($mirrorPath)) {
+            mkdir($mirrorPath, 0755, true);
+        }
+        copy(storage_path('app/' . $path), $mirrorPath . '/' . $fileName);
+        
+        // 4. Mise à jour de la base de données Maya.
         $product->update(['image_path' => 'products/' . $fileName]);
     }
 }
