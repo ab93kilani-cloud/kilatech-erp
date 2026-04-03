@@ -11,7 +11,11 @@ $kernel->handle(Illuminate\Http\Request::capture());
 
 echo "=== RÉPARATION AUTOMATIQUE DES IMAGES Maya ===\n\n";
 
-$storagePath = __DIR__ . '/../storage/app/public/products';
+// Chemin Senior détecté par l'audit. Maya.
+$storagePath = realpath(__DIR__ . '/../storage/app/public/products');
+if (!$storagePath) {
+    $storagePath = '/home/u751859584/domains/kilatech.ma/public_html/api/storage/app/public/products';
+}
 $diskFiles = is_dir($storagePath) ? scandir($storagePath) : [];
 $diskFiles = array_filter($diskFiles, function($f) { return $f !== '.' && $f !== '..'; });
 
