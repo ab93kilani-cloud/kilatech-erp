@@ -29,4 +29,7 @@ Route::post('/public/quote-request', [\App\Http\Controllers\Api\QuoteController:
 Route::post('/api/public/quote-request', [\App\Http\Controllers\Api\QuoteController::class, 'publicQuoteStore']);
 
 Route::apiResource('products', \App\Http\Controllers\Api\ProductController::class)->only(['index', 'show']);
-Route::get('/api/products', [\App\Http\Controllers\Api\ProductController::class, 'index']); // Explicit double prefix fix.
+Route::get('/api/products', [\App\Http\Controllers\Api\ProductController::class, 'index']);
+Route::get('/api/api/products', [\App\Http\Controllers\Api\ProductController::class, 'index']); // Maya: Double prefix fix for Hostinger index.
+Route::get('/api/products/{id}', [\App\Http\Controllers\Api\ProductController::class, 'show']); // Use {id} instead of {product} to avoid implicit binding issues if needed.
+Route::get('/api/api/products/{id}', [\App\Http\Controllers\Api\ProductController::class, 'show']); // Maya: Double prefix fix for Hostinger show.

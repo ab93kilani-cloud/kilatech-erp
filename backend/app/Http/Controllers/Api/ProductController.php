@@ -116,9 +116,20 @@ class ProductController extends Controller
         }
     }
 
-    public function show(Product $product)
+    public function show($id)
     {
-        return response()->json($product->load(['variants', 'supplier']));
+        $product = Product::with(['variants', 'supplier'])->find($id);
+        
+        if (!$product) {
+            // Handle soft-deleted or missing products
+            $product = Product::onlyTrashed()->with(['variants', 'supplier'])->find($id);
+            if ($product) {
+                return response()->json(['message' => 'Produit archivé (corbeille)'], 404);
+            }
+            return response()->json(['message' => 'Produit non trouvé ID: ' . $id], 404);
+        }
+
+        return response()->json($product);
     }
 
     public function update(Request $request, $id)

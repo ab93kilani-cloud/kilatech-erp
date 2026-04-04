@@ -159,8 +159,8 @@ const fetchProductData = async () => {
                 margin_percent: v.margin_percent || 0
             }))
         }
-    } catch (e) {
-        errorMsg.value = 'Erreur lors du chargement du produit.'
+    } catch (e: any) {
+        errorMsg.value = e.response?.data?.message || 'Erreur lors du chargement du produit.'
     }
 }
 
