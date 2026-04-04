@@ -79,13 +79,14 @@ const handleSubmit = async () => {
     
     // Clear cart on success
     cartStore.clearCart()
-  } catch (e: any) {
+    } catch (e: any) {
     console.error('Failed to submit quote request', e)
     if (e.response?.status === 422) {
       errors.value = e.response.data.errors
     } else {
-      const errorMsg = e.response?.data?.message || 'Une erreur est survenue lors de la génération de votre devis. Veuillez réessayer.'
-      alert(errorMsg)
+      // Force display raw response for debugging Maya.
+      const rawError = e.response?.data ? JSON.stringify(e.response.data, null, 2) : (e.response?.statusText || e.message)
+      alert('DEBUG MAYA - Erreur Serveur :\n' + rawError)
     }
   } finally {
     isSubmitting.value = false
