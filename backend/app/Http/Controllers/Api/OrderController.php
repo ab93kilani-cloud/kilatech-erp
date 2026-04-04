@@ -238,13 +238,6 @@ class OrderController extends Controller
      */
     public function publicStore(Request $request)
     {
-        // DEBUG MAYA - RADICAL DETECTION
-        return response()->json([
-            'debug' => true,
-            'message' => 'Maya est entrée dans le contrôleur !',
-            'input' => $request->all()
-        ], 200);
-
         $request->validate([
             'client_type' => 'required|in:company,individual',
             'client_name' => 'required|string|max:255',
