@@ -29,8 +29,16 @@ class RouteServiceProvider extends ServiceProvider
         });
 
         $this->routes(function () {
+            // Maya: Universal Double-Prefix Strategy
+            // Handles both /api/xxx and /api/api/xxx calls from the frontend on Hostinger.
+            
+            // 1. Prefixed group (api/xxx)
             Route::middleware('api')
-                // ->prefix('api') // Maya: Removed prefix because app is already in /api/ folder on Hostinger.
+                ->prefix('api')
+                ->group(base_path('routes/api.php'));
+
+            // 2. Base group (xxx)
+            Route::middleware('api')
                 ->group(base_path('routes/api.php'));
 
             Route::middleware('web')
