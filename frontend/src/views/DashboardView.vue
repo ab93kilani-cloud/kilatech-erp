@@ -6,16 +6,20 @@ import api from '@/plugins/axios'
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 
-const blogPendingCount = ref(0)
+const stats = ref({
+    sales_today: 0,
+    stock_alerts: 0,
+    pending_quotes: 0,
+    qa_receptions: 0,
+    marketing_pending: 0
+})
 
 const fetchStats = async () => {
     try {
-        const res = await api.get('/articles')
-        if (Array.isArray(res.data)) {
-            blogPendingCount.value = res.data.filter((a: any) => a.status === 'draft').length
-        }
+        const res = await api.get('/dashboard-stats')
+        stats.value = res.data
     } catch (e) {
-        console.error('Failed to fetch blog stats')
+        console.error('Failed to fetch dashboard stats')
     }
 }
 
@@ -45,7 +49,7 @@ onMounted(fetchStats)
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Ventes du jour</dt>
-                <dd class="text-lg font-semibold text-gray-900">4 500.00 MAD</dd>
+                <dd class="text-lg font-semibold text-gray-900">{{ stats.sales_today.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) }} MAD</dd>
               </dl>
             </div>
           </div>
@@ -64,7 +68,7 @@ onMounted(fetchStats)
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Alertes Stock/DLC</dt>
-                <dd class="text-lg font-semibold text-gray-900">3</dd>
+                <dd class="text-lg font-semibold text-gray-900">{{ stats.stock_alerts }}</dd>
               </dl>
             </div>
           </div>
@@ -83,7 +87,7 @@ onMounted(fetchStats)
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Devis en attente</dt>
-                <dd class="text-lg font-semibold text-gray-900">12</dd>
+                <dd class="text-lg font-semibold text-gray-900">{{ stats.pending_quotes }}</dd>
               </dl>
             </div>
           </div>
@@ -102,7 +106,7 @@ onMounted(fetchStats)
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Receptions QA</dt>
-                <dd class="text-lg font-semibold text-gray-900">5 Lots</dd>
+                <dd class="text-lg font-semibold text-gray-900">{{ stats.qa_receptions }} Lots</dd>
               </dl>
             </div>
           </div>
@@ -121,7 +125,7 @@ onMounted(fetchStats)
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Marketing a valider</dt>
-                <dd class="text-lg font-semibold text-indigo-700 font-black">{{ blogPendingCount }} Articles</dd>
+                <dd class="text-lg font-semibold text-indigo-700 font-black">{{ stats.marketing_pending }} Articles</dd>
               </dl>
             </div>
           </div>

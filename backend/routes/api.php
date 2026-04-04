@@ -21,6 +21,7 @@ Route::post('/public/quote-request', [\App\Http\Controllers\Api\QuoteController:
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
+    Route::get('/dashboard-stats', [\App\Http\Controllers\Api\DashboardController::class, 'getStats']);
 
     // User & Team Management (Admin/Gérant only)
     Route::middleware('role:Admin,Gérant')->group(function () {
