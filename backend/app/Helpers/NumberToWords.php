@@ -23,13 +23,15 @@ class NumberToWords
         $number = number_format($number, 2, '.', '');
         list($integerPart, $decimalPart) = explode('.', $number);
 
-        $words = self::convertInteger((int)$integerPart) . ' MAD';
+        $words = self::convertInteger((int)$integerPart);
 
         if ((int)$decimalPart > 0) {
-            $words .= ' et ' . self::convertInteger((int)$decimalPart) . ' centimes';
+            $words .= ' MAD et ' . self::convertInteger((int)$decimalPart) . ' centimes';
+        } else {
+            $words .= ' MAD';
         }
 
-        return $words;
+        return trim($words);
     }
 
     private static function convertInteger($number)

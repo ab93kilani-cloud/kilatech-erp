@@ -54,6 +54,14 @@ class OrderController extends Controller
             ];
         });
 
+        $tvaBreakdown = $items->groupBy('tva')->map(function ($group, $rate) {
+            return [
+                'rate' => $rate,
+                'ht' => $group->sum('total_ht'),
+                'tva' => $group->sum('total_ttc') - $group->sum('total_ht')
+            ];
+        });
+
         $totalHT = $items->sum('total_ht');
         $rawTTC = $items->sum('total_ttc');
         $discountAmount = (float)($order->discount_amount ?? 0);
@@ -73,7 +81,8 @@ class OrderController extends Controller
             'client_tva' => $order->client->tva ?? '',
             'items' => $items,
             'total_ht' => $totalHT,
-            'total_tva' => $rawTTC - $totalHT, // TVA avant remise globale (ou répartie, simplifions ici)
+            'total_tva' => $rawTTC - $totalHT,
+            'tva_breakdown' => $tvaBreakdown,
             'discount_amount' => $discountAmount,
             'total_ttc' => $totalTTC,
             'payment_method' => 'Espèce',
@@ -81,8 +90,9 @@ class OrderController extends Controller
             'validity_date' => null,
             'validity_message' => '',
             'deposit_text' => true,
-            'balance_due' => $totalTTC, // ou calculer si acompte
+            'balance_due' => $totalTTC,
             'title' => 'Bon_Livraison_' . $order->order_number,
+            'global_tva_rate' => count($tvaBreakdown) === 1 ? $tvaBreakdown->first()['rate'] : null,
             'copies' => ['EXEMPLAIRE CLIENT', 'EXEMPLAIRE SOCIÉTÉ / ACCUSÉ DE RÉCEPTION']
         ];
 

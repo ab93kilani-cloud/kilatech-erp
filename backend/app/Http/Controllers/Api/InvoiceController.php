@@ -52,6 +52,14 @@ class InvoiceController extends Controller
             ];
         });
 
+        $tvaBreakdown = $items->groupBy('tva')->map(function ($group, $rate) {
+            return [
+                'rate' => $rate,
+                'ht' => $group->sum('total_ht'),
+                'tva' => $group->sum('total_ttc') - $group->sum('total_ht')
+            ];
+        });
+
         $totalHT = $items->sum('total_ht');
         $rawTTC = $items->sum('total_ttc');
         $discountAmount = (float)($invoice->discount_amount ?? 0);
@@ -75,6 +83,7 @@ class InvoiceController extends Controller
             'items' => $items,
             'total_ht' => $totalHT,
             'total_tva' => $rawTTC - $totalHT,
+            'tva_breakdown' => $tvaBreakdown,
             'discount_amount' => $discountAmount,
             'total_ttc' => $totalTTC,
             'payment_method' => 'Virement / Espèce',
@@ -83,8 +92,9 @@ class InvoiceController extends Controller
             'validity_message' => '',
             'deposit_text' => true,
             'total_paid' => $totalPaid,
-            'balance_due' => $invoice->balance_due,
-            'title' => 'Facture_' . $invoice->invoice_number
+            'balance_due' => $balanceDue,
+            'title' => 'Facture_' . $invoice->invoice_number,
+            'global_tva_rate' => count($tvaBreakdown) === 1 ? $tvaBreakdown->first()['rate'] : null
         ];
 
         $pdf = Pdf::loadView('pdf.document', $data);

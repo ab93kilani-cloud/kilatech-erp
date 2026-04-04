@@ -152,6 +152,15 @@ const applyGlobalDiscountTooltip = () => {
     }
 }
 
+const propagateGlobalDiscount = (valStr: string) => {
+    const val = parseFloat(valStr);
+    if (!isNaN(val) && val >= 0 && val <= 100) {
+        lines.value.forEach(line => {
+            line.discount_percent = val;
+        });
+    }
+}
+
 // Calculs dynamiques
 const totalHT = computed(() => {
     return lines.value.reduce((acc, line) => {
@@ -443,8 +452,13 @@ onMounted(() => {
                 <span class="font-bold text-gray-900">{{ totalHT.toFixed(2) }} MAD</span>
              </div>
 
+             <div class="flex items-center justify-between w-full max-w-xs text-sm text-gray-600 bg-blue-50/50 p-2 rounded-lg border border-blue-100">
+                <span class="flex items-center gap-2 font-medium">✨ Remise Rapide (%)</span>
+                <input @input="e => propagateGlobalDiscount((e.target as HTMLInputElement).value)" type="number" step="1" min="0" max="100" placeholder="0" class="w-24 rounded-lg border-gray-200 py-1 text-right text-brand-600 shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm px-2 font-bold bg-white">
+             </div>
+
              <div class="flex items-center justify-between w-full max-w-xs text-sm text-gray-600 bg-red-50/50 p-2 rounded-lg border border-red-100">
-                <span class="flex items-center gap-2 font-medium">Remise Globale (MAD)</span>
+                <span class="flex items-center gap-2 font-medium">Remise Globale (Fin 0.00 DH)</span>
                 <input v-model.number="form.discount_amount" type="number" step="0.01" min="0" class="w-24 rounded-lg border-gray-200 py-1 text-right text-gray-900 shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm px-2 font-bold">
              </div>
 

@@ -298,7 +298,9 @@
 
                 <div style="margin-top: 15px; font-weight: bold; color: #003366;">
                     Arrêté le présent document à la somme de :<br>
-                    <span style="font-size: 10px; text-transform: uppercase;">{{ \App\Helpers\NumberToWords::convert($balance_due ?? $total_ttc) }} MAD</span>
+                <div style="margin-top: 15px; font-weight: bold; color: #003366;">
+                    Arrêté le présent document à la somme de :<br>
+                    <span style="font-size: 10px; text-transform: uppercase;">{{ \App\Helpers\NumberToWords::convert($balance_due ?? $total_ttc) }}</span>
                 </div>
             </td>
             <td>
@@ -308,10 +310,21 @@
                             <td>TOTAL HT</td>
                             <td class="text-right">{{ number_format($total_ht, 2, ',', ' ') }} MAD</td>
                         </tr>
-                        <tr>
-                            <td>TVA ({{ $global_tva_rate ?? '20' }}%)</td>
-                            <td class="text-right">{{ number_format($total_tva, 2, ',', ' ') }} MAD</td>
-                        </tr>
+                        
+                        @if(isset($tva_breakdown))
+                            @foreach($tva_breakdown as $rate => $values)
+                                <tr>
+                                    <td>TVA ({{ $rate }}%)</td>
+                                    <td class="text-right">{{ number_format($values['tva'], 2, ',', ' ') }} MAD</td>
+                                </tr>
+                            @endforeach
+                        @else
+                            <tr>
+                                <td>TVA ({{ $global_tva_rate ?? '20' }}%)</td>
+                                <td class="text-right">{{ number_format($total_tva, 2, ',', ' ') }} MAD</td>
+                            </tr>
+                        @endif
+
                         @if(isset($discount_amount) && $discount_amount > 0)
                         <tr style="color: #dc2626;">
                             <td>REMISE COMMERCIALE</td>

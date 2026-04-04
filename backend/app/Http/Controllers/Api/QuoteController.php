@@ -57,6 +57,14 @@ class QuoteController extends Controller
             ];
         });
 
+        $tvaBreakdown = $items->groupBy('tva')->map(function ($group, $rate) {
+            return [
+                'rate' => $rate,
+                'ht' => $group->sum('total_ht'),
+                'tva' => $group->sum('total_ttc') - $group->sum('total_ht')
+            ];
+        });
+
         $totalHT = $items->sum('total_ht');
         $rawTTC = $items->sum('total_ttc');
         $discountAmount = (float)($quote->discount_amount ?? 0);
@@ -76,6 +84,7 @@ class QuoteController extends Controller
             'items' => $items,
             'total_ht' => $totalHT,
             'total_tva' => $rawTTC - $totalHT,
+            'tva_breakdown' => $tvaBreakdown,
             'discount_amount' => $discountAmount,
             'total_ttc' => $totalTTC,
             'payment_method' => 'Virement / Chèque',
@@ -85,8 +94,8 @@ class QuoteController extends Controller
             'deposit_text' => false,
             'balance_due' => $totalTTC,
             'title' => 'Devis ' . $quote->quote_number,
-            'quote_number' => null, // Optionnel mais attendu par la vue
-            'global_tva_rate' => 20
+            'quote_number' => null,
+            'global_tva_rate' => count($tvaBreakdown) === 1 ? $tvaBreakdown->first()['rate'] : null
         ];
 
         return Pdf::loadView('pdf.document', $data);
