@@ -13,12 +13,16 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::post('/public/orders', [\App\Http\Controllers\Api\OrderController::class, 'publicStore']);
-Route::get('/public/quotes/{id}/pdf', [\App\Http\Controllers\Api\QuoteController::class, 'generatePDF']);
-
-// Maya: Login moved here to ensure web interface connectivity.
-Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login']);
-
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Maya: Compatibility routes to handle both /api/login and /login (Fix for Hostinger prefixing).
+Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login']);
+Route::post('/api/login', [\App\Http\Controllers\AuthController::class, 'login']);
+
+Route::post('/public/orders', [\App\Http\Controllers\Api\OrderController::class, 'publicStore']);
+Route::post('/api/public/orders', [\App\Http\Controllers\Api\OrderController::class, 'publicStore']);
+
+Route::apiResource('products', \App\Http\Controllers\Api\ProductController::class)->only(['index', 'show']);
+Route::get('/api/products', [\App\Http\Controllers\Api\ProductController::class, 'index']); // Explicit double prefix fix.
