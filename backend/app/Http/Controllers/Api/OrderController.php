@@ -244,6 +244,7 @@ class OrderController extends Controller
      */
     public function publicStore(Request $request)
     {
+        die('MAYA REACHED CONTROLLER');
         $request->validate([
             'client_type' => 'required|in:company,individual',
             'client_name' => 'required|string|max:255',
