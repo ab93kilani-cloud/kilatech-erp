@@ -16,3 +16,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Maya: Public order route moved from api.php to web.php to bypass Sanctum 401 issues.
+Route::post('/public/orders', [\App\Http\Controllers\Api\OrderController::class, 'publicStore']);
