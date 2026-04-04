@@ -23,8 +23,16 @@ const form = ref({
 const products = computed(() => {
     // Filtrer les variantes qui appartiennent au fournisseur sélectionné
     const filteredVariants = allVariants.value.filter(v => {
-        if (!form.value.supplier_id) return true; // Si pas de fournisseur, on montre tout ou rien? Montrons tout pour la recherche.
-        return v.suppliers?.some((s: any) => s.id === Number(form.value.supplier_id));
+        if (!form.value.supplier_id) return true;
+        const selectedId = Number(form.value.supplier_id);
+        
+        // 1. Vérification au niveau du produit (Fournisseur principal)
+        const isPrimary = v.product?.supplier_id === selectedId;
+        
+        // 2. Vérification au niveau du pivot ProductSupplier (Fournisseurs alternatifs)
+        const isAlternate = v.suppliers?.some((ps: any) => ps.supplier_id === selectedId);
+        
+        return isPrimary || isAlternate;
     });
 
     const map = new Map<number, any>()

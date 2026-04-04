@@ -183,4 +183,22 @@ class PurchaseOrderController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.document', $data);
         return $pdf->download('Bon_de_Commande_' . $purchaseOrder->po_number . '.pdf');
     }
+
+    public function destroy(PurchaseOrder $purchaseOrder)
+    {
+        if ($purchaseOrder->status !== 'draft') {
+            return response()->json(['message' => 'Seul un PO en brouillon peut être supprimé'], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            $purchaseOrder->lines()->delete();
+            $purchaseOrder->delete();
+            DB::commit();
+            return response()->json(null, 204);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Erreur lors de la suppression du PO'], 500);
+        }
+    }
 }
