@@ -30,7 +30,7 @@ class RouteServiceProvider extends ServiceProvider
 
         $this->routes(function () {
             Route::middleware('api')
-                ->prefix('api')
+                // ->prefix('api') // Maya: Removed prefix because app is already in /api folder on Hostinger.
                 ->group(base_path('routes/api.php'));
 
             Route::middleware('web')
