@@ -150,7 +150,13 @@ class OrderController extends Controller
             ]);
 
             DB::commit();
-            
+            return response()->json(['message' => 'Commande créée avec succès.'], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Erreur lors de la création de la commande.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
     /**
      * Valider une commande en attente (Confirmation Commerciale OBLIGATOIRE) Maya.
      */
