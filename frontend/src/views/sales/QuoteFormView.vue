@@ -9,9 +9,28 @@ const route = useRoute()
 const isEditing = ref(false)
 const quoteId = ref<string | null>(null)
 
-// Données Backend Mockup pour les listes déroulantes
+// Données Backend
 const clients = ref<any[]>([])
-const variants = ref<any[]>([])
+const allVariants = ref<any[]>([]) // toutes les variantes brutes
+
+// Maya: Groupe les variantes par produit pour la sélection en 2 étapes
+const products = computed(() => {
+    const map = new Map<number, any>()
+    allVariants.value.forEach(v => {
+        if (!v.product) return
+        if (!map.has(v.product.id)) {
+            map.set(v.product.id, {
+                id: v.product.id,
+                name: v.product.name,
+                brand: v.product.brand,
+                reference: v.product.reference,
+                variants: []
+            })
+        }
+        map.get(v.product.id).variants.push(v)
+    })
+    return Array.from(map.values())
+})
 
 const form = ref({
     client_id: '',
@@ -21,13 +40,26 @@ const form = ref({
     payment_term: ''
 })
 
-// Panier du Devis
-const lines = ref([
-    { variant_id: '', quantity: 1, unit_price: 0, tax_rate: 20.00, discount_percent: 0 }
+// Panier du Devis — chaque ligne a un selectedProductId pour la sélection en 2 étapes
+const lines = ref<any[]>([
+    { selectedProductId: '', variant_id: '', quantity: 1, unit_price: 0, tax_rate: 20.00, discount_percent: 0 }
 ])
 
 const isSubmitting = ref(false)
 const errorMsg = ref('')
+
+// Variantes disponibles pour un produit sélectionné sur une ligne
+const variantsForLine = (line: any) => {
+    if (!line.selectedProductId) return []
+    const prod = products.value.find(p => p.id === Number(line.selectedProductId))
+    return prod ? prod.variants : []
+}
+
+// Quand le produit change sur une ligne, on réinitialise la variante
+const onProductSelect = (line: any) => {
+    line.variant_id = ''
+    line.unit_price = 0
+}
 
 // Récupérer les données de base nécessaires pour créer un devis
 const fetchDependencies = async () => {
@@ -36,7 +68,7 @@ const fetchDependencies = async () => {
         clients.value = responseClients.data
 
         const responseVariants = await api.get('/product-variants')
-        variants.value = responseVariants.data
+        allVariants.value = responseVariants.data
     } catch (e: any) {
         errorMsg.value = "Erreur de chargement du catalogue ou des clients."
     }
@@ -44,7 +76,7 @@ const fetchDependencies = async () => {
 
 // Actions Panier
 const addLine = () => {
-    lines.value.push({ variant_id: '', quantity: 1, unit_price: 0, tax_rate: 20, discount_percent: 0 })
+    lines.value.push({ selectedProductId: '', variant_id: '', quantity: 1, unit_price: 0, tax_rate: 20, discount_percent: 0 })
 }
 
 const removeLine = (index: number) => {
@@ -53,11 +85,11 @@ const removeLine = (index: number) => {
     }
 }
 
-// Mise à jour automatique du prix unitaire lors du choix du SKU
+// Mise à jour automatique du prix unitaire lors du choix de la variante
 const onVariantSelect = (index: number) => {
     if (!lines.value[index]) return
     const selectedVariantId = lines.value[index].variant_id
-    const variantObj = variants.value.find(v => v.id === selectedVariantId)
+    const variantObj = allVariants.value.find(v => v.id === selectedVariantId)
     if (variantObj) {
         const ttcPrice = Number(variantObj.public_price || variantObj.product?.public_price || 0);
         const tvaRate = Number(variantObj.tva_rate || 20);
@@ -71,12 +103,13 @@ const productSearch = ref('')
 const showSearchDropdown = ref(false)
 
 const filteredCatalog = computed(() => {
-    if (!productSearch.value) return variants.value.slice(0, 50)
+    if (!productSearch.value) return products.value.slice(0, 50)
     const term = productSearch.value.toLowerCase()
-    return variants.value.filter(v => 
-        (v.sku && v.sku.toLowerCase().includes(term)) ||
-        (v.product?.name && v.product.name.toLowerCase().includes(term)) ||
-        (v.name_variation && v.name_variation.toLowerCase().includes(term))
+    return products.value.filter(p =>
+        (p.name && p.name.toLowerCase().includes(term)) ||
+        (p.brand && p.brand.toLowerCase().includes(term)) ||
+        (p.reference && p.reference.toLowerCase().includes(term)) ||
+        p.variants.some((v: any) => v.sku && v.sku.toLowerCase().includes(term))
     ).slice(0, 50)
 })
 
@@ -84,25 +117,24 @@ const hideSearchDropdown = () => {
     showSearchDropdown.value = false
 }
 
-const addSearchedProduct = (variant: any) => {
-    if (!variant) return
-    if (lines.value.length === 1 && lines.value[0] && !lines.value[0].variant_id) {
-        const ttcPrice = Number(variant.public_price || variant.product?.public_price || 0);
-        const tvaRate = Number(variant.tva_rate || 20);
-        lines.value[0].variant_id = variant.id
-        lines.value[0].unit_price = Number((ttcPrice / (1 + tvaRate/100)).toFixed(4));
-        lines.value[0].tax_rate = tvaRate;
-        lines.value[0].discount_percent = 0
+const addSearchedProduct = (product: any) => {
+    if (!product) return
+    // Si la première ligne est vide, on la pré-remplit avec le produit
+    const firstVariant = product.variants[0]
+    const ttcPrice = Number(firstVariant?.public_price || product?.public_price || 0);
+    const tvaRate = Number(firstVariant?.tva_rate || 20);
+    const newLine = {
+        selectedProductId: product.id,
+        variant_id: product.variants.length === 1 ? firstVariant.id : '', // Pré-sélectionne si une seule variante
+        quantity: 1,
+        unit_price: product.variants.length === 1 ? Number((ttcPrice / (1 + tvaRate/100)).toFixed(4)) : 0,
+        tax_rate: tvaRate,
+        discount_percent: 0
+    }
+    if (lines.value.length === 1 && lines.value[0] && !lines.value[0].variant_id && !lines.value[0].selectedProductId) {
+        lines.value[0] = newLine
     } else {
-        const ttcPrice = Number(variant.public_price || variant.product?.public_price || 0);
-        const tvaRate = Number(variant.tva_rate || 20);
-        lines.value.push({
-            variant_id: variant.id,
-            quantity: 1,
-            unit_price: Number((ttcPrice / (1 + tvaRate/100)).toFixed(4)),
-            tax_rate: tvaRate,
-            discount_percent: 0
-        })
+        lines.value.push(newLine)
     }
     productSearch.value = ''
     showSearchDropdown.value = false
@@ -193,6 +225,7 @@ const fetchQuote = async () => {
             payment_term: data.payment_term || ''
         }
         lines.value = data.lines.map((l: any) => ({
+            selectedProductId: allVariants.value.find((v: any) => v.id === l.variant_id)?.product?.id || '',
             variant_id: l.variant_id,
             quantity: l.quantity,
             unit_price: Number(l.unit_price),
@@ -303,13 +336,16 @@ onMounted(() => {
                 <input v-model="productSearch" @focus="showSearchDropdown = true" @blur="hideSearchDropdown" type="text" class="block w-full rounded-md border-0 py-3 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 bg-brand-50 font-medium" placeholder="Rechercher un produit (Nom, SKU...) pour l'ajouter rapidement au devis">
                 
                 <div v-if="showSearchDropdown && filteredCatalog.length > 0" class="absolute z-10 mt-1 w-full bg-white shadow-xl max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto sm:text-sm">
-                    <div v-for="v in filteredCatalog" :key="v.id" @mousedown.prevent="addSearchedProduct(v)" class="text-gray-900 relative cursor-pointer select-none py-3 pl-3 pr-9 border-b border-gray-50 last:border-0 hover:border-brand-100 transition-colors" :class="v.product?.brand ? 'bg-brand-50/20 hover:bg-brand-50' : 'hover:bg-gray-50'">
-                        <div class="flex flex-col">
+                    <div v-for="p in filteredCatalog" :key="p.id" @mousedown.prevent="addSearchedProduct(p)" class="text-gray-900 relative cursor-pointer select-none py-3 pl-3 pr-9 border-b border-gray-50 last:border-0 hover:bg-brand-50 transition-colors">
+                        <div class="flex items-center justify-between">
+                          <div class="flex flex-col">
                             <span class="font-bold block truncate text-brand-700">
-                                <span v-if="v.product?.brand" class="text-[9px] bg-brand-600 text-white px-1.5 py-0.5 rounded mr-1 uppercase font-black">{{ v.product.brand }}</span>
-                                {{ v.product?.name }} {{ v.name_variation ? `- ${v.name_variation}` : '' }}
+                                <span v-if="p.brand" class="text-[9px] bg-brand-600 text-white px-1.5 py-0.5 rounded mr-1 uppercase font-black">{{ p.brand }}</span>
+                                {{ p.name }}
                             </span>
-                            <span class="text-gray-500 text-xs mt-1">SKU: {{ v.sku }} | Réf: {{ v.product?.reference }} | Prix public (base): {{ v.product?.public_price || 0 }} MAD</span>
+                            <span class="text-gray-500 text-xs mt-1">{{ p.variants.length }} variante(s) — Réf: {{ p.reference }}</span>
+                          </div>
+                          <span class="text-xs text-brand-600 font-bold ml-4">{{ p.variants.length > 1 ? '→ Choisir taille' : '+ Ajouter' }}</span>
                         </div>
                     </div>
                 </div>
@@ -330,14 +366,26 @@ onMounted(() => {
                 </div>
 
                 <!-- Lignes dynamiques -->
-                <div v-for="(line, index) in lines" :key="index" class="flex flex-col sm:grid sm:grid-cols-12 gap-4 items-center bg-gray-50 sm:bg-transparent p-4 sm:p-0 rounded-lg">
+                <div v-for="(line, index) in lines" :key="index" class="flex flex-col sm:grid sm:grid-cols-12 gap-4 items-start bg-gray-50 sm:bg-transparent p-4 sm:p-0 rounded-lg">
                     
-                    <div class="w-full sm:col-span-3">
-                        <label class="sm:hidden block text-xs text-gray-500 mb-1">Article</label>
-                        <select v-model="line.variant_id" @change="onVariantSelect(index)" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6">
+                    <!-- Étape 1 : Choisir le Produit -->
+                    <div class="w-full sm:col-span-2">
+                        <label class="block text-xs text-gray-500 mb-1">Produit</label>
+                        <select v-model="line.selectedProductId" @change="onProductSelect(line)" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm">
                             <option value="" disabled>Choisir produit...</option>
-                            <option v-for="v in variants" :key="v.id" :value="v.id">
-                                [{{ v.sku }}] - {{ v.product?.brand ? '(' + v.product.brand + ') ' : '' }}{{ v.product?.name }} {{ v.name_variation ? `(${v.name_variation})` : '' }}
+                            <option v-for="p in products" :key="p.id" :value="p.id">
+                                {{ p.brand ? '(' + p.brand + ') ' : '' }}{{ p.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Étape 2 : Choisir la Variante (taille/couleur) -->
+                    <div class="w-full sm:col-span-2">
+                        <label class="block text-xs text-gray-500 mb-1">Variante {{ variantsForLine(line).length > 0 ? '(' + variantsForLine(line).length + ')' : '' }}</label>
+                        <select v-model="line.variant_id" @change="onVariantSelect(index)" :disabled="!line.selectedProductId" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm disabled:bg-gray-100 disabled:text-gray-400">
+                            <option value="" disabled>{{ line.selectedProductId ? 'Choisir variante...' : 'D’abord choisir un produit' }}</option>
+                            <option v-for="v in variantsForLine(line)" :key="v.id" :value="v.id">
+                                {{ v.name_variation || v.sku }}
                             </option>
                         </select>
                     </div>
