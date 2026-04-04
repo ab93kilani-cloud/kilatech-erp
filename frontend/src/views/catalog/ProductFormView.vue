@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '@/plugins/axios'
 
@@ -176,7 +176,6 @@ const fetchAutoReference = async () => {
 }
 
 // Auto-sélection si un seul résultat Maya.
-import { watch } from 'vue'
 watch(filteredSuppliers, (newVal) => {
     if (newVal.length === 1 && supplierSearchQuery.value !== '') {
         product.value.supplier_id = newVal[0].id
@@ -303,7 +302,7 @@ const saveProduct = async () => {
                     </div>
                 </div>
 
-                <div class="sm:col-span-3">
+                <div class="sm:col-span-2">
                     <div class="flex items-center justify-between mb-2">
                         <label class="block text-sm font-medium leading-6 text-gray-900">Famille (Catégorie) *</label>
                         <button @click="isCategoryModalOpen = true" type="button" class="text-xs text-brand-600 font-bold hover:underline">+ Nouvelle Catégorie</button>
