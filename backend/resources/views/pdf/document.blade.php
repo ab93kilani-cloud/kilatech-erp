@@ -296,9 +296,7 @@
                     @endif
                 </div>
 
-                <div style="margin-top: 15px; font-weight: bold; color: #003366;">
-                    Arrêté le présent document à la somme de :<br>
-                <div style="margin-top: 15px; font-weight: bold; color: #003366;">
+                <div style="font-weight: bold; color: #003366; margin-top: 15px;">
                     Arrêté le présent document à la somme de :<br>
                     <span style="font-size: 10px; text-transform: uppercase;">{{ \App\Helpers\NumberToWords::convert($balance_due ?? $total_ttc) }}</span>
                 </div>
