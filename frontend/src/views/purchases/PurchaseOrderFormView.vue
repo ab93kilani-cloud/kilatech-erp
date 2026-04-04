@@ -7,7 +7,7 @@ const router = useRouter()
 const route = useRoute()
 
 const suppliers = ref<any[]>([])
-const products = ref<any[]>([])
+const allVariants = ref<any[]>([]) // toutes les variantes brutes
 
 const isEditMode = computed(() => !!route.params.id)
 const poId = computed(() => route.params.id)
@@ -19,9 +19,33 @@ const form = ref({
     payment_conditions: 'A reception de facture',
 })
 
+// Maya: Groupe les variantes par produit pour la sélection en 2 étapes, filtré par fournisseur
+const products = computed(() => {
+    // Filtrer les variantes qui appartiennent au fournisseur sélectionné
+    const filteredVariants = allVariants.value.filter(v => {
+        if (!form.value.supplier_id) return true; // Si pas de fournisseur, on montre tout ou rien? Montrons tout pour la recherche.
+        return v.suppliers?.some((s: any) => s.id === Number(form.value.supplier_id));
+    });
+
+    const map = new Map<number, any>()
+    filteredVariants.forEach(v => {
+        if (!v.product) return
+        if (!map.has(v.product.id)) {
+            map.set(v.product.id, {
+                id: v.product.id,
+                name: v.product.name,
+                brand: v.product.brand,
+                variants: []
+            })
+        }
+        map.get(v.product.id).variants.push(v)
+    })
+    return Array.from(map.values())
+})
+
 // Panier du Bon de Commande
-const lines = ref([
-    { variant_id: '', quantity: 1, unit_price: 0, search: '' }
+const lines = ref<any[]>([
+    { selectedProductId: '', variant_id: '', quantity: 1, unit_price: 0, search: '' }
 ])
 
 const isSubmitting = ref(false)
@@ -33,14 +57,14 @@ const fetchDependencies = async () => {
         suppliers.value = responseSuppliers.data
 
         const responseVariants = await api.get('/product-variants')
-        products.value = responseVariants.data
+        allVariants.value = responseVariants.data
     } catch (e: any) {
         errorMsg.value = "Erreur de chargement du catalogue ou des fournisseurs."
     }
 }
 
 const addLine = () => {
-    lines.value.push({ variant_id: '', quantity: 1, unit_price: 0, search: '' })
+    lines.value.push({ selectedProductId: '', variant_id: '', quantity: 1, unit_price: 0, search: '' })
 }
 
 const removeLine = (index: number) => {
@@ -49,20 +73,31 @@ const removeLine = (index: number) => {
     }
 }
 
-const filteredProducts = (searchQuery: string) => {
-    if (!searchQuery) return products.value;
-    const q = searchQuery.toLowerCase();
-    return products.value.filter(p => {
-        const name = (p.product?.name || '').toLowerCase();
-        const sku = (p.sku || '').toLowerCase();
-        const variation = (p.name_variation || '').toLowerCase();
-        return name.includes(q) || sku.includes(q) || variation.includes(q);
-    });
+// Variantes disponibles pour un produit sélectionné sur une ligne
+const variantsForLine = (line: any) => {
+    if (!line.selectedProductId) return []
+    const prod = products.value.find(p => p.id === Number(line.selectedProductId))
+    return prod ? prod.variants : []
+}
+
+// Quand le produit change sur une ligne, on réinitialise la variante
+const onProductSelect = (line: any) => {
+    line.variant_id = ''
 }
 
 const totalQuantities = computed(() => {
     return lines.value.reduce((acc, line) => acc + (line.quantity || 0), 0)
 })
+
+const deletePurchaseOrder = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce bon de commande ?')) return;
+    try {
+        await api.delete(`/purchase-orders/${poId.value}`)
+        router.push({ name: 'purchases' })
+    } catch (e) {
+        errorMsg.value = "Impossible de supprimer ce bon de commande."
+    }
+}
 
 const savePurchaseOrder = async () => {
     isSubmitting.value = true
@@ -77,7 +112,7 @@ const savePurchaseOrder = async () => {
             lines: lines.value.map(line => ({
                 variant_id: line.variant_id,
                 ordered_quantity: line.quantity,
-                unit_price: line.unit_price // Envoyé à 0, modifiable à la réception
+                unit_price: 0 // Envoyé à 0, modifiable à la réception
             }))
         }
 
@@ -100,13 +135,6 @@ onMounted(async () => {
     d.setDate(d.getDate() + 14)
     form.value.expected_delivery_date = d.toISOString().split('T')[0] || ''
     
-    // Check if variant_id is passed in URL
-    const variantIdParam = router.currentRoute.value.query.variant_id;
-    const firstLine = lines.value[0];
-    if (variantIdParam && firstLine) {
-        firstLine.variant_id = (Array.isArray(variantIdParam) ? variantIdParam[0] : variantIdParam) as string;
-    }
-    
     await fetchDependencies()
 
     if (isEditMode.value) {
@@ -119,10 +147,11 @@ onMounted(async () => {
             form.value.payment_conditions = po.payment_conditions || ''
             
             lines.value = po.lines.map((l: any) => ({
+                selectedProductId: l.variant?.product_id || '',
                 variant_id: l.variant_id,
                 quantity: l.ordered_quantity,
                 unit_price: l.unit_price || 0,
-                search: l.variant ? `${l.variant.product?.name || ''} - ${l.variant.name_variation || l.variant.sku}` : ''
+                search: ''
             }))
         } catch (e) {
             errorMsg.value = "Erreur de chargement de la commande à modifier."
@@ -208,26 +237,39 @@ onMounted(async () => {
                     <div class="col-span-1 text-right">Action</div>
                 </div>
 
-                <!-- Lignes de produits -->
+                <!-- Lignes de produits (Sélection 2 étapes) -->
                 <div v-for="(line, index) in lines" :key="index" class="relative group grid grid-cols-1 sm:grid-cols-12 gap-4 items-center bg-white p-4 sm:p-2 sm:px-4 rounded-xl border border-gray-100 hover:border-brand-200 hover:shadow-md transition-all duration-300">
                     
-                    <!-- Sélection Produit (Multi-étapes simulée) -->
-                    <div class="sm:col-span-8 space-y-1">
+                    <!-- 1. Sélection Produit (Famille) -->
+                    <div class="sm:col-span-4">
                         <div class="relative">
-                            <input v-model="line.search" type="text" placeholder="Rechercher (Nom, SKU...)" class="block w-full rounded-t-lg border-gray-100 py-1 px-3 text-[10px] bg-gray-50/30 focus:ring-brand-500 focus:border-brand-500 border-b-0 italic">
-                            <select v-model="line.variant_id" required class="block w-full rounded-b-lg border-gray-200 py-2 px-3 text-sm font-semibold text-gray-900 focus:ring-brand-500 focus:border-brand-500 shadow-sm">
-                                <option value="" disabled>Choisir la variante...</option>
-                                <option v-for="p in filteredProducts(line.search)" :key="p.id" :value="p.id">
-                                    {{ p.product?.brand ? '[' + p.product.brand + '] ' : '' }}{{ p.product?.name }} - {{ p.name_variation || p.sku }}
+                            <select v-model="line.selectedProductId" @change="onProductSelect(line)" required class="block w-full rounded-lg border-gray-200 py-2 px-3 text-sm font-semibold text-gray-900 focus:ring-brand-500 focus:border-brand-500 shadow-sm bg-gray-50/30">
+                                <option value="" disabled>Choisir le produit...</option>
+                                <option v-for="p in products" :key="p.id" :value="p.id">
+                                    {{ p.brand ? '[' + p.brand + '] ' : '' }}{{ p.name }}
                                 </option>
                             </select>
+                            <div class="absolute -top-2 left-4 px-1 bg-white text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Désignation (Famille)</div>
                         </div>
                     </div>
 
-                    <!-- Unité (Lecture seule ou info) -->
+                    <!-- 2. Sélection Variante (Filtrée) -->
+                    <div class="sm:col-span-4">
+                        <div class="relative">
+                            <select v-model="line.variant_id" :disabled="!line.selectedProductId" required class="block w-full rounded-lg border-gray-200 py-2 px-3 text-sm font-semibold text-brand-700 focus:ring-brand-500 focus:border-brand-500 shadow-sm disabled:opacity-50">
+                                <option value="" disabled>{{ !line.selectedProductId ? 'Choisir produit d\'abord...' : 'Choisir la variante...' }}</option>
+                                <option v-for="v in variantsForLine(line)" :key="v.id" :value="v.id">
+                                    {{ v.name_variation || v.sku }} ({{ v.sku }})
+                                </option>
+                            </select>
+                            <div class="absolute -top-2 left-4 px-1 bg-white text-[8px] font-bold text-gray-400 uppercase tracking-tighter text-brand-400">Variante / SKU</div>
+                        </div>
+                    </div>
+
+                    <!-- Unité -->
                     <div class="sm:col-span-1">
                         <div class="text-center py-2 bg-gray-50 rounded-lg text-[10px] font-bold text-gray-500 border border-gray-100">
-                            {{ products.find(p => p.id === line.variant_id)?.product?.unit || 'U' }}
+                            {{ allVariants.find(v => v.id === line.variant_id)?.product?.unit || 'U' }}
                         </div>
                     </div>
 
@@ -239,7 +281,7 @@ onMounted(async () => {
                          </div>
                     </div>
 
-                    <!-- Bouton Supprimer -->
+                    <!-- Bouton Supprimer Ligne -->
                     <div class="sm:col-span-1 flex items-center justify-end">
                         <button v-if="lines.length > 1" @click="removeLine(index)" type="button" class="text-gray-300 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50" title="Supprimer la ligne">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -261,7 +303,13 @@ onMounted(async () => {
 
       <!-- Action finale -->
       <div class="flex items-center justify-between gap-x-6 border-t border-gray-900/10 px-8 py-6 bg-gray-50 sm:rounded-b-xl">
-        <p class="text-xs text-gray-500">* Vérifiez le fournisseur avant de valider la commande.</p>
+        <div class="flex items-center gap-4">
+            <button v-if="isEditMode" @click="deletePurchaseOrder" type="button" class="text-xs font-bold text-red-500 hover:text-red-700 uppercase tracking-widest flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142M4 7h16" /></svg>
+                Supprimer le BC
+            </button>
+            <p class="text-xs text-gray-400 italic" v-else>* Les produits sont filtrés par fournisseur choisi.</p>
+        </div>
         <button type="submit" :disabled="isSubmitting || lines.length === 0" class="rounded-lg bg-brand-600 px-8 py-3 text-sm font-bold text-white shadow-xl hover:bg-brand-700 transition-all transform hover:-translate-y-0.5 disabled:opacity-50">
           {{ isSubmitting ? 'Génération...' : 'Valider & Envoyer le Bon de Commande' }}
         </button>
