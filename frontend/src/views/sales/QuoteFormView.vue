@@ -351,75 +351,84 @@ onMounted(() => {
                 </div>
             </div>
 
-            <div class="space-y-4">
-                 <!-- Header Desktop Only -->
-                <div class="hidden sm:grid sm:grid-cols-12 gap-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                    <div class="col-span-3">Article / SKU</div>
-                    <div class="col-span-2">Quantité</div>
+            <div class="space-y-2">
+                 <!-- Header Desktop Synchronisé -->
+                <div class="hidden sm:grid sm:grid-cols-12 gap-3 px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 bg-gray-50/50 rounded-t-lg">
+                    <div class="col-span-3">Produit Sélectionné</div>
+                    <div class="col-span-2">Variante / SKU</div>
+                    <div class="col-span-1 text-center">Qté</div>
                     <div class="col-span-2">P.U HT (MAD)</div>
-                    <div class="col-span-2 flex items-center gap-2">
-                        Remise (%)
-                        <button @click="applyGlobalDiscountTooltip" type="button" class="text-[9px] bg-brand-600 text-white px-1 rounded hover:bg-brand-700" title="Appliquer un % à toutes les lignes">TOUS</button>
+                    <div class="col-span-1 text-center flex items-center justify-center gap-1">
+                        Rem %
+                        <button @click="applyGlobalDiscountTooltip" type="button" class="text-[8px] bg-brand-100 text-brand-700 px-1 rounded hover:bg-brand-200 transition-colors" title="Appliquer à tous">ALL</button>
                     </div>
-                    <div class="col-span-1">TVA (%)</div>
-                    <div class="col-span-2 text-right">Total HT</div>
+                    <div class="col-span-1 text-center">TVA</div>
+                    <div class="col-span-2 text-right pr-8">Total HT</div>
                 </div>
 
-                <!-- Lignes dynamiques -->
-                <div v-for="(line, index) in lines" :key="index" class="flex flex-col sm:grid sm:grid-cols-12 gap-4 items-start bg-gray-50 sm:bg-transparent p-4 sm:p-0 rounded-lg">
+                <!-- Lignes dynamiques modernisées -->
+                <div v-for="(line, index) in lines" :key="index" class="group relative flex flex-col sm:grid sm:grid-cols-12 gap-3 items-center bg-white hover:bg-brand-50/30 p-4 sm:px-4 sm:py-3 rounded-lg border border-gray-100 sm:border-0 sm:border-b sm:border-gray-50 transition-all">
                     
-                    <!-- Étape 1 : Choisir le Produit -->
-                    <div class="w-full sm:col-span-2">
-                        <label class="block text-xs text-gray-500 mb-1">Produit</label>
-                        <select v-model="line.selectedProductId" @change="onProductSelect(line)" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm">
-                            <option value="" disabled>Choisir produit...</option>
+                    <!-- Sélection Produit -->
+                    <div class="w-full sm:col-span-3">
+                        <select v-model="line.selectedProductId" @change="onProductSelect(line)" class="block w-full rounded-lg border-gray-200 py-2 text-gray-900 shadow-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 sm:text-sm transition-all bg-white font-medium">
+                            <option value="" disabled>Choisir un produit...</option>
                             <option v-for="p in products" :key="p.id" :value="p.id">
-                                {{ p.brand ? '(' + p.brand + ') ' : '' }}{{ p.name }}
+                                {{ p.brand ? '[' + p.brand + '] ' : '' }}{{ p.name }}
                             </option>
                         </select>
                     </div>
 
-                    <!-- Étape 2 : Choisir la Variante (taille/couleur) -->
+                    <!-- Sélection Variante -->
                     <div class="w-full sm:col-span-2">
-                        <label class="block text-xs text-gray-500 mb-1">Variante {{ variantsForLine(line).length > 0 ? '(' + variantsForLine(line).length + ')' : '' }}</label>
-                        <select v-model="line.variant_id" @change="onVariantSelect(index)" :disabled="!line.selectedProductId" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm disabled:bg-gray-100 disabled:text-gray-400">
-                            <option value="" disabled>{{ line.selectedProductId ? 'Choisir variante...' : 'D’abord choisir un produit' }}</option>
+                        <select v-model="line.variant_id" @change="onVariantSelect(index)" :disabled="!line.selectedProductId" required class="block w-full rounded-lg border-gray-200 py-2 text-gray-900 shadow-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 sm:text-sm disabled:bg-gray-50 disabled:text-gray-300 transition-all">
+                            <option value="" disabled>{{ line.selectedProductId ? 'Taille / Modèle' : '--' }}</option>
                             <option v-for="v in variantsForLine(line)" :key="v.id" :value="v.id">
                                 {{ v.name_variation || v.sku }}
                             </option>
                         </select>
                     </div>
 
-                    <div class="w-full sm:col-span-2">
-                        <label class="sm:hidden block text-xs text-gray-500 mb-1">Qte</label>
-                        <input v-model.number="line.quantity" required type="number" min="1" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
-                    </div>
-
-                    <div class="w-full sm:col-span-2">
-                         <label class="sm:hidden block text-xs text-gray-500 mb-1">Prix Unitaire HT</label>
-                        <input v-model.number="line.unit_price" required type="number" step="0.01" min="0" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
-                    </div>
-
-                    <div class="w-full sm:col-span-2">
-                        <label class="sm:hidden block text-xs text-gray-500 mb-1">Remise (%)</label>
-                        <input v-model.number="line.discount_percent" type="number" step="0.01" min="0" max="100" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3" placeholder="0">
-                    </div>
-
+                    <!-- Quantité -->
                     <div class="w-full sm:col-span-1">
-                        <label class="sm:hidden block text-xs text-gray-500 mb-1">TVA</label>
-                        <select v-model.number="line.tax_rate" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6">
+                        <input v-model.number="line.quantity" required type="number" min="1" class="block w-full rounded-lg border-gray-200 py-2 text-center text-gray-900 shadow-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 sm:text-sm px-1 font-bold">
+                    </div>
+
+                    <!-- Prix Unitaire -->
+                    <div class="w-full sm:col-span-2">
+                        <div class="relative">
+                            <input v-model.number="line.unit_price" required type="number" step="0.01" min="0" class="block w-full rounded-lg border-gray-200 py-2 text-right pr-3 text-gray-900 shadow-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 sm:text-sm font-medium">
+                            <div class="absolute inset-y-0 right-0 pr-1 flex items-center pointer-events-none">
+                                <span class="hidden">MAD</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Remise -->
+                    <div class="w-full sm:col-span-1">
+                        <input v-model.number="line.discount_percent" type="number" step="0.01" min="0" max="100" class="block w-full rounded-lg border-gray-200 py-2 text-center text-gray-900 shadow-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 sm:text-sm" placeholder="0">
+                    </div>
+
+                    <!-- TVA -->
+                    <div class="w-full sm:col-span-1">
+                        <select v-model.number="line.tax_rate" class="block w-full rounded-lg border-gray-200 py-2 text-center text-gray-900 shadow-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 sm:text-sm px-1 bg-gray-50">
                             <option :value="20">20%</option>
                             <option :value="10">10%</option>
                             <option :value="0">0%</option>
                         </select>
                     </div>
 
-                    <div class="w-full sm:col-span-2 flex items-center justify-between sm:justify-end gap-4">
-                        <span class="font-medium text-gray-900 text-sm">
-                            {{ ((line.quantity * line.unit_price) * (1 - (line.discount_percent || 0)/100)).toFixed(2) }} 
-                        </span>
+                    <!-- Total HT Ligne -->
+                    <div class="w-full sm:col-span-2 flex items-center justify-end pr-1">
+                        <div class="text-right">
+                            <span class="block text-xs text-gray-400 sm:hidden">Total HT :</span>
+                            <span class="font-bold text-gray-900 text-sm bg-gray-100 px-2 py-1 rounded-md min-w-[80px] inline-block">
+                                {{ ((line.quantity * line.unit_price) * (1 - (line.discount_percent || 0)/100)).toFixed(2) }} 
+                            </span>
+                        </div>
                         
-                        <button v-if="lines.length > 1" @click="removeLine(index)" type="button" class="text-red-500 hover:text-red-700 p-1 bg-white rounded-full sm:bg-transparent shadow sm:shadow-none">
+                        <!-- Bouton Supprimer flottant ou aligné -->
+                        <button v-if="lines.length > 1" @click="removeLine(index)" type="button" class="ml-2 text-gray-300 hover:text-red-500 transition-colors p-1" title="Supprimer la ligne">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                     </div>
@@ -427,21 +436,21 @@ onMounted(() => {
             </div>
         </div>
         
-        <!-- Totaux -->
-        <div class="flex flex-col items-end pt-6 border-t border-gray-100 space-y-3">
-             <div class="flex items-center justify-between w-64 text-sm text-gray-600">
-                <span>Total HT</span>
-                <span class="font-medium text-gray-900">{{ totalHT.toFixed(2) }} MAD</span>
+        <!-- Totaux centralisés et plus propres -->
+        <div class="flex flex-col items-end pt-8 border-t border-gray-100 space-y-4">
+             <div class="flex items-center justify-between w-full max-w-xs text-sm text-gray-500 px-2">
+                <span class="uppercase tracking-widest font-bold text-[10px]">Total HT Brut</span>
+                <span class="font-bold text-gray-900">{{ totalHT.toFixed(2) }} MAD</span>
              </div>
 
-             <div class="flex items-center justify-between w-64 text-sm text-gray-600 pt-3 border-t">
-                <span class="flex items-center gap-2">Remise Supplémentaire (MAD)</span>
-                <input v-model.number="form.discount_amount" type="number" step="0.01" min="0" class="w-24 rounded-md border-0 py-1 text-right text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm px-2">
+             <div class="flex items-center justify-between w-full max-w-xs text-sm text-gray-600 bg-red-50/50 p-2 rounded-lg border border-red-100">
+                <span class="flex items-center gap-2 font-medium">Remise Globale (MAD)</span>
+                <input v-model.number="form.discount_amount" type="number" step="0.01" min="0" class="w-24 rounded-lg border-gray-200 py-1 text-right text-gray-900 shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm px-2 font-bold">
              </div>
 
-             <div class="flex items-center justify-between w-64 text-lg font-bold text-gray-900 py-3 border-t border-gray-900">
-                <span>Total TTC</span>
-                <span class="text-brand-600">{{ totalTTC.toFixed(2) }} MAD</span>
+             <div class="flex items-center justify-between w-full max-w-sm text-xl font-black text-white bg-brand-600 p-4 rounded-xl shadow-lg shadow-brand-200">
+                <span class="uppercase tracking-widest text-xs">Total Net TTC</span>
+                <span>{{ totalTTC.toFixed(2) }} MAD</span>
              </div>
         </div>
 

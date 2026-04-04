@@ -196,33 +196,33 @@ onMounted(async () => {
                 </button>
             </div>
 
-            <div class="space-y-4">
-                <div class="hidden sm:grid sm:grid-cols-12 gap-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                    <div class="col-span-8">Variante Produit (SKU)</div>
-                    <div class="col-span-3">Quantité Demandée</div>
-                    <div class="col-span-1 text-right">Action</div>
+            <div class="space-y-2">
+                <div class="hidden sm:grid sm:grid-cols-12 gap-4 px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 bg-gray-50/50 rounded-t-lg">
+                    <div class="col-span-9">Variante Produit (SKU)</div>
+                    <div class="col-span-2 text-center">Quantité</div>
+                    <div class="col-span-1 text-right pr-2">Action</div>
                 </div>
 
-                <div v-for="(line, index) in lines" :key="index" class="flex flex-col sm:grid sm:grid-cols-12 gap-4 items-center bg-gray-50 sm:bg-transparent p-4 sm:p-0 rounded-lg">
+                <div v-for="(line, index) in lines" :key="index" class="group relative flex flex-col sm:grid sm:grid-cols-12 gap-4 items-center bg-white hover:bg-brand-50/30 p-4 sm:px-4 sm:py-3 rounded-lg border border-gray-100 sm:border-0 sm:border-b sm:border-gray-50 transition-all">
                     
-                    <div class="w-full sm:col-span-8 flex flex-col gap-2">
-                        <label class="sm:hidden block text-xs text-gray-500 mb-1">Produit</label>
-                        <input v-model="line.search" type="text" placeholder="🔍 Filtrer les produits (ex: stéthoscope, PRD-000...)" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-brand-600 sm:text-xs px-3">
-                        <select v-model="line.variant_id" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6">
-                            <option value="" disabled>Choisir un produit (SKU)...</option>
-                            <option v-for="p in filteredProducts(line.search)" :key="p.id" :value="p.id">
-                                {{ p.product?.brand ? '[' + p.product.brand + '] ' : '' }}{{ p.product?.name }} - {{ p.name_variation || p.sku }}
-                            </option>
-                        </select>
+                    <div class="w-full sm:col-span-9 flex flex-col gap-2">
+                        <div class="relative">
+                            <input v-model="line.search" type="text" placeholder="🔍 Filtrer les produits..." class="block w-full rounded-t-lg border-gray-200 py-1.5 text-gray-900 shadow-sm focus:ring-2 focus:ring-brand-500 sm:text-[10px] px-3 bg-gray-50/50">
+                            <select v-model="line.variant_id" required class="block w-full rounded-b-lg border-t-0 border-gray-200 py-2 text-gray-900 shadow-sm focus:ring-2 focus:ring-brand-500 sm:text-sm font-medium">
+                                <option value="" disabled>Choisir un produit (SKU)...</option>
+                                <option v-for="p in filteredProducts(line.search)" :key="p.id" :value="p.id">
+                                    {{ p.product?.brand ? '[' + p.product.brand + '] ' : '' }}{{ p.product?.name }} - {{ p.name_variation || p.sku }}
+                                </option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="w-full sm:col-span-3">
-                        <label class="sm:hidden block text-xs text-gray-500 mb-1">Qte</label>
-                        <input v-model.number="line.quantity" required type="number" min="1" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
+                    <div class="w-full sm:col-span-2">
+                        <input v-model.number="line.quantity" required type="number" min="1" class="block w-full rounded-lg border-gray-200 py-2 text-center text-gray-900 shadow-sm focus:ring-2 focus:ring-brand-500 sm:text-sm font-bold">
                     </div>
 
                     <div class="w-full sm:col-span-1 flex items-center justify-end">
-                        <button v-if="lines.length > 1" @click="removeLine(index)" type="button" class="text-red-500 hover:text-red-700 p-1 bg-white rounded-full sm:bg-transparent shadow sm:shadow-none">
+                        <button v-if="lines.length > 1" @click="removeLine(index)" type="button" class="text-gray-300 hover:text-red-500 transition-colors p-1">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                     </div>
@@ -230,10 +230,10 @@ onMounted(async () => {
             </div>
         </div>
         
-        <div class="flex flex-col items-end pt-6 border-t border-gray-100">
-             <div class="flex items-center justify-between w-64 text-lg font-bold text-gray-900 py-3">
-                <span>Total Unités Prévues</span>
-                <span class="text-brand-600">{{ totalQuantities }}</span>
+        <div class="flex flex-col items-end pt-8 border-t border-gray-100">
+             <div class="flex items-center justify-between w-full max-w-xs text-lg font-black text-white bg-brand-600 p-4 rounded-xl shadow-lg shadow-brand-200">
+                <span class="uppercase tracking-widest text-[10px]">Total Unités</span>
+                <span>{{ totalQuantities }}</span>
              </div>
         </div>
       </div>
