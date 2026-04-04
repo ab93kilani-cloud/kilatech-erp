@@ -54,7 +54,7 @@ const handleSubmit = async () => {
     return
   }
   
-  isSubmitting.value = true
+    isSubmitting.value = true
   try {
     const payload = {
       client_type: form.value.client_type,
@@ -71,7 +71,8 @@ const handleSubmit = async () => {
       }))
     }
     
-    const response = await api.post('/public/orders', payload)
+    // Use a clean request without credentials to avoid 401 Sanctum issues Maya.
+    const response = await api.post('/public/orders', payload, { withCredentials: false })
     quoteResult.value = {
       id: response.data.quote_id,
       number: response.data.quote_number
