@@ -220,6 +220,9 @@
                 <div class="recipient-box">
                     <div class="tag">Informations Client</div>
                     <div class="customer-name">{{ $client_name }}</div>
+                    @if(!empty($client_contact) && $client_contact !== $client_name)
+                    <div style="font-size: 9px; color: #64748b; margin-bottom: 5px;">Contact: {{ $client_contact }}</div>
+                    @endif
                     @if(!empty($client_ice)) <div><strong>ICE:</strong> {{ $client_ice }}</div> @endif
                     <div>{{ $client_address ?? '-' }}</div>
                     <div>{{ $client_city ?? 'Casablanca' }}</div>
@@ -241,24 +244,36 @@
     <table class="content-table">
         <thead>
             <tr>
-                <th style="width: 55%">Désignation</th>
-                <th class="text-center" style="width: 13%">Quantité</th>
-                <th class="text-right" style="width: 16%">P.U HT (MAD)</th>
-                <th class="text-right" style="width: 16%">Total HT</th>
+                <th style="width: 8%; font-size: 7px;">REF.</th>
+                <th style="width: 26%; font-size: 7px;">DÉSIGNATION</th>
+                <th class="text-center" style="width: 5%; font-size: 7px;">UN</th>
+                <th class="text-center" style="width: 6%; font-size: 7px;">QTE</th>
+                <th class="text-right" style="width: 9%; font-size: 7px;">PU HT</th>
+                <th class="text-right" style="width: 9%; font-size: 7px;">PU TTC</th>
+                <th class="text-center" style="width: 6%; font-size: 7px;">REM.</th>
+                <th class="text-right" style="width: 9%; font-size: 7px;">T.HT</th>
+                <th class="text-right" style="width: 9%; font-size: 7px;">T.TTC</th>
+                <th class="text-center" style="width: 7%; font-size: 7px;">TAXE</th>
             </tr>
         </thead>
         <tbody>
             @foreach($items as $item)
             <tr>
+                <td style="font-size: 8px;">{{ $item['reference'] }}</td>
                 <td>
-                    <div style="font-weight: 800; color: #0f172a;">{{ $item['name'] }}</div>
+                    <div style="font-weight: 800; color: #0f172a; font-size: 9px;">{{ $item['name'] }}</div>
                     @if(!empty($item['description']))
-                    <div style="font-size: 8px; color: #64748b; margin-top: 1px;">{{ $item['description'] }}</div>
+                    <div style="font-size: 7px; color: #64748b; margin-top: 1px;">{{ $item['description'] }}</div>
                     @endif
                 </td>
-                <td class="text-center">{{ number_format($item['quantity'], 2, ',', ' ') }}</td>
-                <td class="text-right font-bold">{{ number_format($item['unit_price_ht'], 2, ',', ' ') }}</td>
-                <td class="text-right" style="font-weight: 800;">{{ number_format($item['total_ht'], 2, ',', ' ') }}</td>
+                <td class="text-center" style="font-size: 8px;">{{ $item['unit'] ?? 'U' }}</td>
+                <td class="text-center" style="font-size: 8px;">{{ number_format($item['quantity'], 2, ',', ' ') }}</td>
+                <td class="text-right" style="font-size: 8px;">{{ number_format($item['unit_price_ht'], 2, ',', ' ') }}</td>
+                <td class="text-right" style="font-size: 8px;">{{ number_format($item['unit_price_ttc'], 2, ',', ' ') }}</td>
+                <td class="text-center" style="font-size: 8px;">{{ $item['discount'] }}</td>
+                <td class="text-right" style="font-size: 8px; font-weight: 700;">{{ number_format($item['total_ht'], 2, ',', ' ') }}</td>
+                <td class="text-right" style="font-size: 8px; font-weight: 800;">{{ number_format($item['total_ttc'], 2, ',', ' ') }}</td>
+                <td class="text-center" style="font-size: 8px;">{{ $item['tva'] }}%</td>
             </tr>
             @endforeach
         </tbody>

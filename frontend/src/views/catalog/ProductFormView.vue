@@ -24,6 +24,7 @@ const product = ref({
     social_facebook_post: '',
     local_geo_context: '',
     is_medical: false,
+    unit: 'U',
 })
 
 const autoReferenceDisplay = ref('Chargement...')
@@ -145,6 +146,7 @@ const fetchProductData = async () => {
             social_facebook_post: p.social_facebook_post || '',
             local_geo_context: p.local_geo_context || '',
             is_medical: p.is_medical === 1 || p.is_medical === true,
+            unit: p.unit || 'U',
         }
         
         if (p.variants && p.variants.length > 0) {
@@ -241,6 +243,7 @@ const saveProduct = async () => {
         if (product.value.social_facebook_post) formData.append('social_facebook_post', product.value.social_facebook_post);
         if (product.value.local_geo_context) formData.append('local_geo_context', product.value.local_geo_context);
         formData.append('is_medical', product.value.is_medical ? '1' : '0');
+        formData.append('unit', product.value.unit || 'U');
 
         // Le backend génère le SKU automatiquement si vide. On envoie toutes les variantes.
         const variantsToSave = variants.value;
@@ -309,6 +312,20 @@ const saveProduct = async () => {
                         <select v-model="product.category" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
                             <option value="" disabled>-- Sélectionner une catégorie --</option>
                             <option v-for="cat in categories" :key="cat.id" :value="cat.name">{{ cat.name }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-1">
+                    <label class="block text-sm font-medium leading-6 text-gray-900">Unité</label>
+                    <div class="mt-2">
+                        <select v-model="product.unit" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
+                            <option value="U">U (Unité)</option>
+                            <option value="Boite">Boite</option>
+                            <option value="Lot">Lot</option>
+                            <option value="Kg">Kg</option>
+                            <option value="M">Mètre</option>
+                            <option value="L">Litre</option>
                         </select>
                     </div>
                 </div>
