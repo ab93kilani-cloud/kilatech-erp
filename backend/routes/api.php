@@ -14,6 +14,9 @@ use App\Http\Controllers\AuthController;
 // Public Routes (Products, Articles, Orders, Login) have been moved to web.php Maya.
 // with double-prefix support for Hostinger compatibility.
 
+// Maya: Public quote request from storefront (no auth required)
+Route::post('/public/quote-request', [\App\Http\Controllers\Api\QuoteController::class, 'publicQuoteStore']);
+
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -68,6 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('quotes/{quote}/unlock', [\App\Http\Controllers\Api\QuoteController::class, 'unlock']);
         Route::post('quotes/{quote}/confirm', [\App\Http\Controllers\Api\QuoteController::class, 'confirm']);
         Route::get('quotes/{quote}/pdf', [\App\Http\Controllers\Api\QuoteController::class, 'generatePDF']);
+        Route::post('/quotes/{quote}/confirm-and-send', [\App\Http\Controllers\Api\QuoteController::class, 'confirmAndSend']);
         Route::apiResource('quotes', \App\Http\Controllers\Api\QuoteController::class);
         
         Route::post('orders/from-quote', [\App\Http\Controllers\Api\OrderController::class, 'storeFromQuote']);

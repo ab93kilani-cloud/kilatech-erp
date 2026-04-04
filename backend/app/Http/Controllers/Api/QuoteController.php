@@ -274,7 +274,7 @@ class QuoteController extends Controller
     }
 
     /**
-     * Supprimer un devis
+     * Maya: Suppression d'un devis (draft uniquement)
      */
     public function destroy(Quote $quote)
     {
@@ -291,6 +291,132 @@ class QuoteController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Erreur lors de la suppression', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    // =========================================================================
+    // Maya: NOUVEAU WORKFLOW B2B — Devis Auto depuis la Vitrine
+    // =========================================================================
+
+    /**
+     * Maya: Créer automatiquement un Client + un Devis depuis la vitrine publique.
+     * Status: pending_approval (en attente de validation agent)
+     */
+    public function publicQuoteStore(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'client_type'  => 'required|in:company,individual',
+            'client_name'  => 'required|string|max:255',
+            'client_email' => 'required|email|max:255',
+            'client_phone' => 'required|string|max:50',
+            'company_name' => 'nullable|string|max:255',
+            'ice'          => 'nullable|string|max:100',
+            'address'      => 'nullable|string|max:500',
+            'city'         => 'nullable|string|max:100',
+            'lines'        => 'required|array|min:1',
+            'lines.*.variant_id' => 'required|integer|exists:product_variants,id',
+            'lines.*.quantity'   => 'required|integer|min:1',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // 1. Créer ou retrouver le client par email (clé unique)
+            $client = \App\Models\Client::firstOrCreate(
+                ['email' => $request->client_email],
+                [
+                    'type'         => $request->client_type,
+                    'contact_name' => $request->client_name,
+                    'company_name' => $request->company_name ?? '',
+                    'phone'        => $request->client_phone,
+                    'ice'          => $request->ice ?? '',
+                    'address'      => $request->address ?? '',
+                    'city'         => $request->city ?? '',
+                    'status'       => 'Prospect',
+                ]
+            );
+
+            // 2. Créer le devis avec statut "en_attente_validation"
+            $quote = Quote::create([
+                'client_id' => $client->id,
+                'status'    => 'pending_approval',
+                'version'   => 1,
+            ]);
+
+            // 3. Créer les lignes du devis avec le prix public de la variante
+            foreach ($request->lines as $line) {
+                $variant = \App\Models\ProductVariant::find($line['variant_id']);
+                $unitPrice = $variant ? (float)$variant->public_price : 0;
+
+                QuoteLine::create([
+                    'quote_id'        => $quote->id,
+                    'variant_id'      => $line['variant_id'],
+                    'unit_price'      => $unitPrice,
+                    'quantity'        => $line['quantity'],
+                    'discount_percent' => 0,
+                ]);
+            }
+
+            // 4. Envoyer email interne de notification
+            try {
+                \Illuminate\Support\Facades\Mail::to(env('MAIL_FROM_ADDRESS', 'info@kilatech.ma'))
+                    ->send(new \App\Mail\NewQuoteRequestNotification($quote));
+            } catch (\Exception $mailEx) {
+                \Illuminate\Support\Facades\Log::warning('Maya: Notification email failed: ' . $mailEx->getMessage());
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success'      => true,
+                'quote_number' => $quote->quote_number,
+                'message'      => 'Votre demande a bien été reçue. Notre équipe va la valider et vous envoyer votre devis par email sous 24h.',
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Erreur lors de la création de votre demande.',
+                'error'   => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Maya: L'agent confirme et envoie le devis au client par email avec PDF.
+     * Route protégée : auth:sanctum
+     */
+    public function confirmAndSend(Quote $quote)
+    {
+        if (!in_array($quote->status, ['pending_approval', 'draft'])) {
+            return response()->json(['message' => 'Ce devis ne peut pas être envoyé dans son état actuel.'], 400);
+        }
+
+        try {
+            // 1. Générer le PDF
+            $pdf = $this->getQuotePdf($quote->load(['client', 'lines.variant.product']));
+            $pdfContent = $pdf->output();
+
+            // 2. Envoyer au client
+            \Illuminate\Support\Facades\Mail::to($quote->client->email)
+                ->send(new \App\Mail\QuoteSentToClient($quote, $pdfContent));
+
+            // 3. Mettre à jour le statut du devis
+            $quote->update(['status' => 'sent']);
+
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Le devis ' . $quote->quote_number . ' a été envoyé à ' . $quote->client->email,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erreur lors de l\'envoi du devis.',
+                'error'   => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ], 500);
         }
     }
 

@@ -4,7 +4,7 @@ import { useCartStore } from '@/stores/cart'
 import api from '@/plugins/axios'
 import { useConfig } from '@/composables/useConfig'
 
-const { getImageUrl: getStorageUrl, apiBaseUrl } = useConfig()
+const { getImageUrl: getStorageUrl } = useConfig()
 
 const props = defineProps<{
   show: boolean;
@@ -25,7 +25,8 @@ const form = ref({
 })
 
 const isSubmitting = ref(false)
-const quoteResult = ref<{ id: number; number: string } | null>(null)
+const requestSent = ref(false)
+const quoteNumber = ref('')
 const errors = ref<Record<string, string[]>>({})
 
 const getImageUrl = (path: string | null) => {
@@ -41,20 +42,15 @@ const handleSubmit = async () => {
   errors.value = {}
   if (cartStore.items.length === 0) return
   
-  // Basic frontend validation
   if (!form.value.client_email || !isValidEmail(form.value.client_email)) {
     errors.value.client_email = ['Veuillez entrer une adresse email valide.']
   }
-  
   if (!form.value.client_phone) {
-    errors.value.client_phone = ['Le numéro de téléphone est obligatoire pour valider votre demande.']
+    errors.value.client_phone = ['Le numéro de téléphone est obligatoire.']
   }
-
-  if (Object.keys(errors.value).length > 0) {
-    return
-  }
+  if (Object.keys(errors.value).length > 0) return
   
-    isSubmitting.value = true
+  isSubmitting.value = true
   try {
     const payload = {
       client_type: form.value.client_type,
@@ -71,32 +67,21 @@ const handleSubmit = async () => {
       }))
     }
     
-    // Use a clean request without credentials to avoid 401 Sanctum issues Maya.
-    const response = await api.post('/public/orders', payload, { withCredentials: false })
-    quoteResult.value = {
-      id: response.data.quote_id,
-      number: response.data.quote_number
-    }
-    
-    // Clear cart on success
+    // Maya: Nouveau endpoint — devis auto-créé, attend validation agent.
+    const response = await api.post('/public/quote-request', payload, { withCredentials: false })
+    quoteNumber.value = response.data.quote_number || ''
+    requestSent.value = true
     cartStore.clearCart()
-    } catch (e: any) {
-    console.error('Failed to submit quote request', e)
+  } catch (e: any) {
     if (e.response?.status === 422) {
       errors.value = e.response.data.errors
     } else {
-      // Force display raw response for debugging Maya.
-      const rawError = e.response?.data ? JSON.stringify(e.response.data, null, 2) : (e.response?.statusText || e.message)
-      alert('DEBUG MAYA - Erreur Serveur :\n' + rawError)
+      const rawError = e.response?.data ? JSON.stringify(e.response.data, null, 2) : e.message
+      alert('Erreur : ' + rawError)
     }
   } finally {
     isSubmitting.value = false
   }
-}
-
-const downloadQuote = () => {
-  if (!quoteResult.value) return
-  window.open(`${apiBaseUrl}/public/quotes/${quoteResult.value.id}/pdf`, '_blank')
 }
 </script>
 
@@ -122,22 +107,19 @@ const downloadQuote = () => {
           <!-- Content -->
           <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
             
-            <div v-if="quoteResult" class="text-center py-12 animate-fade-in">
+            <div v-if="requestSent" class="text-center py-12 animate-fade-in">
                 <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-4">Devis Prêt !</h3>
-                <p class="text-gray-500 mb-8 font-medium">Votre devis <span class="text-brand-600 font-bold">{{ quoteResult.number }}</span> a été généré automatiquement.</p>
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Demande Reçue !</h3>
+                <p class="text-gray-500 mb-2 font-medium">
+                  Votre devis <span class="text-brand-600 font-bold">{{ quoteNumber }}</span> est en cours de préparation.
+                </p>
+                <p class="text-gray-400 text-sm mb-8">Notre équipe va le vérifier et vous l'enverra par email sous 24h.</p>
                 <div class="space-y-4">
-                  <button @click="downloadQuote" class="w-full py-4 bg-brand-600 text-white rounded-2xl font-bold shadow-xl shadow-brand-100 flex items-center justify-center gap-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Télécharger le PDF
-                  </button>
-                  <button @click="quoteResult = null; emit('close')" class="w-full py-4 text-gray-400 font-bold hover:text-gray-600 transition-colors">
+                  <button @click="requestSent = false; emit('close')" class="w-full py-4 bg-brand-600 text-white rounded-2xl font-bold shadow-xl shadow-brand-100">
                     Fermer
                   </button>
                 </div>
@@ -255,7 +237,7 @@ const downloadQuote = () => {
           </div>
 
           <!-- Footer -->
-          <div v-if="!quoteResult && cartStore.items.length > 0" class="p-8 bg-gray-50 border-t border-gray-100">
+          <div v-if="!requestSent && cartStore.items.length > 0" class="p-8 bg-gray-50 border-t border-gray-100">
             <div class="flex items-center justify-between mb-6">
               <span class="font-bold text-gray-500">Estimation Totale (TTC)</span>
               <span class="text-2xl font-black text-brand-900">{{ cartStore.totalPrice.toFixed(2) }} MAD</span>

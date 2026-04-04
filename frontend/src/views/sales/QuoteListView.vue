@@ -61,13 +61,23 @@ const showAlert = (msg: string) => {
 }
 
 const confirmQuote = async (quote: Quote) => {
-    // Remplacement du window.confirm bloquant par exécution directe
     try {
         await api.post(`/quotes/${quote.id}/confirm`)
         fetchQuotes()
         showAlert('✅ Le devis a été transformé en Bon de Livraison avec succès.')
     } catch (e: any) {
         showAlert('❌ Erreur : ' + (e.response?.data?.message || e.message))
+    }
+}
+
+// Maya: Envoyer le devis au client après validation agent.
+const confirmAndSend = async (quote: Quote) => {
+    try {
+        const res = await api.post(`/quotes/${quote.id}/confirm-and-send`)
+        fetchQuotes()
+        showAlert(res.data.message || '✅ Devis envoyé au client avec succès.')
+    } catch (e: any) {
+        showAlert('❌ Erreur envoi : ' + (e.response?.data?.message || e.message))
     }
 }
 
@@ -148,10 +158,13 @@ onMounted(() => {
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     {{ quote.client?.company_name || quote.client?.contact_name || 'Client Inconnu' }}
                   </td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                     <span v-if="quote.status === 'draft'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Brouillon</span>
-                     <span v-else-if="quote.status === 'confirmed'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Confirmé</span>
-                  </td>
+                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      <span v-if="quote.status === 'pending_approval'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">⏳ En attente de validation</span>
+                      <span v-else-if="quote.status === 'draft'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Brouillon</span>
+                      <span v-else-if="quote.status === 'sent'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">📧 Envoyé client</span>
+                      <span v-else-if="quote.status === 'confirmed'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Confirmé</span>
+                      <span v-else class="text-gray-500 capitalize">{{ quote.status }}</span>
+                   </td>
                   
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                      <div v-if="quote.locked_by_user_id" class="flex items-center text-amber-600">
@@ -164,6 +177,14 @@ onMounted(() => {
                   </td>
 
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-3">
+                    <!-- Maya: Bouton Confirmer et Envoyer pour les devis issus de la vitrine -->
+                    <button
+                      v-if="quote.status === 'pending_approval' && !viewArchived"
+                      @click="confirmAndSend(quote)"
+                      class="text-white bg-brand-600 hover:bg-brand-700 font-bold border border-brand-700 px-3 py-1 rounded text-xs transition"
+                    >
+                      ✅ Confirmer & Envoyer
+                    </button>
                     <button v-if="quote.status === 'draft' && !viewArchived" @click="confirmQuote(quote)" class="text-green-600 hover:text-green-900 font-bold border border-green-200 bg-green-50 px-2 py-1 rounded text-xs">
                         Transformer en BL
                     </button>

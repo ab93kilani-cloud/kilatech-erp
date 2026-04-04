@@ -13,6 +13,8 @@ class VerifyCsrfToken extends Middleware
      */
     protected $except = [
         'public/orders',
+        'public/quote-request',
+        'api/public/quote-request',
         'api/public/orders',
         'public/search-miss',
         'api/public/search-miss',
