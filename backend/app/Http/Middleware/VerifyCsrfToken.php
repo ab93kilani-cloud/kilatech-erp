@@ -14,5 +14,6 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         'public/orders',
         'public/search-miss',
+        'login',
     ];
 }

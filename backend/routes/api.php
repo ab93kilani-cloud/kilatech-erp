@@ -11,8 +11,8 @@ use App\Http\Controllers\AuthController;
 |
 */
 
-// Public Routes
-Route::post('/login', [AuthController::class, 'login']);
+// Public Route for Authentication (Login has been moved to web.php for better accessibility Maya.)
+// Route::post('/login', [AuthController::class, 'login']);
 Route::apiResource('products', \App\Http\Controllers\Api\ProductController::class)->only(['index', 'show']);
 
 // Public Blog Routes

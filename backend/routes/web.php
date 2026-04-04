@@ -13,6 +13,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::post('/public/orders', [\App\Http\Controllers\Api\OrderController::class, 'publicStore']);
+Route::get('/public/quotes/{id}/pdf', [\App\Http\Controllers\Api\QuoteController::class, 'generatePDF']);
+
+// Maya: Login moved here to ensure web interface connectivity.
+Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login']);
+
 Route::get('/', function () {
     return view('welcome');
 });
