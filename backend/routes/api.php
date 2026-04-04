@@ -11,20 +11,11 @@ use App\Http\Controllers\AuthController;
 |
 */
 
-// Public Routes
+// Public Route for Authentication Maya.
 Route::post('/login', [AuthController::class, 'login']);
-Route::apiResource('products', \App\Http\Controllers\Api\ProductController::class)->only(['index', 'show']);
 
-// Public Blog Routes
-Route::get('/public/articles', [\App\Http\Controllers\Api\ArticleController::class, 'publicList']);
-Route::get('/public/articles/{slug}', [\App\Http\Controllers\Api\ArticleController::class, 'publicShow']);
-Route::get('/public/catalogues', [\App\Http\Controllers\Api\CatalogueController::class, 'index']);
-Route::post('/public/search-miss', [\App\Http\Controllers\Api\MissingSearchController::class, 'log']);
-// Route::post('/public/orders', [\App\Http\Controllers\Api\OrderController::class, 'publicStore']);
-Route::get('/public/quotes/{id}/pdf', [\App\Http\Controllers\Api\QuoteController::class, 'generatePDF']);
-
-// TEST ROUTE PUBLIC
-Route::get('/test-pdf-credit/{id}', [\App\Http\Controllers\Api\CreditNoteController::class, 'generatePDF']);
+// Public routes (Products, Articles, Orders, PDF) have been moved to web.php Maya.
+// to avoid conflicts with the /api folder structure and Sanctum auth guards.
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
