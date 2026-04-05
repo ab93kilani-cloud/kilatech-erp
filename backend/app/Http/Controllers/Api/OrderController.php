@@ -52,6 +52,7 @@ class OrderController extends Controller
                 'unit' => $line->variant?->product?->unit ?? 'U',
                 'client_product_ref' => $line->client_product_ref,
                 'lot_number' => $line->lot_number,
+                'serial_numbers' => $line->serial_numbers,
                 'expiry_date' => $line->expiry_date,
                 'quantity' => $line->quantity,
                 'unit_price_ht' => $line->unit_price,
@@ -156,11 +157,25 @@ class OrderController extends Controller
                     ->orderBy('expiration_date', 'asc')
                     ->first();
 
+                $snList = null;
+                if ($lot) {
+                    $units = \App\Models\StockUnit::where('lot_id', $lot->id)
+                        ->where('status', '!=', 'sold')
+                        ->limit($line->quantity)
+                        ->pluck('serial_number')
+                        ->filter()
+                        ->toArray();
+                    if (!empty($units)) {
+                        $snList = implode(', ', $units);
+                    }
+                }
+
                 OrderLine::create([
                     'order_id' => $order->id,
                     'variant_id' => $line->variant_id,
                     'client_product_ref' => $line->client_product_ref,
                     'lot_number' => $lot?->lot_number,
+                    'serial_numbers' => $snList,
                     'expiry_date' => $lot?->expiration_date,
                     'unit_price' => $line->unit_price,
                     'quantity' => $line->quantity,

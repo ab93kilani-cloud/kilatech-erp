@@ -276,6 +276,10 @@
                     <div style="font-size: 7px; color: #64748b; margin-top: 1px;"><strong>Lot :</strong> {{ $item['lot_number'] }} @if(!empty($item['expiry_date'])) (Exp: {{ \Carbon\Carbon::parse($item['expiry_date'])->format('d/m/Y') }}) @endif</div>
                     @endif
 
+                    @if(!empty($item['serial_numbers']))
+                    <div style="font-size: 7px; color: #64748b; margin-top: 1px;"><strong>S/N :</strong> {{ $item['serial_numbers'] }}</div>
+                    @endif
+
                     @if(!empty($item['description']))
                     <div style="font-size: 7px; color: #64748b; margin-top: 1px;">{{ $item['description'] }}</div>
                     @endif
