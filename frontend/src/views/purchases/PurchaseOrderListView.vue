@@ -114,15 +114,16 @@ const submitReceive = async () => {
                 po_line_id: l.po_line_id,
                 received_quantity: l.received_quantity,
                 actual_purchase_price: null,
-                lot_number: l.lot_number,
-                expiry_date: l.expiry_date
+                lot_number: l.lot_number || null,
+                expiry_date: l.expiry_date || null
             }))
         })
         isReceiveModalOpen.value = false
         fetchPOs()
         alert("Réception réussie : Les produits sont en attente de Contrôle Qualité (QA) pour affectation des lots.")
     } catch (e: any) {
-        alert(e.response?.data?.message || "Erreur lors de la réception.")
+        const detail = e.response?.data?.error || e.response?.data?.message || "";
+        alert("Erreur lors de la réception : " + detail);
     } finally {
         isReceiving.value = false
     }

@@ -42,7 +42,8 @@ class ReceiptController extends Controller
 
         DB::beginTransaction();
         try {
-            $receiptNumber = 'REC-' . date('ym') . '-' . str_pad(Receipt::count() + 1, 4, '0', STR_PAD_LEFT);
+            $maxId = \App\Models\Receipt::withTrashed()->max('id') ?? 0;
+            $receiptNumber = 'REC-' . date('ym') . '-' . str_pad($maxId + 1, 4, '0', STR_PAD_LEFT);
 
             $receipt = Receipt::create([
                 'purchase_order_id' => $po->id,
