@@ -233,8 +233,13 @@
                     <div class="type-banner">{{ $document_type }}</div>
                     <div class="id-line">Réf : {{ $document_number }}</div>
                     <div style="margin-top: 10px;">Date : {{ \Carbon\Carbon::parse($document_date)->format('d/m/Y') }}</div>
+                    
+                    @if(!empty($validity_date))
+                    <div style="font-weight: bold; color: #dc2626; margin-top: 5px;">Validité : Jusqu'au {{ \Carbon\Carbon::parse($validity_date)->format('d/m/Y') }}</div>
+                    @endif
+
                     @if(!empty($quote_number))
-                    <div style="font-size: 9px; color: #64748b;">Réf. Devis d'origine : {{ $quote_number }}</div>
+                    <div style="font-size: 9px; color: #64748b; margin-top: 5px;">Réf. Devis d'origine : {{ $quote_number }}</div>
                     @endif
                 </div>
             </td>

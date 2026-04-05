@@ -73,7 +73,7 @@ class QuoteController extends Controller
         $data = [
             'document_type' => 'Devis',
             'document_number' => $quote->quote_number,
-            'document_date' => $quote->created_at,
+            'document_date' => $quote->quote_date ?? $quote->created_at,
             'client_id' => $quote->client_id,
             'client_name' => $quote->client->company_name ?? ($quote->client->contact_name ?? 'Client'),
             'client_contact' => $quote->client->contact_name,
@@ -106,6 +106,7 @@ class QuoteController extends Controller
         $request->validate([
             'client_id' => 'required|exists:clients,id',
             'valid_until' => 'nullable|date',
+            'quote_date' => 'nullable|date',
             'discount_amount' => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string',
             'payment_term' => 'nullable|string',
@@ -121,6 +122,7 @@ class QuoteController extends Controller
             $quote = Quote::create([
                 'client_id' => $request->client_id,
                 'valid_until' => $request->valid_until,
+                'quote_date' => $request->quote_date ?? now()->toDateString(),
                 'discount_amount' => $request->discount_amount ?? 0,
                 'payment_method' => $request->payment_method,
                 'payment_term' => $request->payment_term,
@@ -240,6 +242,7 @@ class QuoteController extends Controller
         $request->validate([
             'client_id' => 'required|exists:clients,id',
             'valid_until' => 'nullable|date',
+            'quote_date' => 'nullable|date',
             'discount_amount' => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string',
             'payment_term' => 'nullable|string',
@@ -255,6 +258,7 @@ class QuoteController extends Controller
             $quote->update([
                 'client_id' => $request->client_id,
                 'valid_until' => $request->valid_until,
+                'quote_date' => $request->quote_date ?? $quote->quote_date,
                 'discount_amount' => $request->discount_amount ?? 0,
                 'payment_method' => $request->payment_method,
                 'payment_term' => $request->payment_term,
