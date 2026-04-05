@@ -11,6 +11,7 @@ interface Invoice {
   status: string;
   invoice_date: string;
   due_date: string;
+  created_at : string;
 }
 
 const invoices = ref<Invoice[]>([])
@@ -96,6 +97,18 @@ const archiveInvoice = async (invoice: Invoice) => {
     }
 }
 
+const updateInvoiceDate = async (invoice: Invoice) => {
+    const newDate = prompt("Modifier la date de la facture (YYYY-MM-DD) :", invoice.invoice_date || invoice.created_at.split('T')[0]);
+    if (newDate && /^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+        try {
+            await api.patch(`/invoices/${invoice.id}`, { invoice_date: newDate });
+            fetchInvoices();
+        } catch (e: any) {
+            alert('Erreur : ' + (e.response?.data?.message || e.message));
+        }
+    }
+}
+
 const downloadPdf = async (id: number) => {
     try {
         const response = await api.get(`/invoices/${id}/pdf`, { responseType: 'blob' })
@@ -151,6 +164,7 @@ onMounted(() => {
                 <tr>
                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">Facture N°</th>
                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Client / Origine</th>
+                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date</th>
                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Échéance</th>
                    <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Montant Total</th>
                    <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Reste à Payer</th>
@@ -164,6 +178,14 @@ onMounted(() => {
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <div class="font-medium text-gray-900">{{ inv.order?.client?.type === 'company' ? inv.order?.client?.company_name : inv.order?.client?.contact_name }}</div>
                       <div class="text-xs text-gray-400">Réf: {{ inv.order?.order_number }}</div>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      <span class="flex items-center gap-2">
+                          {{ inv.invoice_date || new Date(inv.created_at).toLocaleDateString('fr-FR') }}
+                          <button @click="updateInvoiceDate(inv)" class="text-gray-400 hover:text-brand-600 transition" title="Modifier la date">
+                              <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                          </button>
+                      </span>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ inv.due_date || '-' }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900 text-right font-medium">{{ inv.total_amount }} MAD</td>

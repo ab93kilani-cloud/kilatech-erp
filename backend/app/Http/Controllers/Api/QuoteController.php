@@ -201,12 +201,16 @@ class QuoteController extends Controller
         try {
             $quote->update(['status' => 'confirmed']);
 
-            // Transformation en Bon de Livraison (Table Orders)
+            $docDate = $quote->quote_date ? \Carbon\Carbon::parse($quote->quote_date) : \Carbon\Carbon::now();
+            $prefix = 'BL-' . $docDate->format('ym');
+            $count = Order::withTrashed()->where('order_number', 'like', $prefix . '%')->count();
+
             $order = Order::create([
                 'client_id' => $quote->client_id,
                 'quote_id' => $quote->id,
-                'order_number' => 'BL-' . date('ym') . '-' . str_pad(Order::count() + 1, 4, '0', STR_PAD_LEFT),
-                'status' => 'pending', // En attente de livraison/expédition
+                'order_number' => $prefix . '-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT),
+                'order_date' => $docDate->toDateString(),
+                'status' => 'pending', 
                 'discount_amount' => $quote->discount_amount ?? 0,
             ]);
 

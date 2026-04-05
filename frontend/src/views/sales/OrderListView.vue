@@ -5,6 +5,7 @@ import api from '@/plugins/axios'
 interface Order {
   id: number;
   order_number: string;
+  order_date: string | null;
   client: { company_name: string, contact_name: string, type: string };
   created_at: string;
   status: string;
@@ -53,6 +54,19 @@ const revertOrder = async (order: Order) => {
         showAlert('↩️ Bon de livraison annulé et devis restauré en mode brouillon.')
     } catch (e: any) {
         showAlert('❌ Erreur : ' + (e.response?.data?.message || e.message))
+    }
+}
+
+const updateOrderDate = async (order: Order) => {
+    const newDate = prompt("Modifier la date du document (YYYY-MM-DD) :", order.order_date || order.created_at.split('T')[0]);
+    if (newDate && /^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+        try {
+            await api.patch(`/orders/${order.id}`, { order_date: newDate });
+            fetchOrders();
+            showAlert('📅 Date mise à jour avec succès.');
+        } catch (e: any) {
+            showAlert('❌ Erreur : ' + (e.response?.data?.message || e.message));
+        }
     }
 }
 
@@ -133,7 +147,12 @@ onMounted(() => {
                      {{ order.client?.type === 'company' ? order.client?.company_name : order.client?.contact_name || 'Inconnu' }}
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                     {{ new Date(order.created_at).toLocaleDateString('fr-FR') }}
+                     <span class="flex items-center gap-2">
+                        {{ order.order_date || new Date(order.created_at).toLocaleDateString('fr-FR') }}
+                        <button @click="updateOrderDate(order)" class="text-gray-400 hover:text-brand-600 transition" title="Modifier la date">
+                            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </button>
+                     </span>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                      <span v-if="order.status === 'pending'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">

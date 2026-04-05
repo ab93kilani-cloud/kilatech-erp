@@ -9,7 +9,7 @@ class Invoice extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['order_id', 'invoice_number', 'total_amount', 'balance_due', 'status', 'discount_amount'];
+    protected $fillable = ['order_id', 'invoice_number', 'invoice_date', 'total_amount', 'balance_due', 'status', 'discount_amount'];
     
     protected $casts = [
         'total_amount' => 'decimal:4',

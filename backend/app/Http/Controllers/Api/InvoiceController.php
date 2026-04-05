@@ -18,6 +18,13 @@ class InvoiceController extends Controller
         return response()->json($query->get());
     }
 
+    public function update(Request $request, Invoice $invoice)
+    {
+        $request->validate(['invoice_date' => 'nullable|date']);
+        $invoice->update($request->only('invoice_date'));
+        return response()->json(['message' => 'Date mise à jour.', 'invoice' => $invoice]);
+    }
+
     public function show($id)
     {
         return response()->json(Invoice::withTrashed()->with(['order.lines.variant', 'payments', 'order.client'])->findOrFail($id));
@@ -72,7 +79,7 @@ class InvoiceController extends Controller
         $data = [
             'document_type' => 'Facture',
             'document_number' => $invoice->invoice_number,
-            'document_date' => $invoice->created_at,
+            'document_date' => $invoice->invoice_date ?? $invoice->created_at,
             'client_id' => $order->client_id,
             'client_name' => $order->client->company_name ?? $order->client->contact_name,
             'client_contact' => $order->client->contact_name,

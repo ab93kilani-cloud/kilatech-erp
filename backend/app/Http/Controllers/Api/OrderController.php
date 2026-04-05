@@ -26,6 +26,13 @@ class OrderController extends Controller
         return response()->json($query->get());
     }
 
+    public function update(Request $request, Order $order)
+    {
+        $request->validate(['order_date' => 'nullable|date']);
+        $order->update($request->only('order_date'));
+        return response()->json(['message' => 'Date mise à jour.', 'order' => $order]);
+    }
+
     public function generatePDF($id)
     {
         $order = Order::withTrashed()->with(['client', 'quote' => function($q) { $q->withTrashed(); }, 'lines.variant.product'])->findOrFail($id);
@@ -71,7 +78,7 @@ class OrderController extends Controller
             'document_type' => 'Bon de livraison',
             'document_number' => $order->order_number,
             'quote_number' => $order->quote ? $order->quote->quote_number : null,
-            'document_date' => $order->created_at,
+            'document_date' => $order->order_date ?? $order->created_at,
             'client_id' => $order->client_id,
             'client_name' => $order->client->company_name ?? $order->client->contact_name,
             'client_contact' => $order->client->contact_name,
@@ -122,12 +129,16 @@ class OrderController extends Controller
 
         DB::beginTransaction();
         try {
-            $orderNumber = 'BL-' . date('ym') . '-' . str_pad(Order::count() + 1, 4, '0', STR_PAD_LEFT);
+            $docDate = $quote->quote_date ? \Carbon\Carbon::parse($quote->quote_date) : \Carbon\Carbon::now();
+            $prefix = 'BL-' . $docDate->format('ym');
+            $count = Order::withTrashed()->where('order_number', 'like', $prefix . '%')->count();
+            $orderNumber = $prefix . '-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
 
             $order = Order::create([
                 'quote_id' => $quote->id,
                 'client_id' => $quote->client_id,
                 'order_number' => $orderNumber,
+                'order_date' => $docDate->toDateString(),
                 'status' => 'confirmed',
                 'discount_amount' => $quote->discount_amount ?? 0,
             ]);
