@@ -5,7 +5,7 @@
     <title>{{ $title ?? 'Bon de Commande' }}</title>
     <style>
         @page { margin: 40px 40px 80px 40px; }
-        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; color: #1e293b; margin: 0; padding: 0; line-height: 1.5; }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; color: #1e293b; margin: 0; padding: 0; line-height: 1.6; }
         
         .header-table { width: 100%; border-bottom: 2px solid #003366; margin-bottom: 30px; padding-bottom: 10px; }
         .logo-box { width: 50%; vertical-align: middle; }
@@ -27,23 +27,13 @@
         .content-table th { background-color: #003366; color: #ffffff; padding: 12px 10px; text-align: left; font-weight: bold; font-size: 9px; text-transform: uppercase; }
         .content-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; }
         .content-table tr:nth-child(even) { background-color: #fcfdfe; }
-        .text-right { text-align: right; }
         .text-center { text-align: center; }
 
-        .financial-grid { width: 100%; }
-        .financial-grid td { vertical-align: top; }
-        .notes-and-payment { width: 55%; padding-right: 40px; }
-        .notes-and-payment strong { color: #003366; }
-        
-        .totals-widget { width: 45%; background-color: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; }
-        .total-row { width: 100%; border-collapse: collapse; }
-        .total-row td { padding: 4px 0; font-size: 10px; }
-        .grand-total-row { border-top: 2px solid #003366; margin-top: 10px; padding-top: 10px; font-size: 13px; font-weight: 900; color: #003366; }
-
+        .logistics-notes { border-top: 2px solid #003366; padding-top: 20px; font-size: 10px; color: #1e293b; }
         .footer-polished { position: fixed; bottom: -40px; left: 0; right: 0; width: 100%; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 8px; color: #64748b; text-align: center; line-height: 1.6; }
         
         .signature-area { margin-top: 60px; width: 100%; }
-        .signature-area td { width: 50%; padding: 20px; text-align: center; border-top: 1px dashed #cbd5e1; font-weight: bold; color: #64748b; font-size: 9px; }
+        .signature-area td { width: 50%; padding: 40px 20px; text-align: center; border: 1px dashed #cbd5e1; font-weight: bold; color: #64748b; font-size: 9px; background-color: #f8fafc; border-radius: 8px; }
 
     </style>
 </head>
@@ -78,7 +68,7 @@
         <tr>
             <td>
                 <div class="recipient-box">
-                    <div class="tag">Informations Fournisseur</div>
+                    <div class="tag">Destinataire (Fournisseur)</div>
                     <div class="customer-name">{{ $client_name }}</div>
                     @if(!empty($client_ice)) <div><strong>ICE:</strong> {{ $client_ice }}</div> @endif
                     <div>{{ $client_address ?? '-' }}</div>
@@ -88,9 +78,11 @@
             <td>
                 <div class="doc-identity">
                     <div class="type-banner">{{ $document_type }}</div>
-                    <div class="id-line">Réf : {{ $document_number }}</div>
-                    <div style="margin-top: 10px;">Date : {{ \Carbon\Carbon::parse($document_date)->format('d/m/Y') }}</div>
-                    <div style="font-size: 9px; color: #003366; font-weight: bold; margin-top: 5px;">Livraison prévue le : {{ !empty($delivery_at) ? \Carbon\Carbon::parse($delivery_at)->format('d/m/Y') : 'À confirmer' }}</div>
+                    <div class="id-line">BC N° : {{ $document_number }}</div>
+                    <div style="margin-top: 10px; font-weight: bold;">Date d'émission : {{ \Carbon\Carbon::parse($document_date)->format('d/m/Y') }}</div>
+                    <div style="font-size: 11px; color: #003366; font-weight: 900; margin-top: 15px; background: #eff6ff; display: inline-block; padding: 5px 10px; border-radius: 4px;">
+                        LIVRAISON PRÉVUE LE : {{ !empty($delivery_at) ? \Carbon\Carbon::parse($delivery_at)->format('d/m/Y') : 'À CONFIRMER' }}
+                    </div>
                 </div>
             </td>
         </tr>
@@ -99,11 +91,10 @@
     <table class="content-table">
         <thead>
             <tr>
-                <th style="width: 10%;">RÉF.</th>
-                <th style="width: 50%;">DÉSIGNATION</th>
-                <th class="text-center" style="width: 10%;">UN</th>
-                <th class="text-center" style="width: 10%;">QTE</th>
-                <th class="text-right" style="width: 20%;">P.U HT (MAD)</th>
+                <th style="width: 15%;">RÉFÉRENCE / SKU</th>
+                <th style="width: 60%;">DÉSIGNATION DES ARTICLES</th>
+                <th class="text-center" style="width: 10%;">UNITÉ</th>
+                <th class="text-center" style="width: 15%;">QUANTITÉ À LIVRER</th>
             </tr>
         </thead>
         <tbody>
@@ -111,62 +102,41 @@
             <tr>
                 <td><strong>{{ $item['reference'] }}</strong></td>
                 <td>
-                    <div style="font-weight: 800; color: #0f172a;">{{ $item['name'] }}</div>
-                    @if(!empty($item['description'])) <div style="font-size: 7px; color: #64748b;">{{ $item['description'] }}</div> @endif
+                    <div style="font-weight: 800; color: #0f172a; font-size: 11px;">{{ $item['name'] }}</div>
+                    @if(!empty($item['description'])) <div style="font-size: 8px; color: #64748b;">{{ $item['description'] }}</div> @endif
                 </td>
-                <td class="text-center">{{ $item['unit'] ?? 'U' }}</td>
-                <td class="text-center">{{ number_format($item['quantity'], 2, ',', ' ') }}</td>
-                <td class="text-right">{{ number_format($item['unit_price_ht'], 2, ',', ' ') }}</td>
+                <td class="text-center" style="font-size: 11px; font-weight: bold;">{{ $item['unit'] ?? 'U' }}</td>
+                <td class="text-center" style="font-size: 13px; font-weight: 900; color: #003366;">{{ number_format($item['quantity'], 0, ',', ' ') }}</td>
             </tr>
             @endforeach
         </tbody>
     </table>
 
-    <table class="financial-grid">
-        <tr>
-            <td class="notes-and-payment">
-                <div style="font-size: 9px;">
-                    <strong>Mode de Règlement :</strong> {{ $payment_method }}<br>
-                    <strong>Échéance :</strong> {{ $validity_date }}<br>
-                </div>
-                <div style="font-weight: bold; color: #003366; margin-top: 20px;">
-                    Arrêté le présent bon de commande à la somme de :<br>
-                    <span style="font-size: 10px; text-transform: uppercase;">{{ $amount_in_words }}</span>
-                </div>
-            </td>
-            <td>
-                <div class="totals-widget">
-                    <table class="total-row">
-                        <tr>
-                            <td>TOTAL HT</td>
-                            <td class="text-right">{{ number_format($total_ht, 2, ',', ' ') }} MAD</td>
-                        </tr>
-                        @foreach($tva_breakdown as $rate => $val)
-                        <tr>
-                            <td>TVA ({{ $rate }}%)</td>
-                            <td class="text-right">{{ number_format($val['tva'], 2, ',', ' ') }} MAD</td>
-                        </tr>
-                        @endforeach
-                        <tr class="grand-total-row">
-                            <td>NET À PAYER TTC</td>
-                            <td class="text-right">{{ number_format($total_ttc, 2, ',', ' ') }} MAD</td>
-                        </tr>
-                    </table>
-                </div>
-            </td>
-        </tr>
-    </table>
+    <div class="logistics-notes">
+        <strong>Notes Logistiques & Règlement :</strong><br>
+        • Mode de paiement prévu : {{ $payment_method }}<br>
+        • Échéance de règlement : {{ $validity_date }}<br>
+        <div style="margin-top: 10px; font-size: 9px; color: #64748b;">
+            Veuillez accuser réception de ce bon de commande et nous confirmer les quantités disponibles ainsi que la date exacte de livraison.
+        </div>
+    </div>
 
     <table class="signature-area">
         <tr>
-            <td>Cachet & Signature Fournisseur</td>
-            <td>Visa Responsable Achats (KILATECH)</td>
+            <td>
+                Visa Responsable Achats (KILATECH)<br>
+                <div style="margin-top: 15px; font-size: 8px; font-weight: normal;">(Bon pour accord)</div>
+            </td>
+            <td>
+                Accusé de réception & Cachet Fournisseur<br>
+                <div style="margin-top: 15px; font-size: 8px; font-weight: normal;">(Confirmé le ..... / ..... / 202...)</div>
+            </td>
         </tr>
     </table>
 
     <div class="footer-polished">
         KILATECH SARLAU | CAPITAL 100 000 DH | RC 657473 | IF 66194148 | ICE 003652842000053<br>
-        Siège Social : 5 RUE ENNOUSSOUR, RDC C/O CASABLANCA, MAROC | Email : info@kilatech.ma
+        Siège Social : 5 RUE ENNOUSSOUR, RDC C/O CASABLANCA, MAROC
     </div>
 
 </body>
