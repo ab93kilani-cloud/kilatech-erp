@@ -130,7 +130,8 @@ const addSearchedProduct = (product: any) => {
         quantity: 1,
         unit_price: product.variants.length === 1 ? Number((ttcPrice / (1 + tvaRate/100)).toFixed(4)) : 0,
         tax_rate: tvaRate,
-        discount_percent: 0
+        discount_percent: 0,
+        client_product_ref: ''
     }
     if (lines.value.length === 1 && lines.value[0] && !lines.value[0].variant_id && !lines.value[0].selectedProductId) {
         lines.value[0] = newLine
@@ -242,7 +243,8 @@ const fetchQuote = async () => {
             quantity: l.quantity,
             unit_price: Number(l.unit_price),
             discount_percent: Number(l.discount_percent),
-            tax_rate: 20
+            tax_rate: 20,
+            client_product_ref: l.client_product_ref || ''
         }))
     } catch (e) {
         errorMsg.value = "Erreur de chargement du devis."
@@ -407,6 +409,7 @@ onMounted(() => {
                                 {{ v.name_variation || v.sku }}
                             </option>
                         </select>
+                        <input v-model="line.client_product_ref" type="text" placeholder="Réf. Client (Opt.)" class="mt-1 w-full rounded border-gray-200 py-1 text-[10px] text-gray-500 placeholder-gray-400 focus:border-brand-500 focus:ring-brand-500 shadow-sm italic">
                     </div>
 
                     <!-- Quantité -->

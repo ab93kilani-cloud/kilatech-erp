@@ -267,6 +267,15 @@
                 <td style="font-size: 8px;">{{ $item['reference'] }}</td>
                 <td>
                     <div style="font-weight: 800; color: #0f172a; font-size: 9px;">{{ $item['name'] }}</div>
+                    
+                    @if(!empty($item['client_product_ref']))
+                    <div style="font-size: 7px; color: #64748b; margin-top: 2px;"><strong>Réf Client :</strong> {{ $item['client_product_ref'] }}</div>
+                    @endif
+
+                    @if(!empty($item['lot_number']))
+                    <div style="font-size: 7px; color: #64748b; margin-top: 1px;"><strong>Lot :</strong> {{ $item['lot_number'] }} @if(!empty($item['expiry_date'])) (Exp: {{ \Carbon\Carbon::parse($item['expiry_date'])->format('d/m/Y') }}) @endif</div>
+                    @endif
+
                     @if(!empty($item['description']))
                     <div style="font-size: 7px; color: #64748b; margin-top: 1px;">{{ $item['description'] }}</div>
                     @endif

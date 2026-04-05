@@ -46,6 +46,7 @@ class QuoteController extends Controller
                 'name' => ($line->variant?->product?->name ?? 'Produit') . ($line->variant?->product?->brand ? ' - ' . $line->variant->product->brand : '') . ($line->variant?->name_variation ? ' - ' . $line->variant->name_variation : ''),
                 'description' => '',
                 'unit' => $line->variant?->product?->unit ?? 'U',
+                'client_product_ref' => $line->client_product_ref,
                 'quantity' => $line->quantity,
                 'unit_price_ht' => $line->unit_price,
                 'unit_price_ttc' => $line->unit_price * (1 + ($tvaRate / 100)),
