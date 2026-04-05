@@ -5,7 +5,7 @@ import api from '@/plugins/axios'
 interface Receipt {
   id: number;
   receipt_number: string;
-  purchase_order: { po_number: string, supplier: { name: string } };
+  purchase_order: { id: number, po_number: string, supplier: { name: string } };
   receipt_date: string;
   status: string;
 }
@@ -67,7 +67,12 @@ onMounted(() => {
               <tbody class="divide-y divide-gray-200 bg-white">
                 <tr v-for="rec in receipts" :key="rec.id">
                   <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">{{ rec.receipt_number }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ rec.purchase_order?.po_number }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm font-medium text-blue-600 hover:text-blue-900">
+                    <router-link v-if="rec.purchase_order" :to="{ name: 'purchases.show', params: { id: rec.purchase_order.id } }" class="underline decoration-dotted transition-colors">
+                      {{ rec.purchase_order?.po_number }}
+                    </router-link>
+                    <span v-else>-</span>
+                  </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ rec.purchase_order?.supplier?.name }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ rec.receipt_date }}</td>
                   
