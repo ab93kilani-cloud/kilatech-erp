@@ -277,7 +277,7 @@ onMounted(async () => {
                     <!-- Unité -->
                     <div class="sm:col-span-1">
                         <div class="text-center py-2 bg-gray-50 rounded-lg text-[10px] font-bold text-gray-500 border border-gray-100">
-                            {{ allVariants.find(v => v.id === line.variant_id)?.product?.unit || 'U' }}
+                            {{ allVariants.find(v => v.id === Number(line.variant_id))?.product?.unit || 'U' }}
                         </div>
                     </div>
 
