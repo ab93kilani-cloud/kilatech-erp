@@ -79,7 +79,7 @@ const selectedPO = ref<any>(null)
 const receiveForm = ref({
     receipt_date: '',
     notes: '',
-    lines: [] as {po_line_id: number, ordered_quantity: number, received_quantity: number, product_name: string}[]
+    lines: [] as {po_line_id: number, ordered_quantity: number, received_quantity: number, product_name: string, lot_number: string, expiry_date: string}[]
 })
 const isReceiving = ref(false)
 
@@ -93,6 +93,8 @@ const openReceiveModal = async (id: number) => {
             po_line_id: l.id,
             ordered_quantity: l.ordered_quantity,
             received_quantity: l.ordered_quantity - l.received_quantity, // Reste à recevoir
+            lot_number: '',
+            expiry_date: '',
             product_name: l.variant ? (l.variant.product?.brand ? `[${l.variant.product.brand}] ` : '') + `${l.variant.product?.name || ''} - ${l.variant.name_variation || l.variant.sku}` : 'Inconnu'
         })).filter((l: any) => l.received_quantity > 0)
         isReceiveModalOpen.value = true
@@ -111,7 +113,9 @@ const submitReceive = async () => {
             lines: receiveForm.value.lines.filter(l => l.received_quantity > 0).map(l => ({
                 po_line_id: l.po_line_id,
                 received_quantity: l.received_quantity,
-                actual_purchase_price: null
+                actual_purchase_price: null,
+                lot_number: l.lot_number,
+                expiry_date: l.expiry_date
             }))
         })
         isReceiveModalOpen.value = false
@@ -245,16 +249,25 @@ onMounted(() => {
                       <thead class="bg-gray-50">
                           <tr>
                               <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Produit (SKU)</th>
-                              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Qte Prévue</th>
-                              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 text-right">Qte Reçue</th>
+                              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 w-32">Lot N°</th>
+                              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 w-32">Péremption</th>
+                              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 w-24">Qte Reçue</th>
                           </tr>
                       </thead>
                       <tbody class="divide-y divide-gray-200">
                           <tr v-for="line in receiveForm.lines" :key="line.po_line_id">
-                              <td class="px-3 py-2 text-sm text-gray-900">{{ line.product_name }}</td>
-                              <td class="px-3 py-2 text-sm text-gray-500">{{ line.ordered_quantity }}</td>
+                              <td class="px-3 py-2 text-sm text-gray-900">
+                                  <div class="font-bold">{{ line.product_name }}</div>
+                                  <div class="text-[10px] text-gray-500">Commande: {{ line.ordered_quantity }} unités</div>
+                              </td>
+                              <td class="px-3 py-2">
+                                  <input type="text" v-model="line.lot_number" placeholder="LOT..." class="w-full text-xs rounded border-gray-300 px-2 py-1 shadow-sm focus:ring-brand-500 focus:border-brand-500 border uppercase">
+                              </td>
+                              <td class="px-3 py-2">
+                                  <input type="date" v-model="line.expiry_date" class="w-full text-xs rounded border-gray-300 px-2 py-1 shadow-sm focus:ring-brand-500 focus:border-brand-500 border">
+                              </td>
                               <td class="px-3 py-2 text-right">
-                                  <input type="number" v-model.number="line.received_quantity" min="0" :max="line.ordered_quantity" class="w-24 text-right rounded border-gray-300 px-2 py-1 text-sm shadow-sm ring-1 ring-inset ring-brand-300 focus:ring-brand-600 focus:ring-2">
+                                  <input type="number" v-model.number="line.received_quantity" min="0" :max="line.ordered_quantity" class="w-full text-right font-bold text-brand-700 rounded border-brand-300 px-2 py-1 text-sm shadow-sm ring-1 ring-inset ring-brand-300 focus:ring-brand-600 focus:ring-2">
                               </td>
                           </tr>
                       </tbody>

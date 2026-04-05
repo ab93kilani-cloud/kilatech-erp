@@ -9,7 +9,7 @@ class ReceiptLine extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['receipt_id', 'po_line_id', 'received_quantity', 'status', 'actual_purchase_price'];
+    protected $fillable = ['receipt_id', 'po_line_id', 'received_quantity', 'status', 'actual_purchase_price', 'lot_number', 'expiry_date'];
 
     public function receipt()
     {

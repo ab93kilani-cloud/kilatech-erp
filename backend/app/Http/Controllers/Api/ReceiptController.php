@@ -30,6 +30,8 @@ class ReceiptController extends Controller
             'lines.*.po_line_id' => 'required|exists:po_lines,id',
             'lines.*.received_quantity' => 'required|integer|min:1',
             'lines.*.actual_purchase_price' => 'nullable|numeric|min:0',
+            'lines.*.lot_number' => 'nullable|string|max:50',
+            'lines.*.expiry_date' => 'nullable|date',
         ]);
 
         $po = PurchaseOrder::findOrFail($request->purchase_order_id);
@@ -70,6 +72,8 @@ class ReceiptController extends Controller
                     'po_line_id' => $poLine->id,
                     'received_quantity' => $lineData['received_quantity'],
                     'actual_purchase_price' => $lineData['actual_purchase_price'] ?? $poLine->unit_price,
+                    'lot_number' => $lineData['lot_number'] ?? null,
+                    'expiry_date' => $lineData['expiry_date'] ?? null,
                     'status' => 'pending_qa', // Waiting for QA and Lot creation
                 ]);
 
