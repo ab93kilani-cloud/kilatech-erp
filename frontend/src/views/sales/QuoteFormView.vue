@@ -35,6 +35,7 @@ const products = computed(() => {
 const form = ref({
     client_id: '',
     valid_until: '',
+    quote_date: '',
     discount_amount: 0,
     payment_method: '',
     payment_term: ''
@@ -189,6 +190,7 @@ const saveQuote = async () => {
         const payload = {
             client_id: form.value.client_id,
             valid_until: form.value.valid_until,
+            quote_date: form.value.quote_date,
             discount_amount: form.value.discount_amount,
             payment_method: form.value.payment_method,
             payment_term: form.value.payment_term,
@@ -229,6 +231,7 @@ const fetchQuote = async () => {
         form.value = {
             client_id: data.client_id,
             valid_until: data.valid_until,
+            quote_date: data.quote_date || '',
             discount_amount: data.discount_amount,
             payment_method: data.payment_method || '',
             payment_term: data.payment_term || ''
@@ -253,6 +256,7 @@ onMounted(() => {
         fetchQuote()
     } else {
         const d = new Date()
+        form.value.quote_date = d.toISOString().split('T')[0] || ''
         d.setDate(d.getDate() + 15)
         form.value.valid_until = d.toISOString().split('T')[0] || ''
     }
@@ -291,7 +295,14 @@ onMounted(() => {
                 </div>
             </div>
 
-            <div class="sm:col-span-3 lg:col-span-2">
+            <div class="sm:col-span-3 lg:col-span-1">
+                <label class="block text-sm font-medium leading-6 text-gray-900">Date du Devis *</label>
+                <div class="mt-2">
+                    <input v-model="form.quote_date" required type="date" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
+                </div>
+            </div>
+
+            <div class="sm:col-span-3 lg:col-span-1">
                 <label class="block text-sm font-medium leading-6 text-gray-900">Date de Validité *</label>
                 <div class="mt-2">
                     <input v-model="form.valid_until" required type="date" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">

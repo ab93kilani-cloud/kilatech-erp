@@ -122,7 +122,7 @@ class QuoteController extends Controller
             $quote = Quote::create([
                 'client_id' => $request->client_id,
                 'valid_until' => $request->valid_until,
-                'quote_date' => $request->quote_date ?? now()->toDateString(),
+                'quote_date' => $request->quote_date ?? \Carbon\Carbon::now()->toDateString(),
                 'discount_amount' => $request->discount_amount ?? 0,
                 'payment_method' => $request->payment_method,
                 'payment_term' => $request->payment_term,
