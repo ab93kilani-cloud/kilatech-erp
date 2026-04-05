@@ -28,7 +28,8 @@ class PurchaseOrderController extends Controller
         DB::beginTransaction();
         try {
             // Generates PO number like PO-2602-0001
-            $poNumber = 'PO-' . date('ym') . '-' . str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT);
+            $nextId = (PurchaseOrder::withTrashed()->max('id') ?? 0) + 1;
+            $poNumber = 'PO-' . date('ym') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
 
             $po = PurchaseOrder::create([
                 'supplier_id' => $request->supplier_id,

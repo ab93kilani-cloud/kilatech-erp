@@ -153,8 +153,8 @@ onMounted(() => {
                     <div class="flex flex-col gap-1">
                       <div v-for="variant in product.variants" :key="variant.id" class="flex items-center justify-between group rounded border border-gray-100 bg-gray-50 px-2 py-1.5 hover:bg-white hover:shadow-sm transition-all">
                         <div class="flex flex-col">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase leading-none">{{ variant.sku }}</span>
-                            <span class="text-sm font-semibold text-gray-700">{{ variant.name_variation || 'Standard' }}</span>
+                            <span class="text-sm font-bold text-gray-900 group-hover:text-brand-700 transition-colors uppercase leading-tight">{{ variant.name_variation || 'Standard' }}</span>
+                            <span class="text-[9px] font-medium text-gray-400 tracking-wider">#{{ variant.sku }}</span>
                         </div>
                         
                         <div class="flex items-center gap-2">

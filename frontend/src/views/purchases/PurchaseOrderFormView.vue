@@ -267,7 +267,7 @@ onMounted(async () => {
                             <select v-model="line.variant_id" :disabled="!line.selectedProductId" required class="block w-full rounded-lg border-gray-200 py-2 px-3 text-sm font-semibold text-brand-700 focus:ring-brand-500 focus:border-brand-500 shadow-sm disabled:opacity-50">
                                 <option value="" disabled>{{ !line.selectedProductId ? 'Choisir produit d\'abord...' : 'Choisir la variante...' }}</option>
                                 <option v-for="v in variantsForLine(line)" :key="v.id" :value="v.id">
-                                    {{ v.name_variation || v.sku }} ({{ v.sku }})
+                                    {{ (v.name_variation || 'Unique').toUpperCase() }} ({{ v.sku }})
                                 </option>
                             </select>
                             <div class="absolute -top-2 left-4 px-1 bg-white text-[8px] font-bold text-gray-400 uppercase tracking-tighter text-brand-400">Variante / SKU</div>
