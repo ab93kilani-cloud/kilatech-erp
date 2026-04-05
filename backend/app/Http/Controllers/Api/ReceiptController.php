@@ -104,4 +104,52 @@ class ReceiptController extends Controller
     {
         return response()->json($receipt->load(['purchaseOrder', 'receiver', 'lines.poLine.variant']));
     }
+
+    /**
+     * Annule un bon de livraison et restaure les quantités sur le BC
+     */
+    public function destroy(Receipt $receipt)
+    {
+        // Sécurité : On ne peut annuler que si aucune ligne n'a encore passé le QA
+        foreach ($receipt->lines as $line) {
+            if ($line->status !== 'pending_qa') {
+                return response()->json(['message' => 'Impossible d\'annuler ce BL car certains articles ont déjà été validés par la QA.'], 400);
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            $poId = $receipt->purchase_order_id;
+            
+            foreach ($receipt->lines as $line) {
+                $poLine = $line->poLine;
+                if ($poLine) {
+                    $poLine->received_quantity = max(0, $poLine->received_quantity - $line->received_quantity);
+                    $poLine->save();
+                }
+                $line->delete();
+            }
+
+            $receipt->delete();
+
+            // Recalculer le statut du Bon de Commande
+            $po = PurchaseOrder::find($poId);
+            if ($po) {
+                $anyReceived = $po->lines()->where('received_quantity', '>', 0)->exists();
+                if (!$anyReceived) {
+                    // Si plus aucune ligne n'a de réception, on repasse en 'ordered' (ou 'sent' selon le flux)
+                    $po->status = 'ordered'; 
+                } else {
+                    $po->status = 'partially_received';
+                }
+                $po->save();
+            }
+
+            DB::commit();
+            return response()->json(['message' => 'Bon de livraison annulé avec succès. Les quantités ont été réinitialisées sur le Bon de Commande.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Erreur lors de l\'annulation du BL', 'error' => $e->getMessage()], 500);
+        }
+    }
 }

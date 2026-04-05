@@ -25,6 +25,17 @@ const fetchReceipts = async () => {
     }
 }
 
+const deleteReceipt = async (id: number) => {
+    if (!confirm("Voulez-vous vraiment annuler ce bon de livraison ? Les quantités reçues seront déduites et retournées sur le Bon de Commande correspondant.")) return;
+    
+    try {
+        await api.delete(`/receipts/${id}`)
+        fetchReceipts()
+    } catch (e: any) {
+        alert(e.response?.data?.message || "Erreur lors de l'annulation du BL")
+    }
+}
+
 const showAlert = (msg: string) => { window.alert(msg) }
 
 onMounted(() => {
@@ -83,9 +94,11 @@ onMounted(() => {
                      <span v-else class="text-gray-500 uppercase text-xs">{{ rec.status }}</span>
                   </td>
                   
-                  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-3">
-                     <router-link v-if="rec.status === 'validated'" :to="{ name: 'stock.qa' }" class="text-amber-600 hover:text-amber-900 font-bold">Effectuer QA</router-link>
-                     <button @click="showAlert('Aperçu complet du BL en construction.')" class="text-gray-400 hover:text-gray-900 ml-4">Ouvrir</button>
+                  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 flex items-center justify-end gap-3">
+                      <router-link v-if="rec.purchase_order" :to="{ name: 'purchases.show', params: { id: rec.purchase_order.id } }" class="text-[10px] uppercase font-black text-brand-600 hover:text-brand-900 px-2 py-1 bg-brand-50 rounded border border-brand-100">Voir BC</router-link>
+                      <router-link v-if="rec.status === 'validated'" :to="{ name: 'stock.qa' }" class="text-amber-600 hover:text-amber-900 font-bold px-2 py-1 bg-amber-50 rounded border border-amber-100">Effectuer QA</router-link>
+                      <button v-if="rec.status !== 'qa_passed'" @click="deleteReceipt(rec.id)" class="text-xs font-black text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded border border-red-100 uppercase tracking-tighter">Annuler / Retour BC</button>
+                      <button @click="showAlert('Aperçu complet du BL en construction.')" class="text-gray-400 hover:text-gray-900 ml-4 font-bold">Ouvrir</button>
                   </td>
                 </tr>
                 <tr v-if="receipts.length === 0">

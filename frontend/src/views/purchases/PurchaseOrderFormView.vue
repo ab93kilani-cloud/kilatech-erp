@@ -172,9 +172,14 @@ onMounted(async () => {
   <div class="max-w-5xl mx-auto py-8">
     <div class="mb-8 flex items-center justify-between">
       <h1 class="text-2xl font-semibold text-gray-900">{{ isEditMode ? 'Modifier le Bon de Commande' : 'Nouveau Bon de Commande Fournisseur' }}</h1>
-      <router-link :to="{ name: 'purchases' }" class="text-sm font-medium text-gray-600 hover:text-gray-900 border px-3 py-1.5 rounded bg-white">
-        Retour à la liste
-      </router-link>
+      <div class="flex items-center gap-3">
+        <router-link v-if="isEditMode" :to="{ name: 'purchases.show', params: { id: poId } }" class="text-sm font-medium text-brand-600 hover:text-brand-900 border border-brand-100 px-3 py-1.5 rounded bg-brand-50">
+          Voir la commande
+        </router-link>
+        <router-link :to="{ name: 'purchases' }" class="text-sm font-medium text-gray-600 hover:text-gray-900 border px-3 py-1.5 rounded bg-white shadow-sm hover:bg-gray-50 transition-colors">
+          Retour à la liste
+        </router-link>
+      </div>
     </div>
 
     <form @submit.prevent="savePurchaseOrder" class="bg-white shadow-sm ring-1 ring-gray-200 sm:rounded-xl">
