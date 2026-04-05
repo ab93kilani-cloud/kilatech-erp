@@ -178,20 +178,19 @@ class PurchaseOrderController extends Controller
             'client_ice' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->ice ?? '-') : '-',
             'client_address' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->address ?? '-') : '-',
             'client_city' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->city ?? '-') : '-',
-            'client_contact' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->contact_name ?? '') : '',
             'items' => $items,
             'total_ht' => $totalHT,
             'total_ttc' => $totalTTC,
             'total_tva' => $totalTVA,
             'tva_breakdown' => $tvaBreakdown,
-            'discount_amount' => 0,
             'amount_in_words' => \App\Helpers\NumberToWords::convert($totalTTC),
             'title' => 'BC_' . $purchaseOrder->po_number,
             'payment_method' => $purchaseOrder->payment_method ?? 'Virement',
-            'validity_date' => $purchaseOrder->expected_delivery_date ?? null,
+            'validity_date' => $purchaseOrder->payment_conditions ?? 'À réception',
+            'delivery_at' => $purchaseOrder->expected_delivery_date ?? null,
         ];
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.document', $data);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.purchase_order', $data);
         return $pdf->download('Bon_de_Commande_' . $purchaseOrder->po_number . '.pdf');
     }
 
