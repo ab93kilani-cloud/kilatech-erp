@@ -238,6 +238,8 @@ class OrderController extends Controller
             }
 
             if ($order->quote) {
+                // Restaurer le devis s'il a été soft-deleted lors de la transformation en BL
+                $order->quote->restore();
                 $order->quote->update(['status' => 'draft']);
             }
 
