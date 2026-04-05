@@ -36,6 +36,16 @@ const confirmPO = async (id: number) => {
     }
 }
 
+const archivePO = async (id: number) => {
+    if (!confirm('Voulez-vous archiver manuellement cette commande ? Elle sera déplacée dans l\'onglet Archives.')) return;
+    try {
+        await api.post(`/purchase-orders/${id}/archive`)
+        fetchPOs()
+    } catch (e: any) {
+        alert(e.response?.data?.message || 'Erreur lors de l\'archivage.')
+    }
+}
+
 const deletePO = async (id: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer définitivement ce bon de commande ?')) return;
     try {
@@ -185,6 +195,7 @@ onMounted(() => {
                      <button @click="downloadPDF(po.id)" class="text-gray-600 hover:text-gray-900 font-medium">📥 PDF</button>
                      <button v-if="po.status === 'draft'" @click="confirmPO(po.id)" class="text-brand-600 hover:text-brand-900 font-medium">Confirmer la Commande</button>
                      <button v-if="po.status === 'ordered' || po.status === 'partially_received'" @click="openReceiveModal(po.id)" class="text-green-600 hover:text-green-900 font-bold">Réceptionner</button>
+                     <button v-if="po.status === 'ordered' || po.status === 'partially_received'" @click="archivePO(po.id)" class="text-gray-400 hover:text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-100 text-[10px] font-bold uppercase transition-colors" title="Archiver la commande">Archiver</button>
                      <router-link v-if="po.status === 'draft'" :to="{ name: 'purchases.edit', params: { id: po.id } }" class="text-blue-600 hover:text-blue-900 font-medium">Modifier</router-link>
                      <router-link v-else :to="{ name: 'purchases.show', params: { id: po.id } }" class="text-blue-600 hover:text-blue-900 font-medium tracking-tight">Ouvrir</router-link>
                      <button v-if="po.status === 'draft' || po.status === 'ordered' || po.status === 'sent'" @click="deletePO(po.id)" class="text-red-400 hover:text-red-600 flex items-center gap-1 inline-flex ml-4 group">

@@ -128,6 +128,19 @@ class PurchaseOrderController extends Controller
         return response()->json($purchaseOrder);
     }
 
+    /**
+     * Archive manuellement la commande (si livraison incomplète mais finie)
+     */
+    public function archive(PurchaseOrder $purchaseOrder)
+    {
+        if ($purchaseOrder->status === 'draft') {
+            return response()->json(['message' => 'Impossible d\'archiver un brouillon non confirmé'], 400);
+        }
+
+        $purchaseOrder->update(['status' => 'completed']);
+        return response()->json($purchaseOrder);
+    }
+
     public function generatePDF(PurchaseOrder $purchaseOrder)
     {
         $purchaseOrder->load(['supplier', 'creator', 'lines.variant.product']);

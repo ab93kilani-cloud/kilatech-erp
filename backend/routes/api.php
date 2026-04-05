@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Procurement & Inventory
     Route::post('purchase-orders/{purchaseOrder}/confirm', [\App\Http\Controllers\Api\PurchaseOrderController::class, 'confirm']);
+    Route::post('purchase-orders/{purchaseOrder}/archive', [\App\Http\Controllers\Api\PurchaseOrderController::class, 'archive']);
     Route::get('purchase-orders/{purchase_order}/pdf', [\App\Http\Controllers\Api\PurchaseOrderController::class, 'generatePDF']);
     Route::apiResource('purchase-orders', \App\Http\Controllers\Api\PurchaseOrderController::class);
     
