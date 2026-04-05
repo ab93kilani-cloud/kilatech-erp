@@ -186,8 +186,13 @@ class PurchaseOrderController extends Controller
 
     public function destroy(PurchaseOrder $purchaseOrder)
     {
-        if ($purchaseOrder->status !== 'draft') {
-            return response()->json(['message' => 'Seul un PO en brouillon peut être supprimé'], 400);
+        // On autorise la suppression en Brouillon OU si Commandé sans aucune réception
+        if ($purchaseOrder->status !== 'draft' && $purchaseOrder->status !== 'ordered') {
+            return response()->json(['message' => 'Ce bon de commande ne peut plus être supprimé (déjà en cours de réception)'], 400);
+        }
+
+        if ($purchaseOrder->receipts()->count() > 0) {
+            return response()->json(['message' => 'Suppression impossible : des réceptions ont déjà été enregistrées pour ce BC'], 400);
         }
 
         DB::beginTransaction();

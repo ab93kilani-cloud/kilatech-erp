@@ -36,6 +36,16 @@ const confirmPO = async (id: number) => {
     }
 }
 
+const deletePO = async (id: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer définitivement ce bon de commande ?')) return;
+    try {
+        await api.delete(`/purchase-orders/${id}`)
+        fetchPOs()
+    } catch (e: any) {
+        alert(e.response?.data?.message || 'Erreur lors de la suppression.')
+    }
+}
+
 const filteredPOs = computed(() => {
     if (activeTab.value === 'active') {
         return pos.value.filter(po => po.status !== 'received' && po.status !== 'completed'); // received is the actual DB status, but we handle completed just in case
@@ -164,6 +174,7 @@ onMounted(() => {
                   
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                      <span v-if="po.status === 'draft'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Brouillon</span>
+                     <span v-else-if="po.status === 'ordered'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 tracking-wider">COMMANDÉ</span>
                      <span v-else-if="po.status === 'sent'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Envoyée</span>
                      <span v-else-if="po.status === 'partially_received'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Partiellement Reçu</span>
                      <span v-else-if="po.status === 'received'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Réception Terminée</span>
@@ -175,7 +186,11 @@ onMounted(() => {
                      <button v-if="po.status === 'draft'" @click="confirmPO(po.id)" class="text-brand-600 hover:text-brand-900 font-medium">Confirmer la Commande</button>
                      <button v-if="po.status === 'ordered' || po.status === 'partially_received'" @click="openReceiveModal(po.id)" class="text-green-600 hover:text-green-900 font-bold">Réceptionner</button>
                      <router-link v-if="po.status === 'draft'" :to="{ name: 'purchases.edit', params: { id: po.id } }" class="text-blue-600 hover:text-blue-900 font-medium">Modifier</router-link>
-                     <router-link v-else :to="{ name: 'purchases.show', params: { id: po.id } }" class="text-blue-600 hover:text-blue-900 font-medium">Ouvrir</router-link>
+                     <router-link v-else :to="{ name: 'purchases.show', params: { id: po.id } }" class="text-blue-600 hover:text-blue-900 font-medium tracking-tight">Ouvrir</router-link>
+                     <button v-if="po.status === 'draft' || po.status === 'ordered' || po.status === 'sent'" @click="deletePO(po.id)" class="text-red-400 hover:text-red-600 flex items-center gap-1 inline-flex ml-4 group">
+                        <svg class="h-4 w-4 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        <span class="text-[10px] uppercase font-bold tracking-widest">Supprimer</span>
+                     </button>
                   </td>
                 </tr>
                 <tr v-if="filteredPOs.length === 0">
