@@ -9,7 +9,7 @@ class OrderLine extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['order_id', 'variant_id', 'unit_price', 'quantity', 'discount_percent'];
+    protected $fillable = ['order_id', 'variant_id', 'unit_price', 'quantity', 'discount_percent', 'tax_rate'];
 
     public function order()
     {

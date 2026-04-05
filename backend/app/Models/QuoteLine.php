@@ -9,7 +9,7 @@ class QuoteLine extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['quote_id', 'variant_id', 'unit_price', 'quantity', 'discount_percent'];
+    protected $fillable = ['quote_id', 'variant_id', 'unit_price', 'quantity', 'discount_percent', 'tax_rate'];
 
     public function quote()
     {

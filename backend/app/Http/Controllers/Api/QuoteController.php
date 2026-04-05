@@ -137,6 +137,7 @@ class QuoteController extends Controller
                     'unit_price' => $line['unit_price'],
                     'quantity' => $line['quantity'],
                     'discount_percent' => $line['discount_percent'] ?? 0,
+                    'tax_rate' => $line['tax_rate'] ?? 20.00,
                 ]);
             }
 
@@ -215,7 +216,7 @@ class QuoteController extends Controller
                     'variant_id' => $line->variant_id,
                     'quantity' => $line->quantity,
                     'unit_price' => $line->unit_price,
-                    'tax_rate' => 20.00, // Par défaut ou dynamisé si ajouté dans db
+                    'tax_rate' => $line->tax_rate ?? 20.00,
                     'discount_percent' => $line->discount_percent,
                 ]);
             }
@@ -275,6 +276,7 @@ class QuoteController extends Controller
                     'unit_price' => $line['unit_price'],
                     'quantity' => $line['quantity'],
                     'discount_percent' => $line['discount_percent'] ?? 0,
+                    'tax_rate' => $line['tax_rate'] ?? $quote->lines->where('variant_id', $line['variant_id'])->first()->tax_rate ?? 20.00,
                 ]);
             }
 
