@@ -135,8 +135,9 @@ class PurchaseOrderController extends Controller
         $totalHT = 0;
         $totalTTC = 0;
         $totalTVA = 0;
+        $tvaBreakdown = [];
 
-        $items = $purchaseOrder->lines->map(function ($line) use (&$totalHT, &$totalTTC, &$totalTVA) {
+        $items = $purchaseOrder->lines->map(function ($line) use (&$totalHT, &$totalTTC, &$totalTVA, &$tvaBreakdown) {
             $ht = (float)($line->unit_price ?? 0) * (int)($line->ordered_quantity ?? 1);
             $tvaRate = (float)($line->variant?->tva_rate ?? 20);
             $ttc = $ht * (1 + ($tvaRate / 100));
@@ -146,16 +147,26 @@ class PurchaseOrderController extends Controller
             $totalTTC += $ttc;
             $totalTVA += $tva;
 
+            // Breakdown par taux
+            $rateKey = (string)$tvaRate;
+            if (!isset($tvaBreakdown[$rateKey])) {
+                $tvaBreakdown[$rateKey] = ['ht' => 0, 'tva' => 0];
+            }
+            $tvaBreakdown[$rateKey]['ht'] += $ht;
+            $tvaBreakdown[$rateKey]['tva'] += $tva;
+
             return [
                 'reference' => $line->variant?->sku ?? '-',
                 'name' => ($line->variant?->product?->name ?? 'Produit') . ($line->variant?->product?->brand ? ' - ' . $line->variant->product->brand : '') . ($line->variant?->name_variation ? ' - ' . $line->variant->name_variation : ''),
                 'description' => '',
                 'quantity' => $line->ordered_quantity,
+                'unit' => $line->variant?->product?->unit ?? 'U',
                 'unit_price_ht' => (float)($line->unit_price ?? 0),
                 'unit_price_ttc' => (float)($line->unit_price ?? 0) * (1 + ($tvaRate / 100)),
                 'total_ht' => $ht,
                 'total_ttc' => $ttc,
                 'tva' => $tvaRate,
+                'discount' => '0%',
             ];
         });
 
@@ -163,22 +174,21 @@ class PurchaseOrderController extends Controller
             'document_type' => 'BON DE COMMANDE',
             'document_number' => $purchaseOrder->po_number,
             'document_date' => $purchaseOrder->created_at,
-            'client_name' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->name ?? 'Fournisseur Inconnu') : 'Fournisseur Non Défini (Brouillon)',
+            'client_name' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->name ?? 'Fournisseur Inconnu') : 'Fournisseur Non Défini',
             'client_ice' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->ice ?? '-') : '-',
             'client_address' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->address ?? '-') : '-',
             'client_city' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->city ?? '-') : '-',
-            'client_id' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->id ?? '-') : '-',
-            'client_tva' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->if ?? '-') : '-',
+            'client_contact' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->contact_name ?? '') : '',
             'items' => $items,
             'total_ht' => $totalHT,
             'total_ttc' => $totalTTC,
             'total_tva' => $totalTVA,
+            'tva_breakdown' => $tvaBreakdown,
+            'discount_amount' => 0,
             'amount_in_words' => \App\Helpers\NumberToWords::convert($totalTTC),
-            'title' => 'Bon_de_Commande_' . $purchaseOrder->po_number,
-            'condition_text' => 'Ce bon de commande confirme la demande de réapprovisionnement.',
-            'validity_message' => 'Échéance / Conditions :',
-            'validity_date' => $purchaseOrder->payment_conditions ?? 'A reception de facture',
-            'payment_method' => $purchaseOrder->payment_method ?? 'Non défini',
+            'title' => 'BC_' . $purchaseOrder->po_number,
+            'payment_method' => $purchaseOrder->payment_method ?? 'Virement',
+            'validity_date' => $purchaseOrder->expected_delivery_date ?? null,
         ];
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.document', $data);
