@@ -277,10 +277,11 @@ class OrderController extends Controller
                 return response()->json(['message' => 'Impossible d\'annuler ce BL car une facture y est déjà rattachée.'], 400);
             }
 
-            if ($order->quote) {
+            $quote = \App\Models\Quote::withTrashed()->find($order->quote_id);
+            if ($quote) {
                 // Restaurer le devis s'il a été soft-deleted lors de la transformation en BL
-                $order->quote->restore();
-                $order->quote->update(['status' => 'draft']);
+                $quote->restore();
+                $quote->update(['status' => 'draft']);
             }
 
             $order->lines()->delete();
