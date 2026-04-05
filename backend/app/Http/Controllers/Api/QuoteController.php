@@ -216,9 +216,19 @@ class QuoteController extends Controller
             ]);
 
             foreach ($quote->lines as $line) {
+                $lot = \App\Models\Lot::where('variant_id', $line->variant_id)
+                    ->where(function($q) {
+                        $q->whereNull('expiration_date')->orWhere('expiration_date', '>=', now());
+                    })
+                    ->orderBy('expiration_date', 'asc')
+                    ->first();
+
                 OrderLine::create([
                     'order_id' => $order->id,
                     'variant_id' => $line->variant_id,
+                    'client_product_ref' => $line->client_product_ref,
+                    'lot_number' => $lot?->lot_number,
+                    'expiry_date' => $lot?->expiration_date,
                     'quantity' => $line->quantity,
                     'unit_price' => $line->unit_price,
                     'tax_rate' => $line->tax_rate ?? 20.00,

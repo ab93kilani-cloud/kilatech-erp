@@ -149,12 +149,23 @@ class OrderController extends Controller
             $totalAmount = 0;
 
             foreach ($quote->lines as $line) {
+                $lot = \App\Models\Lot::where('variant_id', $line->variant_id)
+                    ->where(function($q) {
+                        $q->whereNull('expiration_date')->orWhere('expiration_date', '>=', now());
+                    })
+                    ->orderBy('expiration_date', 'asc')
+                    ->first();
+
                 OrderLine::create([
                     'order_id' => $order->id,
                     'variant_id' => $line->variant_id,
+                    'client_product_ref' => $line->client_product_ref,
+                    'lot_number' => $lot?->lot_number,
+                    'expiry_date' => $lot?->expiration_date,
                     'unit_price' => $line->unit_price,
                     'quantity' => $line->quantity,
                     'discount_percent' => $line->discount_percent,
+                    'tax_rate' => $line->tax_rate ?? 20.00,
                 ]);
 
                 $discountPriceHT = $line->unit_price * (1 - ($line->discount_percent / 100));
