@@ -10,9 +10,13 @@ use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(PurchaseOrder::with(['supplier', 'creator', 'lines.variant'])->get());
+        $query = PurchaseOrder::with(['supplier', 'creator', 'lines.variant']);
+        if ($request->has('archived')) {
+            $query->onlyTrashed();
+        }
+        return response()->json($query->get());
     }
 
     public function store(Request $request)
@@ -138,6 +142,7 @@ class PurchaseOrderController extends Controller
         }
 
         $purchaseOrder->update(['status' => 'completed']);
+        $purchaseOrder->delete();
         return response()->json($purchaseOrder);
     }
 

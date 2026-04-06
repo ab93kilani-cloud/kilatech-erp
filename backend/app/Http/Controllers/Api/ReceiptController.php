@@ -95,6 +95,7 @@ class ReceiptController extends Controller
                 $po->update(['status' => 'partially_received']);
             } else {
                 $po->update(['status' => 'completed']);
+                $po->delete(); // Archivage automatique si complété
             }
 
             DB::commit();
