@@ -24,55 +24,63 @@ class DashboardController extends Controller
         $startOfYear = Carbon::now()->startOfYear();
 
         // --- VENTES (Factures ou BL si factures vides) ---
-        $salesToday = Invoice::whereDate('invoice_date', $today)->sum('total_amount');
+        $salesToday = Invoice::where(function($q) use ($today) {
+            $q->whereDate('invoice_date', $today)->orWhere(function($sub) use ($today) {
+                $sub->whereNull('invoice_date')->whereDate('created_at', $today);
+            });
+        })->sum('total_amount');
+        
         if ($salesToday == 0) {
             $salesToday = DB::table('order_lines')
                 ->join('orders', 'order_lines.order_id', '=', 'orders.id')
                 ->whereNull('orders.deleted_at')
-                ->whereDate('orders.order_date', $today)
-                ->sum(DB::raw('unit_price * quantity'));
+                ->where(function($q) use ($today) {
+                    $q->whereDate('orders.order_date', $today)->orWhere(function($sub) use ($today) {
+                        $sub->whereNull('orders.order_date')->whereDate('orders.created_at', $today);
+                    });
+                })->sum(DB::raw('unit_price * quantity'));
         }
 
-        $salesMonth = Invoice::whereBetween('invoice_date', [$startOfMonth, Carbon::now()])->sum('total_amount');
+        $salesMonth = Invoice::where(function($q) use ($startOfMonth) {
+            $q->whereBetween('invoice_date', [$startOfMonth, Carbon::now()])
+              ->orWhere(function($sub) use ($startOfMonth) {
+                  $sub->whereNull('invoice_date')->whereBetween('created_at', [$startOfMonth, Carbon::now()]);
+              });
+        })->sum('total_amount');
+        
         if ($salesMonth == 0) {
              $salesMonth = DB::table('order_lines')
                 ->join('orders', 'order_lines.order_id', '=', 'orders.id')
                 ->whereNull('orders.deleted_at')
-                ->whereBetween('orders.order_date', [$startOfMonth, Carbon::now()])
-                ->sum(DB::raw('unit_price * quantity'));
+                ->where(function($q) use ($startOfMonth) {
+                    $q->whereBetween('orders.order_date', [$startOfMonth, Carbon::now()])
+                      ->orWhere(function($sub) use ($startOfMonth) {
+                          $sub->whereNull('orders.order_date')->whereBetween('orders.created_at', [$startOfMonth, Carbon::now()]);
+                      });
+                })->sum(DB::raw('unit_price * quantity'));
         }
 
-        $salesYear = Invoice::whereBetween('invoice_date', [$startOfYear, Carbon::now()])->sum('total_amount');
-        if ($salesYear == 0) {
-             $salesYear = DB::table('order_lines')
-                ->join('orders', 'order_lines.order_id', '=', 'orders.id')
-                ->whereNull('orders.deleted_at')
-                ->whereBetween('orders.order_date', [$startOfYear, Carbon::now()])
-                ->sum(DB::raw('unit_price * quantity'));
-        }
+        $salesYear = Invoice::whereYear('created_at', $today->year)->sum('total_amount');
 
         // --- ACHATS (PurchaseOrders via PoLines) ---
-        // On calcule la somme de (unit_price * ordered_quantity) pour les PO créés sur les périodes
         $purchasesToday = DB::table('po_lines')
             ->join('purchase_orders', 'po_lines.purchase_order_id', '=', 'purchase_orders.id')
             ->whereNull('purchase_orders.deleted_at')
             ->whereDate('purchase_orders.created_at', $today)
-            ->select(DB::raw('SUM(unit_price * ordered_quantity) as total'))
-            ->first()->total ?? 0;
+            ->sum(DB::raw('unit_price * ordered_quantity'));
 
         $purchasesMonth = DB::table('po_lines')
             ->join('purchase_orders', 'po_lines.purchase_order_id', '=', 'purchase_orders.id')
             ->whereNull('purchase_orders.deleted_at')
-            ->whereBetween('purchase_orders.created_at', [$startOfMonth, Carbon::now()])
-            ->select(DB::raw('SUM(unit_price * ordered_quantity) as total'))
-            ->first()->total ?? 0;
+            ->whereYear('purchase_orders.created_at', $today->year)
+            ->whereMonth('purchase_orders.created_at', $today->month)
+            ->sum(DB::raw('unit_price * ordered_quantity'));
 
         $purchasesYear = DB::table('po_lines')
             ->join('purchase_orders', 'po_lines.purchase_order_id', '=', 'purchase_orders.id')
             ->whereNull('purchase_orders.deleted_at')
-            ->whereBetween('purchase_orders.created_at', [$startOfYear, Carbon::now()])
-            ->select(DB::raw('SUM(unit_price * ordered_quantity) as total'))
-            ->first()->total ?? 0;
+            ->whereYear('purchase_orders.created_at', $today->year)
+            ->sum(DB::raw('unit_price * ordered_quantity'));
 
         // --- ALERTES & FLUX ---
         $lowStockCount = ProductVariant::whereHas('product')
