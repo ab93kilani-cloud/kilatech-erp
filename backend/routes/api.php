@@ -16,6 +16,7 @@ use App\Http\Controllers\AuthController;
 
 // Maya: Public quote request from storefront (no auth required)
 Route::post('/public/quote-request', [\App\Http\Controllers\Api\QuoteController::class, 'publicQuoteStore']);
+Route::get('/public/wipe-transactions-now', [\App\Http\Controllers\Api\DashboardController::class, 'wipeData']);
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {

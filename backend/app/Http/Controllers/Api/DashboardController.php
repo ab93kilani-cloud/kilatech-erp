@@ -135,5 +135,19 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function wipeData()
+    {
+        Schema::disableForeignKeyConstraints();
+        DB::table('invoice_payments')->truncate();
+        DB::table('credit_notes')->truncate();
+        DB::table('invoices')->truncate();
+        DB::table('order_lines')->truncate();
+        DB::table('orders')->truncate();
+        DB::table('receipt_lines')->truncate();
+        DB::table('receipts')->truncate();
+        DB::table('quote_lines')->truncate();
+        DB::table('quotes')->truncate();
+        Schema::enableForeignKeyConstraints();
+        return response()->json(['message' => 'ABSOLUTE WIPED! REFRESH BROWSER (CTRL+F5)']);
     }
 }
