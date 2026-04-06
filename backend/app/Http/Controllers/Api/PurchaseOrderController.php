@@ -146,9 +146,9 @@ class PurchaseOrderController extends Controller
         return response()->json($purchaseOrder);
     }
 
-    public function generatePDF(PurchaseOrder $purchaseOrder)
+    public function generatePDF($id)
     {
-        $purchaseOrder->load(['supplier', 'creator', 'lines.variant.product']);
+        $purchaseOrder = PurchaseOrder::withTrashed()->with(['supplier', 'creator', 'lines.variant.product'])->findOrFail($id);
 
         $totalHT = 0;
         $totalTTC = 0;
