@@ -11,6 +11,13 @@ use App\Http\Controllers\AuthController;
 |
 */
 
+// Temporary Diagnostic Route
+Route::get('/debug-db/quote-status', function() {
+    $quotes = \Illuminate\Support\Facades\DB::table('quotes')->select('id', 'quote_number', 'status', 'deleted_at')->get();
+    $orders = \Illuminate\Support\Facades\DB::table('orders')->select('id', 'order_number', 'status', 'deleted_at')->get();
+    return response()->json(['quotes' => $quotes, 'orders' => $orders]);
+});
+
 // Public Routes (Products, Articles, Orders, Login) have been moved to web.php Maya.
 // with double-prefix support for Hostinger compatibility.
 

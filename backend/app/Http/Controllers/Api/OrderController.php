@@ -206,11 +206,9 @@ class OrderController extends Controller
             // Sortie de stock
             $this->withdrawStock($order);
 
-            // Archivage automatique du BL une fois facturé
-            $order->delete();
-
-            // Archivage du devis source lors de la transformation
-            $quote->delete();
+            // Archivage automatique du BL et du devis
+            \App\Models\Order::destroy($order->id);
+            \App\Models\Quote::destroy($quote->id);
 
             DB::commit();
             return response()->json(['message' => 'Commande créée avec succès.'], 201);
@@ -264,7 +262,7 @@ class OrderController extends Controller
             $this->withdrawStock($order);
 
             // Archivage automatique du BL une fois facturé
-            $order->delete();
+            \App\Models\Order::destroy($order->id);
 
             DB::commit();
             return response()->json([
@@ -312,7 +310,7 @@ class OrderController extends Controller
             $this->withdrawStock($order);
 
             // Archivage automatique du BL une fois facturé
-            $order->delete();
+            \App\Models\Order::destroy($order->id);
 
             DB::commit();
             return response()->json([

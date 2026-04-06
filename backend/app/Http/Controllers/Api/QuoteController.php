@@ -252,7 +252,7 @@ class QuoteController extends Controller
                 ]);
             }
 
-            $quote->delete();
+            \App\Models\Quote::destroy($quote->id);
 
             DB::commit();
             return response()->json(['message' => 'Devis confirmé et transformé en Bon de Livraison !', 'quote' => $quote, 'order' => $order]);
