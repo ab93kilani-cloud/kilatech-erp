@@ -22,61 +22,25 @@ class DashboardController extends Controller
     {
         $today = Carbon::today();
         $startOfMonth = Carbon::now()->startOfMonth();
-        $startOfYear = Carbon::now()->startOfYear();
 
         // 1. --- ANALYSE COMMERCIALE (VENTES) ---
-        // On cherche par invoice_date OU created_at si invoice_date est nul
-        $salesToday = Invoice::where(function($q) use ($today) {
-            $q->whereDate('invoice_date', $today)->orWhere(function($sub) use ($today) {
-                $sub->whereNull('invoice_date')->whereDate('created_at', $today);
-            });
-        })->sum('total_amount');
-        
-        if ($salesToday == 0) {
-             $salesToday = DB::table('order_lines')
-                ->join('orders', 'order_lines.order_id', '=', 'orders.id')
-                ->whereNull('orders.deleted_at')
-                ->where(function($q) use ($today) {
-                    $q->whereDate('orders.order_date', $today)->orWhere(function($sub) use ($today) {
-                         $sub->whereNull('orders.order_date')->whereDate('orders.created_at', $today);
-                    });
-                })->sum(DB::raw('unit_price * quantity'));
-        }
+        // Les invoices ne sont jamais soft-deleted directement, on utilise la date de création comme fallback
 
-        $salesMonth = Invoice::where(function($q) use ($startOfMonth) {
-            $q->whereBetween('invoice_date', [$startOfMonth, Carbon::now()])
-              ->orWhere(function($sub) use ($startOfMonth) {
-                  $sub->whereNull('invoice_date')->whereBetween('created_at', [$startOfMonth, Carbon::now()]);
-              });
-        })->sum('total_amount');
+        // Aujourd'hui : invoice_date OU created_at
+        $salesToday = Invoice::whereDate('created_at', $today)->sum('total_amount');
         
-        if ($salesMonth == 0) {
-            $salesMonth = DB::table('order_lines')
-                ->join('orders', 'order_lines.order_id', '=', 'orders.id')
-                ->whereNull('orders.deleted_at')
-                ->where(function($q) use ($startOfMonth) {
-                    $q->whereBetween('orders.order_date', [$startOfMonth, Carbon::now()])
-                      ->orWhere(function($sub) use ($startOfMonth) {
-                         $sub->whereNull('orders.order_date')->whereBetween('orders.created_at', [$startOfMonth, Carbon::now()]);
-                      });
-                })->sum(DB::raw('unit_price * quantity'));
-        }
-
+        // Mois en cours
+        $salesMonth = Invoice::whereBetween('created_at', [$startOfMonth, Carbon::now()])->sum('total_amount');
+        
+        // Année en cours
         $salesYear = Invoice::whereYear('created_at', $today->year)->sum('total_amount');
-        if ($salesYear == 0) {
-             $salesYear = DB::table('order_lines')
-                ->join('orders', 'order_lines.order_id', '=', 'orders.id')
-                ->whereNull('orders.deleted_at')
-                ->whereYear('orders.created_at', $today->year)
-                ->sum(DB::raw('unit_price * quantity'));
-        }
 
-        // 2. --- ANALYSE TRÉSORERIE (PAIEMENTS vs IMPAYÉS) ---
+        // 2. --- ANALYSE TRÉSORERIE ---
         $totalInvoiced = Invoice::sum('total_amount');
-        $totalPaid = Invoice::where('status', 'paid')->sum('total_amount');
-        $totalUnpaid = Invoice::sum('balance_due');
-        
-        $recoveryWarning = ($totalUnpaid > ($totalInvoiced * 0.25)) ? true : false;
+        $totalPaid     = Invoice::sum(DB::raw('total_amount - balance_due'));
+        $totalUnpaid   = Invoice::sum('balance_due');
+
+        $recoveryWarning = $totalInvoiced > 0 && ($totalUnpaid > ($totalInvoiced * 0.25));
 
         // 3. --- TOP 10 PRODUITS (MARGE BÉNÉFICIAIRE) ---
         $topProducts = DB::table('order_lines')
