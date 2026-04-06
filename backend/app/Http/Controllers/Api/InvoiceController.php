@@ -160,11 +160,29 @@ class InvoiceController extends Controller
                 }
             }
 
+            // --- RECALCUL FINANCES ---
+            $newTotal = 0;
+            foreach ($order->lines as $line) {
+                $ht = ($line->quantity * $line->unit_price) * (1 - ($line->discount_percent / 100));
+                $newTotal += $ht * (1 + ($line->tax_rate / 100));
+            }
+            $totalPaid = $invoice->payments()->sum('amount');
+            $newBalance = max(0, $newTotal - $totalPaid);
+            $newStatus = 'sent';
+            if ($newBalance <= 0) $newStatus = 'paid';
+            elseif ($totalPaid > 0) $newStatus = 'partially_paid';
+
+            $invoice->update([
+                'total_amount' => $newTotal,
+                'balance_due' => $newBalance,
+                'status' => $newStatus
+            ]);
+
             DB::commit();
-            return response()->json(['message' => 'Facture mise à jour intégralement.', 'invoice' => $invoice->load(['order' => fn($q) => $q->withTrashed(), 'order.lines' => fn($q) => $q->withTrashed()])]);
+            return response()->json(['message' => 'Facture actualisée avec succès.', 'invoice' => $invoice->load(['order' => fn($q) => $q->withTrashed(), 'order.lines' => fn($q) => $q->withTrashed(), 'payments'])]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => 'Erreur : ' . $e->getMessage()], 500);
         }
     }
 

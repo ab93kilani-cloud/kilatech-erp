@@ -140,7 +140,8 @@ const editForm = ref({
     invoice_date: '',
     due_date: '',
     payment_method: '',
-    lines: [] as any[]
+    lines: [] as any[],
+    payments: [] as any[]
 })
 
 // Moteur de recherche de produits (Catalogue)
@@ -182,6 +183,7 @@ const openEditModal = (invoice: any) => {
     editForm.value.invoice_date = invoice.invoice_date || invoice.created_at.split('T')[0]
     editForm.value.due_date = invoice.due_date || ''
     editForm.value.payment_method = invoice.payment_method || ''
+    editForm.value.payments = invoice.payments || []
     
     // Cloner les lignes pour l'édition avec tous les champs financiers
     editForm.value.lines = invoice.order.lines.map((l: any) => ({
@@ -232,7 +234,9 @@ const currentTotals = computed(() => {
         ht += lineHT
         tva += lineHT * (line.tax_rate / 100)
     })
-    return { ht, tva, ttc: ht + tva }
+    const totalTTC = ht + tva
+    const totalPaid = (editForm.value.payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0)
+    return { ht, tva, ttc: totalTTC, balance: Math.max(0, totalTTC - totalPaid) }
 })
 
 const submitEdit = async () => {
@@ -485,6 +489,28 @@ onMounted(() => {
                     <div class="flex justify-between text-xl font-black text-brand-900 border-t border-brand-200 pt-3">
                         <span>TOTAL TTC</span>
                         <span>{{ currentTotals.ttc.toFixed(2) }} MAD</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-black text-red-600 bg-red-50 p-2 rounded-lg mt-2">
+                        <span>RESTE À PAYER</span>
+                        <span>{{ currentTotals.balance.toFixed(2) }} MAD</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historique des Paiements -->
+            <div v-if="editForm.payments && editForm.payments.length > 0" class="mt-8 border-t pt-8">
+                <h3 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <svg class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    RECOUVREMENT : RÈGLEMENTS PERÇUS
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div v-for="pay in editForm.payments" :key="pay.id" class="bg-gray-50/50 border border-gray-100 rounded-2xl p-5 flex justify-between items-center transition hover:bg-white hover:shadow-md">
+                        <div>
+                            <div class="text-[10px] font-black text-gray-400 uppercase tracking-tighter mb-1">{{ pay.payment_date }}</div>
+                            <div class="text-base font-black text-brand-900">{{ Number(pay.amount).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) }} MAD</div>
+                            <div class="text-[10px] text-gray-500 font-bold uppercase tracking-tight mt-1">{{ pay.payment_method }}</div>
+                        </div>
+                        <div class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-black uppercase ring-1 ring-inset ring-green-600/20">ENCAISSÉ</div>
                     </div>
                 </div>
             </div>
