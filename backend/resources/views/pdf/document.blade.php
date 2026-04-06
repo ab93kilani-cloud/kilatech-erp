@@ -241,6 +241,9 @@
                     @if(!empty($quote_number))
                     <div style="font-size: 9px; color: #64748b; margin-top: 5px;">Réf. Devis d'origine : {{ $quote_number }}</div>
                     @endif
+                    @if(!empty($order_number))
+                    <div style="font-size: 9px; color: #64748b; margin-top: 5px;">Réf. BL d'origine : {{ $order_number }}</div>
+                    @endif
                 </div>
             </td>
         </tr>

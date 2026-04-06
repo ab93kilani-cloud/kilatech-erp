@@ -101,6 +101,7 @@ class InvoiceController extends Controller
             'total_paid' => $totalPaid,
             'balance_due' => $balanceDue,
             'title' => 'Facture_' . $invoice->invoice_number,
+            'order_number' => $order->order_number,
             'global_tva_rate' => count($tvaBreakdown) === 1 ? $tvaBreakdown->first()['rate'] : null
         ];
 
