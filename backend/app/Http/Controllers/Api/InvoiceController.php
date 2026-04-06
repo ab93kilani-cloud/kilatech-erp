@@ -32,7 +32,9 @@ class InvoiceController extends Controller
             'lines' => 'required|array',
             'lines.*.id' => 'required|exists:order_lines,id',
             'lines.*.quantity' => 'required|integer|min:1',
-            'lines.*.unit_price' => 'required|numeric'
+            'lines.*.unit_price' => 'required|numeric',
+            'lines.*.discount_percent' => 'nullable|numeric|min:0|max:100',
+            'lines.*.tax_rate' => 'nullable|numeric'
         ]);
 
         $user = $request->user();
@@ -95,7 +97,9 @@ class InvoiceController extends Controller
                 // Update the Order Line (BL)
                 $orderLine->update([
                     'quantity' => $newQty,
-                    'unit_price' => $lineData['unit_price']
+                    'unit_price' => $lineData['unit_price'],
+                    'discount_percent' => $lineData['discount_percent'] ?? 0,
+                    'tax_rate' => $lineData['tax_rate'] ?? 20
                 ]);
 
                 // Sync the original Quote Line (Devis) if linked
@@ -105,7 +109,9 @@ class InvoiceController extends Controller
                         ->where('variant_id', $variantId)
                         ->update([
                             'quantity' => $newQty,
-                            'unit_price' => $lineData['unit_price']
+                            'unit_price' => $lineData['unit_price'],
+                            'discount_percent' => $lineData['discount_percent'] ?? 0,
+                            'tax_rate' => $lineData['tax_rate'] ?? 20
                         ]);
                 }
             }

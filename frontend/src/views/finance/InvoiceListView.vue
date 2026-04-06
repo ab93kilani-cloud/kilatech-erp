@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import api from '@/plugins/axios'
 import { useAuthStore } from '@/stores/auth'
+import logoUrl from '@/assets/logo.png'
 
 interface Invoice {
   id: number;
@@ -134,6 +135,8 @@ const downloadPdf = async (id: number) => {
 const showEditModal = ref(false)
 const editForm = ref({
     id: 0,
+    invoice_number: '',
+    client_name: '',
     invoice_date: '',
     lines: [] as any[]
 })
@@ -144,16 +147,38 @@ const openEditModal = (invoice: any) => {
         return;
     }
     editForm.value.id = invoice.id
+    editForm.value.invoice_number = invoice.invoice_number
+    editForm.value.client_name = invoice.order?.client?.company_name || invoice.order?.client?.contact_name || 'Client Inconnu'
     editForm.value.invoice_date = invoice.invoice_date || invoice.created_at.split('T')[0]
-    // Cloner les lignes pour l'édition
+    
+    // Cloner les lignes pour l'édition avec tous les champs financiers
     editForm.value.lines = invoice.order.lines.map((l: any) => ({
         id: l.id,
         name: (l.variant?.product?.name || 'Produit') + ' ' + (l.variant?.name_variation || ''),
         quantity: l.quantity,
-        unit_price: l.unit_price
+        unit_price: l.unit_price,
+        discount_percent: l.discount_percent || 0,
+        tax_rate: l.tax_rate || 20
     }))
     showEditModal.value = true
 }
+
+const calculateLineTotalHT = (line: any) => {
+    const brit = line.quantity * line.unit_price
+    const discount = brit * ((line.discount_percent || 0) / 100)
+    return brit - discount
+}
+
+const currentTotals = computed(() => {
+    let ht = 0
+    let tva = 0
+    editForm.value.lines.forEach(line => {
+        const lineHT = calculateLineTotalHT(line)
+        ht += lineHT
+        tva += lineHT * (line.tax_rate / 100)
+    })
+    return { ht, tva, ttc: ht + tva }
+})
 
 const submitEdit = async () => {
     isSubmitting.value = true
@@ -271,53 +296,109 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Edit Invoice Modal -->
+    <!-- Edit Invoice Modal (Style Devis) -->
     <div v-if="showEditModal" class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
       <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
         <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-          <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">Modifier la Facture #{{ editForm.id }}</h3>
+          <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-7xl sm:p-8">
             
-            <div class="space-y-6">
+            <!-- Header Mode Devis -->
+            <div class="flex justify-between items-start border-b pb-6 mb-6">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Date de Facturation</label>
-                    <input type="date" v-model="editForm.invoice_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm">
+                    <h2 class="text-3xl font-extrabold text-brand-700 tracking-tight">MODIFIER LA FACTURE</h2>
+                    <p class="text-sm text-gray-500 mt-1 uppercase font-bold tracking-widest">Référence : {{ editForm.invoice_number }}</p>
                 </div>
+                <div class="text-right">
+                    <img :src="logoUrl" alt="Kilatech" class="h-12 w-auto ml-auto mb-2 opacity-80">
+                    <div class="text-xs text-gray-400 font-medium">B2B SALES WORKFLOW SYSTEM</div>
+                </div>
+            </div>
 
-                <div class="overflow-hidden border border-gray-200 rounded-lg">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Désignation</th>
-                                <th class="px-4 py-2 text-center text-xs font-bold text-gray-500 uppercase">Quantité</th>
-                                <th class="px-4 py-2 text-right text-xs font-bold text-gray-500 uppercase">P.U HT</th>
-                                <th class="px-4 py-2 text-right text-xs font-bold text-gray-500 uppercase">Total HT</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="line in editForm.lines" :key="line.id">
-                                <td class="px-4 py-2 text-sm text-gray-900">{{ line.name }}</td>
-                                <td class="px-4 py-2">
-                                    <input type="number" v-model.number="line.quantity" min="1" class="w-20 text-center border-gray-300 rounded-md shadow-sm sm:text-sm">
-                                </td>
-                                <td class="px-4 py-2">
-                                    <input type="number" step="0.01" v-model.number="line.unit_price" class="w-32 text-right border-gray-300 rounded-md shadow-sm sm:text-sm">
-                                </td>
-                                <td class="px-4 py-2 text-right text-sm font-medium">
-                                    {{ (line.quantity * line.unit_price).toFixed(2) }} MAD
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 bg-gray-50 p-6 rounded-xl border border-gray-100">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Date de Facturation</label>
+                    <input type="date" v-model="editForm.invoice_date" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-11">
                 </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Client Destinataire</label>
+                  <p class="mt-4 text-sm font-bold text-gray-900">{{ editForm.client_name }}</p>
+                </div>
+                <div class="text-right">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Statut Document</label>
+                    <span class="inline-flex mt-3 items-center rounded-md bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-700/10 uppercase">EN COURS D'ÉDITION</span>
+                </div>
+            </div>
 
-                <div class="flex justify-end gap-3 pt-4 border-t">
-                    <button @click="showEditModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Annuler</button>
-                    <button @click="submitEdit" :disabled="isSubmitting" class="px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-md shadow-sm hover:bg-brand-700 disabled:opacity-50">
-                        {{ isSubmitting ? 'Synchronisation...' : 'Enregistrer & Synchroniser (Stock/BL/Devis)' }}
-                    </button>
+            <!-- Table Edition Panier (Style Devis) -->
+            <div class="overflow-hidden border border-gray-200 rounded-xl mb-8 shadow-sm">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Désignation Produit</th>
+                            <th class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Qté</th>
+                            <th class="px-4 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">P.U HT (MAD)</th>
+                            <th class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Remise (%)</th>
+                            <th class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">TVA (%)</th>
+                            <th class="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Total HT NET</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr v-for="line in editForm.lines" :key="line.id" class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-bold text-gray-900">{{ line.name }}</div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <input type="number" v-model.number="line.quantity" min="1" class="w-20 text-center border-gray-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-10 font-bold">
+                            </td>
+                            <td class="px-4 py-4">
+                                <input type="number" step="0.01" v-model.number="line.unit_price" class="w-32 text-right border-gray-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-10 font-bold">
+                            </td>
+                            <td class="px-4 py-4">
+                                <input type="number" step="0.1" v-model.number="line.discount_percent" class="w-20 text-center border-gray-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-10">
+                            </td>
+                            <td class="px-4 py-4">
+                                <select v-model.number="line.tax_rate" class="w-24 text-center border-gray-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-10">
+                                    <option :value="20">20%</option>
+                                    <option :value="10">10%</option>
+                                    <option :value="7">7%</option>
+                                    <option :value="0">Exonéré</option>
+                                </select>
+                            </td>
+                            <td class="px-6 py-4 text-right text-sm font-extrabold text-brand-600">
+                                {{ calculateLineTotalHT(line).toFixed(2) }} MAD
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Totaux -->
+            <div class="flex flex-col md:flex-row justify-between items-start gap-8 bg-brand-50/30 p-8 rounded-2xl border border-brand-100">
+                <div class="max-w-md text-sm text-gray-500 italic">
+                    <p>🚨 <strong>Attention :</strong> Toute modification de quantité impacte directement votre stock réel. Les unités seront automatiquement réintégrées ou sorties selon vos ajustements.</p>
                 </div>
+                <div class="w-full md:w-80 space-y-3">
+                    <div class="flex justify-between text-sm font-medium text-gray-600">
+                        <span>TOTAL HT NET</span>
+                        <span>{{ currentTotals.ht.toFixed(2) }} MAD</span>
+                    </div>
+                    <div class="flex justify-between text-sm font-medium text-gray-600">
+                        <span>TOTAL TVA</span>
+                        <span>{{ currentTotals.tva.toFixed(2) }} MAD</span>
+                    </div>
+                    <div class="flex justify-between text-xl font-black text-brand-900 border-t border-brand-200 pt-3">
+                        <span>TOTAL TTC</span>
+                        <span>{{ currentTotals.ttc.toFixed(2) }} MAD</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-4 mt-10">
+                <button @click="showEditModal = false" class="px-6 py-3 text-sm font-bold text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition shadow-sm">ANNULER</button>
+                <button @click="submitEdit" :disabled="isSubmitting" class="px-8 py-3 text-sm font-black text-white bg-brand-600 rounded-xl shadow-lg shadow-brand-200 hover:bg-brand-700 hover:-translate-y-0.5 transform transition disabled:opacity-50">
+                    {{ isSubmitting ? 'SYNCHRONISATION...' : 'ENREGISTRER & METTRE À JOUR LE STOCK' }}
+                </button>
             </div>
           </div>
         </div>
