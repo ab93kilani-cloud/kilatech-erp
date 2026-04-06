@@ -12,14 +12,20 @@ use Illuminate\Support\Facades\DB;
 
 class StockUnitController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // On groupe par lot et statut pour éviter de renvoyer 10000 lignes pour 10000 aiguilles.
-        $summary = DB::table('stock_units')
+        $query = DB::table('stock_units')
             ->select('lot_id', 'status', DB::raw('count(id) as quantity'), DB::raw('MAX(id) as sample_id'))
-            ->whereNull('deleted_at')
-            ->groupBy('lot_id', 'status')
-            ->get();
+            ->whereNull('deleted_at');
+        
+        if ($request->has('show_sold')) {
+            $query->where('status', '=', 'vendue');
+        } else {
+            $query->where('status', '!=', 'vendue');
+        }
+
+        $summary = $query->groupBy('lot_id', 'status')->get();
 
         $sampleIds = $summary->pluck('sample_id');
         
