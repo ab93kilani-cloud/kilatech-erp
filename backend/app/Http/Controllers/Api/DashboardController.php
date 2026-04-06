@@ -134,6 +134,4 @@ class DashboardController extends Controller
             'marketing_pending' => Article::where('status', 'draft')->count(),
         ]);
     }
-
-    }
 }
