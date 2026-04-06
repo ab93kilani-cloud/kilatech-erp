@@ -13,8 +13,6 @@ return new class extends Migration
 
         // 1. Clear Invoices, Credits and Payments
         DB::table('invoice_payments')->delete();
-        DB::table('invoice_items')->delete();
-        DB::table('credit_note_items')->delete();
         DB::table('credit_notes')->delete();
         DB::table('invoices')->delete();
 
