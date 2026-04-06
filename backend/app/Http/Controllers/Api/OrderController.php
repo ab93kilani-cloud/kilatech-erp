@@ -290,6 +290,9 @@ class OrderController extends Controller
                 'discount_amount' => $order->discount_amount ?? 0,
             ]);
 
+            // Archivage automatique du BL une fois facturé
+            $order->delete();
+
             DB::commit();
             return response()->json([
                 'message' => 'Facture générée avec succès !',
