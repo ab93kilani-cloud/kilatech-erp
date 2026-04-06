@@ -108,6 +108,18 @@ const archiveInvoice = async (invoice: Invoice) => {
     }
 }
 
+const restoreInvoice = async (invoice: Invoice) => {
+    if (!confirm('⚠️ Action irréversible : Voulez-vous repasser cette facture en cours ?\n\n1. Tout règlement déjà fait sera SUPPRIMÉ.\n2. La facture redeviendra modifiable.\n3. Elle retournera dans la liste active.')) return;
+    try {
+        await api.post(`/invoices/${invoice.id}/restore`)
+        fetchInvoices()
+        showAlert('✅ Facture réactivée. La balance a été réinitialisée et les paiements supprimés.')
+    } catch (e: any) {
+        console.error('Erreur lors de la restauration', e)
+        alert('Erreur lors de la restauration : ' + (e.response?.data?.message || e.message))
+    }
+}
+
 
 const downloadPdf = async (id: number) => {
     try {
@@ -334,7 +346,12 @@ onMounted(() => {
                         <button v-if="isAdminOrManager" @click="openEditModal(inv)" class="text-blue-500 hover:text-blue-700 text-xs font-bold uppercase tracking-tighter transition">Modifier</button>
                         <button v-if="inv.status === 'paid'" @click="archiveInvoice(inv)" class="text-amber-600 hover:text-amber-900 text-xs underline decoration-dotted">Archiver</button>
                     </template>
-                    <span v-else class="text-gray-400 italic text-xs">Facture archivée</span>
+                    <template v-else>
+                        <button v-if="isAdminOrManager" @click="restoreInvoice(inv)" class="text-green-600 hover:text-green-800 text-xs font-bold border border-green-200 bg-green-50 px-3 py-1 rounded transition duration-150 uppercase tracking-tighter">
+                            ♻️ Repasser en cours
+                        </button>
+                        <span v-else class="text-gray-400 italic text-xs">Facture archivée</span>
+                    </template>
                     
                     <button @click="downloadPdf(inv.id)" title="Télécharger le PDF" class="text-blue-500 hover:text-blue-700">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">

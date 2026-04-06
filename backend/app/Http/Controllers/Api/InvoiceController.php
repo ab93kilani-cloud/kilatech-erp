@@ -281,4 +281,50 @@ class InvoiceController extends Controller
         $invoice->delete();
         return response()->json(['message' => 'Facture archivée avec succès.']);
     }
+
+    public function restore(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user->role || !in_array($user->role->name, ['Admin', 'Gérant'])) {
+            return response()->json(['message' => 'Accès refusé. Seuls l\'Admin et le Gérant peuvent restaurer une facture.'], 403);
+        }
+
+        $invoice = Invoice::withTrashed()->findOrFail($id);
+
+        DB::beginTransaction();
+        try {
+            // Restore the invoice if it was soft-deleted
+            if ($invoice->trashed()) {
+                $invoice->restore();
+            }
+
+            // Restore associated Order and Quote if they were soft-deleted
+            $order = $invoice->order()->withTrashed()->first();
+            if ($order && $order->trashed()) {
+                $order->restore();
+            }
+            
+            if ($order && $order->quote_id) {
+                $quote = \App\Models\Quote::withTrashed()->find($order->quote_id);
+                if ($quote && $quote->trashed()) {
+                    $quote->restore();
+                }
+            }
+
+            // 1. Delete all associated payments
+            $invoice->payments()->delete();
+
+            // 2. Reset status and balance
+            $invoice->update([
+                'status' => 'unpaid',
+                'balance_due' => $invoice->total_amount
+            ]);
+
+            DB::commit();
+            return response()->json(['message' => 'Facture restaurée et réinitialisée avec succès.', 'invoice' => $invoice]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Erreur lors de la restauration : ' . $e->getMessage()], 500);
+        }
+    }
 }

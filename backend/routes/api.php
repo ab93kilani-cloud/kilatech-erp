@@ -87,6 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('orders', \App\Http\Controllers\Api\OrderController::class);
 
         Route::get('invoices/{invoice}/pdf', [\App\Http\Controllers\Api\InvoiceController::class, 'generatePDF']);
+        Route::post('invoices/{invoice}/restore', [\App\Http\Controllers\Api\InvoiceController::class, 'restore']);
         Route::apiResource('invoices', \App\Http\Controllers\Api\InvoiceController::class)->only(['index', 'show', 'update', 'destroy']);
         Route::apiResource('invoice-payments', \App\Http\Controllers\Api\InvoicePaymentController::class)->except(['update', 'destroy']);
         Route::get('credit-notes/{credit_note}/pdf', [\App\Http\Controllers\Api\CreditNoteController::class, 'generatePDF']);
