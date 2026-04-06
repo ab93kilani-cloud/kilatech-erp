@@ -9,6 +9,7 @@ use App\Models\ReceiptLine;
 use App\Models\PoLine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ReceiptController extends Controller
 {
@@ -212,5 +213,18 @@ class ReceiptController extends Controller
             DB::rollBack();
             return response()->json(['message' => 'Erreur lors du retour au BC', 'error' => $e->getMessage()], 500);
         }
+    }
+
+    public function downloadInvoiceProxy(Receipt $receipt)
+    {
+        if (!$receipt->invoice_path) {
+            return response()->json(['message' => 'Facture non attachée'], 404);
+        }
+
+        if (!Storage::disk('public')->exists($receipt->invoice_path)) {
+            return response()->json(['message' => 'Fichier physique introuvable sur le disque'], 404);
+        }
+
+        return Storage::disk('public')->download($receipt->invoice_path);
     }
 }

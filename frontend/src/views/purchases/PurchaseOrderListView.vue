@@ -32,8 +32,14 @@ const handleArchiveInvoice = async (e: any, receiptId: number) => {
     }
 }
 
-const downloadInvoice = (path: string) => {
-    window.open(`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/storage/${path}`, '_blank')
+const downloadInvoice = async (receiptId: number) => {
+    try {
+        const response = await api.get(`/receipts/${receiptId}/download-invoice`, { responseType: 'blob' })
+        const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+        window.open(url, '_blank')
+    } catch (e: any) {
+        alert('Erreur lors du téléchargement de la facture.')
+    }
 }
 const isLoading = ref(true)
 const error = ref('')
@@ -232,7 +238,7 @@ onMounted(() => {
                   
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-3">
                      <button @click="downloadPDF(po.id)" class="text-gray-600 hover:text-gray-900 font-medium">📥 Commande</button>
-                     <button v-if="po.receipts?.length && po.receipts[0]?.invoice_path" @click="downloadInvoice(po.receipts[0].invoice_path)" class="text-blue-600 hover:text-blue-900 font-medium">🧾 Facture Fourn.</button>
+                     <button v-if="po.receipts?.length && po.receipts[0]?.invoice_path" @click="downloadInvoice(po.receipts[0].id)" class="text-blue-600 hover:text-blue-900 font-medium">🧾 Facture Fourn.</button>
                      <button v-if="po.status === 'draft'" @click="confirmPO(po.id)" class="text-brand-600 hover:text-brand-900 font-medium">Confirmer la Commande</button>
                      <button v-if="po.status === 'ordered' || po.status === 'partially_received'" @click="openReceiveModal(po.id)" class="text-green-600 hover:text-green-900 font-bold">Réceptionner</button>
                      <button v-if="po.status === 'ordered' || po.status === 'partially_received'" @click="archivePO(po.id)" class="text-gray-400 hover:text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-100 text-[10px] font-bold uppercase transition-colors" title="Archiver la commande">Archiver</button>
