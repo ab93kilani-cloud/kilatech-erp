@@ -68,10 +68,25 @@ class StockUnitController extends Controller
 
         DB::beginTransaction();
         try {
-            // S'il y a un fichier facture, on l'upload et on le lie au Receipt parent
+            // Gestion de la facture PDF
             if ($request->hasFile('invoice_file')) {
                 $path = $request->file('invoice_file')->store('purchase_invoices', 'public');
-                $receiptLine->receipt->update(['invoice_path' => $path]);
+                $receiptLine->receipt->update([
+                    'invoice_path' => $path,
+                    'invoice_status' => 'received'
+                ]);
+            } else {
+                // Alerte si la facture est manquante
+                $receiptLine->receipt->update(['invoice_status' => 'pending']);
+                
+                \App\Models\Notification::create([
+                    'user_id' => $request->user()->id,
+                    'type' => 'invoice_missing',
+                    'title' => 'Facture manquante : ' . $receiptLine->receipt->receipt_number,
+                    'message' => 'Le stock pour ' . ($receiptLine->poLine?->variant?->product?->name ?? 'Produit') . ' a été validé sans facture fournisseur.',
+                    'reference_type' => 'Receipt',
+                    'reference_id' => $receiptLine->receipt->id,
+                ]);
             }
             $variantId = $receiptLine->poLine->variant_id;
 

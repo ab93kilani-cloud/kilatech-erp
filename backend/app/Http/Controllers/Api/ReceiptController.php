@@ -157,4 +157,21 @@ class ReceiptController extends Controller
             return response()->json(['message' => 'Erreur lors de l\'annulation du BL', 'error' => $e->getMessage()], 500);
         }
     }
+
+    public function uploadInvoice(Request $request, $id)
+    {
+        $request->validate([
+            'invoice_file' => 'required|file|mimes:pdf'
+        ]);
+
+        $receipt = Receipt::findOrFail($id);
+        $path = $request->file('invoice_file')->store('purchase_invoices', 'public');
+        
+        $receipt->update([
+            'invoice_path' => $path,
+            'invoice_status' => 'received'
+        ]);
+
+        return response()->json(['message' => 'Facture téléchargée avec succès.', 'receipt' => $receipt]);
+    }
 }
