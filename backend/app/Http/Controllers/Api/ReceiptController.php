@@ -175,4 +175,42 @@ class ReceiptController extends Controller
 
         return response()->json(['message' => 'Facture téléchargée avec succès.', 'receipt' => $receipt]);
     }
+
+    public function revertToPO($id)
+    {
+        $receipt = Receipt::findOrFail($id);
+
+        foreach ($receipt->lines as $line) {
+            if ($line->status === 'completed') {
+                return response()->json(['message' => 'Impossible de retourner au BC : certains articles ont déjà été validés physiquement en QA.'], 400);
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            $poId = $receipt->purchase_order_id;
+            
+            // Re-fetch withtrashed to restore
+            $po = PurchaseOrder::withTrashed()->findOrFail($poId);
+            $po->restore();
+            $po->update(['status' => 'ordered']);
+
+            foreach ($receipt->lines as $line) {
+                $poLine = $line->poLine;
+                if ($poLine) {
+                    $poLine->received_quantity = max(0, $poLine->received_quantity - $line->received_quantity);
+                    $poLine->save();
+                }
+            }
+
+            $receipt->lines()->delete();
+            $receipt->delete();
+
+            DB::commit();
+            return response()->json(['message' => 'Réception annulée. Le BC est revenu dans la liste active pour correction.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Erreur lors du retour au BC', 'error' => $e->getMessage()], 500);
+        }
+    }
 }

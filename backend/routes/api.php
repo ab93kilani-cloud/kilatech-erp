@@ -62,6 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::apiResource('receipts', \App\Http\Controllers\Api\ReceiptController::class);
     Route::post('receipts/{receipt}/upload-invoice', [\App\Http\Controllers\Api\ReceiptController::class, 'uploadInvoice']);
+    Route::post('receipts/{receipt}/revert', [\App\Http\Controllers\Api\ReceiptController::class, 'revertToPO']);
     
     Route::post('stock-units/validate-qa', [\App\Http\Controllers\Api\StockUnitController::class, 'validateQA']);
     Route::apiResource('stock-units', \App\Http\Controllers\Api\StockUnitController::class);
