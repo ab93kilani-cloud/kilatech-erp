@@ -12,7 +12,13 @@ class InvoiceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Invoice::with(['order.client', 'order.lines.variant.product', 'payments']);
+        $query = Invoice::with([
+            'order' => function($q) { $q->withTrashed(); },
+            'order.lines' => function($q) { $q->withTrashed(); },
+            'order.client',
+            'order.lines.variant.product',
+            'payments'
+        ]);
         if ($request->has('archived')) {
             $query->onlyTrashed();
         }
@@ -45,7 +51,7 @@ class InvoiceController extends Controller
             $invoice->update($request->only('invoice_date'));
 
             foreach ($request->lines as $lineData) {
-                $orderLine = \App\Models\OrderLine::find($lineData['id']);
+                $orderLine = \App\Models\OrderLine::withTrashed()->find($lineData['id']);
                 if (!$orderLine) continue;
 
                 $oldQty = (int)$orderLine->quantity;
@@ -94,7 +100,8 @@ class InvoiceController extends Controller
 
                 // Sync the original Quote Line (Devis) if linked
                 if ($order->quote_id) {
-                    \App\Models\QuoteLine::where('quote_id', $order->quote_id)
+                    \App\Models\QuoteLine::withTrashed()
+                        ->where('quote_id', $order->quote_id)
                         ->where('variant_id', $variantId)
                         ->update([
                             'quantity' => $newQty,
@@ -113,7 +120,13 @@ class InvoiceController extends Controller
 
     public function show($id)
     {
-        return response()->json(Invoice::withTrashed()->with(['order.lines.variant', 'payments', 'order.client'])->findOrFail($id));
+        return response()->json(Invoice::withTrashed()->with([
+            'order' => fn($q) => $q->withTrashed(),
+            'order.lines' => fn($q) => $q->withTrashed(),
+            'order.lines.variant.product',
+            'payments',
+            'order.client'
+        ])->findOrFail($id));
     }
 
     public function generatePDF($id)
