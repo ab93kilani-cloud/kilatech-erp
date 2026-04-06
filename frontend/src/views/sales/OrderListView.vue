@@ -21,7 +21,10 @@ const fetchOrders = async () => {
     isLoading.value = true
     try {
         const response = await api.get('/orders', {
-            params: viewArchived.value ? { archived: 1 } : {}
+            params: {
+                ...(viewArchived.value ? { archived: 1 } : {}),
+                _t: Date.now()
+            }
         })
         orders.value = response.data
     } catch (e: any) {

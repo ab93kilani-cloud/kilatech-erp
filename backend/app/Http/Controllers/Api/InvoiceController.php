@@ -298,19 +298,10 @@ class InvoiceController extends Controller
                 $invoice->restore();
             }
 
-            // Restore associated Order and Quote if they were soft-deleted
+            // IMPORTANT: We do NOT restore order/quote because they should stay archived
+            // The update() method already handles trashed records if needed.
             $order = $invoice->order()->withTrashed()->first();
-            if ($order && $order->trashed()) {
-                $order->restore();
-            }
             
-            if ($order && $order->quote_id) {
-                $quote = \App\Models\Quote::withTrashed()->find($order->quote_id);
-                if ($quote && $quote->trashed()) {
-                    $quote->restore();
-                }
-            }
-
             // 1. Delete all associated payments
             $invoice->payments()->delete();
 

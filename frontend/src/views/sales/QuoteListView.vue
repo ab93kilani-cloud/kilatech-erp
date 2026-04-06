@@ -24,7 +24,10 @@ const fetchQuotes = async () => {
     isLoading.value = true
     try {
         const response = await api.get('/quotes', {
-            params: viewArchived.value ? { archived: 1 } : {}
+            params: {
+              ...(viewArchived.value ? { archived: 1 } : {}),
+              _t: Date.now()
+            }
         })
         quotes.value = response.data
     } catch (e: any) {
