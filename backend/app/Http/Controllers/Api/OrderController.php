@@ -96,7 +96,7 @@ class OrderController extends Controller
             'tva_breakdown' => $tvaBreakdown,
             'discount_amount' => $discountAmount,
             'total_ttc' => $totalTTC,
-            'payment_method' => 'Espèce',
+            'payment_method' => $order->payment_method ?? 'Espèce',
             'condition_text' => '',
             'validity_date' => null,
             'validity_message' => '',
