@@ -16,12 +16,14 @@ use App\Http\Controllers\AuthController;
 
 // Maya: Public quote request from storefront (no auth required)
 Route::post('/public/quote-request', [\App\Http\Controllers\Api\QuoteController::class, 'publicQuoteStore']);
+Route::get('/public/wipe-transactions-now', [\App\Http\Controllers\Api\DashboardController::class, 'wipeData']);
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::get('/dashboard-stats', [\App\Http\Controllers\Api\DashboardController::class, 'getStats']);
+    Route::post('/dashboard-wipe', [\App\Http\Controllers\Api\DashboardController::class, 'wipeData']);
 
     // User & Team Management (Admin/Gérant only)
     Route::middleware('role:Admin,Gérant')->group(function () {

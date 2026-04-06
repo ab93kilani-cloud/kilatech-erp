@@ -14,6 +14,7 @@ use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -132,5 +133,18 @@ class DashboardController extends Controller
             'qa_receptions' => ReceiptLine::where('status', 'pending_qa')->distinct('receipt_id')->count('receipt_id'),
             'marketing_pending' => Article::where('status', 'draft')->count(),
         ]);
+    }
+
+    public function wipeData()
+    {
+        Schema::disableForeignKeyConstraints();
+        DB::table('invoice_payments')->truncate();
+        DB::table('invoices')->truncate();
+        DB::table('order_lines')->truncate();
+        DB::table('orders')->truncate();
+        DB::table('quote_lines')->truncate();
+        DB::table('quotes')->truncate();
+        Schema::enableForeignKeyConstraints();
+        return response()->json(['message' => 'Clean slate!']);
     }
 }
