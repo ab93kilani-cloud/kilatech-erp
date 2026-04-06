@@ -16,11 +16,12 @@ class Product extends Model
         'social_linkedin_post', 'social_facebook_post', 'social_instagram_post', 'local_geo_context',
         'is_medical', 'cost_price', 
         'price_ht', 'tva_rate', 'public_price', 
-        'margin_percent', 'image_path'
+        'margin_percent', 'image_path', 'is_showcase'
     ];
 
     protected $casts = [
         'is_medical' => 'boolean',
+        'is_showcase' => 'boolean',
         'cost_price' => 'decimal:4',
         'price_ht' => 'decimal:4',
         'public_price' => 'decimal:4',

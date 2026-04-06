@@ -25,6 +25,7 @@ const product = ref({
     local_geo_context: '',
     is_medical: false,
     unit: 'U',
+    is_showcase: false,
 })
 
 const autoReferenceDisplay = ref('Chargement...')
@@ -146,6 +147,7 @@ const fetchProductData = async () => {
             social_facebook_post: p.social_facebook_post || '',
             local_geo_context: p.local_geo_context || '',
             is_medical: p.is_medical === 1 || p.is_medical === true,
+            is_showcase: p.is_showcase === 1 || p.is_showcase === true,
             unit: p.unit || 'U',
         }
         
@@ -242,6 +244,7 @@ const saveProduct = async () => {
         if (product.value.social_facebook_post) formData.append('social_facebook_post', product.value.social_facebook_post);
         if (product.value.local_geo_context) formData.append('local_geo_context', product.value.local_geo_context);
         formData.append('is_medical', product.value.is_medical ? '1' : '0');
+        formData.append('is_showcase', product.value.is_showcase ? '1' : '0');
         formData.append('unit', product.value.unit || 'U');
 
         // Le backend génère le SKU automatiquement si vide. On envoie toutes les variantes.
@@ -366,9 +369,16 @@ const saveProduct = async () => {
                     <p class="mt-1 text-xs text-gray-500">Sera automatiquement redimensionnée et convertie en WEBP par le serveur.</p>
                 </div>
 
-                <div class="sm:col-span-6 flex items-center gap-x-3 mt-4">
-                    <input v-model="product.is_medical" id="secure" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-600">
-                    <label for="secure" class="block text-sm font-medium leading-6 text-gray-900">Matériel Médical (Norme CE / Validation requise)</label>
+                <div class="sm:col-span-6 flex flex-col gap-4 mt-4">
+                    <div class="flex items-center gap-x-3">
+                        <input v-model="product.is_medical" id="secure" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-600">
+                        <label for="secure" class="block text-sm font-medium leading-6 text-gray-900">Matériel Médical (Norme CE / Validation requise)</label>
+                    </div>
+                    <div class="flex items-center gap-x-3 bg-amber-50 p-3 rounded-lg border border-amber-100">
+                        <input v-model="product.is_showcase" id="showcase" type="checkbox" class="h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-600">
+                        <label for="showcase" class="block text-sm font-bold leading-6 text-amber-900 border-l-2 border-amber-400 pl-2">🌟 AJOUTER À LA VITRINE (FEATURED PRODUCT)</label>
+                        <p class="text-[10px] text-amber-600 italic">Ce produit sera visible sur votre site public et mis en avant.</p>
+                    </div>
                 </div>
             </div>
         </div>
