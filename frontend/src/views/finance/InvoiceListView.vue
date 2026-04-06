@@ -104,17 +104,6 @@ const archiveInvoice = async (invoice: Invoice) => {
     }
 }
 
-const updateInvoiceDate = async (invoice: Invoice) => {
-    const newDate = prompt("Modifier la date de la facture (YYYY-MM-DD) :", invoice.invoice_date || invoice.created_at.split('T')[0]);
-    if (newDate && /^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
-        try {
-            await api.patch(`/invoices/${invoice.id}`, { invoice_date: newDate });
-            fetchInvoices();
-        } catch (e: any) {
-            alert('Erreur : ' + (e.response?.data?.message || e.message));
-        }
-    }
-}
 
 const downloadPdf = async (id: number) => {
     try {
