@@ -135,16 +135,5 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function wipeData()
-    {
-        Schema::disableForeignKeyConstraints();
-        DB::table('invoice_payments')->truncate();
-        DB::table('invoices')->truncate();
-        DB::table('order_lines')->truncate();
-        DB::table('orders')->truncate();
-        DB::table('quote_lines')->truncate();
-        DB::table('quotes')->truncate();
-        Schema::enableForeignKeyConstraints();
-        return response()->json(['message' => 'Clean slate!']);
     }
 }
