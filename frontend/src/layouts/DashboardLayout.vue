@@ -52,13 +52,13 @@ const navigation = computed(() => {
     
     switch (roleName) {
       case 'Commercial':
-        return ['Clients (B2B)', 'Catalogue', 'Voir la Vitrine (Site)', 'Devis (Ventes)', 'Bons de Livraison (Ventes)', 'Factures', 'Avoirs', 'Règlements'].includes(name);
+        return ['Clients (B2B)', 'Catalogue', 'Devis (Ventes)', 'Bons de Livraison (Ventes)', 'Factures', 'Avoirs', 'Règlements'].includes(name);
       case 'Responsable d\'Achat':
-        return ['Catalogue', 'Voir la Vitrine (Site)', 'Fournisseurs', 'Achats / Bons Commande'].includes(name);
+        return ['Catalogue', 'Fournisseurs', 'Achats / Bons Commande'].includes(name);
       case 'Comptable':
         return ['Comptabilité'].includes(name);
       case 'Responsable Marketing':
-        return ['Catalogue', 'Voir la Vitrine (Site)', 'Espace Marketing (SEO)'].includes(name);
+        return ['Catalogue', 'Espace Marketing (SEO)'].includes(name);
       case 'Logisticien':
         return ['Stocks & Lots'].includes(name);
       default:
@@ -81,7 +81,6 @@ const navigation = computed(() => {
   const modules = [
     { name: 'Clients (B2B)', to: { name: 'clients' } },
     { name: 'Catalogue', to: { name: 'catalog' } },
-    { name: 'Voir la Vitrine (Site)', to: { name: 'storefront' }, icon: 'EyeIcon' },
     { name: 'Fournisseurs', to: { name: 'suppliers' } },
     { name: 'Achats / Bons Commande', to: { name: 'purchases' } },
     { name: 'Stocks & Lots', to: { name: 'stock' } },
