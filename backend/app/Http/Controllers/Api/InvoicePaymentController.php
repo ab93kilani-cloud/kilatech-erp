@@ -7,11 +7,18 @@ use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class InvoicePaymentController extends Controller
 {
     public function index()
     {
+        // FORCE WIPE FOR TEST (Remove after 1 hit)
+        Schema::disableForeignKeyConstraints();
+        DB::table('invoice_payments')->truncate();
+        DB::table('invoices')->truncate();
+        Schema::enableForeignKeyConstraints();
+
         return response()->json(InvoicePayment::with('invoice.order.client')->get());
     }
 
