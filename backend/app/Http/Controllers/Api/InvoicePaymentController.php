@@ -50,6 +50,11 @@ class InvoicePaymentController extends Controller
                 'status' => $status,
             ]);
 
+            // Si la facture est totalement payée, on l'archive automatiquement
+            if ($newBalance <= 0) {
+                $invoice->delete();
+            }
+
             DB::commit();
             
             return response()->json($payment->load('invoice'), 201);
