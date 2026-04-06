@@ -17,8 +17,10 @@ const error = ref('')
 const activeTab = ref('active') // 'active' ou 'archived'
 
 const fetchPOs = async () => {
+    isLoading.value = true
     try {
-        const response = await api.get('/purchase-orders')
+        const url = activeTab.value === 'archived' ? '/purchase-orders?archived=1' : '/purchase-orders'
+        const response = await api.get(url)
         pos.value = response.data
     } catch (e: any) {
         error.value = 'Erreur lors du chargement des commandes.'
@@ -26,6 +28,11 @@ const fetchPOs = async () => {
         isLoading.value = false
     }
 }
+
+import { watch } from 'vue'
+watch(activeTab, () => {
+    fetchPOs()
+})
 
 const confirmPO = async (id: number) => {
     try {
@@ -56,13 +63,7 @@ const deletePO = async (id: number) => {
     }
 }
 
-const filteredPOs = computed(() => {
-    if (activeTab.value === 'active') {
-        return pos.value.filter(po => po.status !== 'received' && po.status !== 'completed'); // received is the actual DB status, but we handle completed just in case
-    } else {
-        return pos.value.filter(po => po.status === 'received' || po.status === 'completed');
-    }
-})
+const filteredPOs = computed(() => pos.value)
 
 const downloadPDF = async (id: number) => {
     try {
