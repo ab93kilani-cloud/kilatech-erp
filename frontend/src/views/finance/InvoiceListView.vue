@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import api from '@/plugins/axios'
+import { useAuthStore } from '@/stores/auth'
 
 interface Invoice {
   id: number;
@@ -13,6 +14,12 @@ interface Invoice {
   due_date: string;
   created_at : string;
 }
+
+const authStore = useAuthStore()
+const user = computed(() => authStore.user)
+const isAdminOrManager = computed(() => {
+    return user.value?.role?.name === 'Admin' || user.value?.role?.name === 'Gérant'
+})
 
 const invoices = ref<Invoice[]>([])
 const isLoading = ref(true)
@@ -220,7 +227,7 @@ onMounted(() => {
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <span class="flex items-center gap-2">
                           {{ inv.invoice_date || new Date(inv.created_at).toLocaleDateString('fr-FR') }}
-                          <button @click="openEditModal(inv)" class="text-gray-400 hover:text-brand-600 transition" title="Modifier">
+                          <button v-if="isAdminOrManager" @click="openEditModal(inv)" class="text-gray-400 hover:text-brand-600 transition" title="Modifier">
                               <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                           </button>
                       </span>
@@ -246,7 +253,7 @@ onMounted(() => {
                         <button v-if="inv.balance_due > 0" @click="openPaymentModal(inv)" class="text-brand-600 font-bold hover:text-brand-900 border border-brand-200 bg-brand-50 px-3 py-1 rounded text-xs transition duration-150">
                             + Règlement
                         </button>
-                        <button @click="openEditModal(inv)" class="text-blue-500 hover:text-blue-700 text-xs font-bold uppercase tracking-tighter transition">Modifier</button>
+                        <button v-if="isAdminOrManager" @click="openEditModal(inv)" class="text-blue-500 hover:text-blue-700 text-xs font-bold uppercase tracking-tighter transition">Modifier</button>
                         <button v-if="inv.status === 'paid'" @click="archiveInvoice(inv)" class="text-amber-600 hover:text-amber-900 text-xs underline decoration-dotted">Archiver</button>
                     </template>
                     <span v-else class="text-gray-400 italic text-xs">Facture archivée</span>

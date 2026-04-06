@@ -29,6 +29,11 @@ class InvoiceController extends Controller
             'lines.*.unit_price' => 'required|numeric'
         ]);
 
+        $user = $request->user();
+        if (!$user->role || !in_array($user->role->name, ['Admin', 'Gérant'])) {
+            return response()->json(['message' => 'Accès refusé. Seul le Gérant ou l\'Admin peut modifier une facture.'], 403);
+        }
+
         $order = $invoice->order;
         if (!$order) {
             return response()->json(['message' => 'Commande associée introuvable.'], 404);
