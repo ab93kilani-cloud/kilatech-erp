@@ -18,16 +18,6 @@ class QuoteController extends Controller
 {
     public function index(Request $request)
     {
-        // FORCE WIPE FOR TEST
-        Schema::disableForeignKeyConstraints();
-        DB::table('invoice_payments')->truncate();
-        DB::table('invoices')->truncate();
-        DB::table('order_lines')->truncate();
-        DB::table('orders')->truncate();
-        DB::table('quote_lines')->truncate();
-        DB::table('quotes')->truncate();
-        Schema::enableForeignKeyConstraints();
-
         $query = Quote::with(['client', 'lockedBy', 'lines.variant']);
         if ($request->has('archived')) {
             $query->onlyTrashed();

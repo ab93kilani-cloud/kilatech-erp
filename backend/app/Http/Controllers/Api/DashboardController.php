@@ -24,19 +24,6 @@ class DashboardController extends Controller
         $startOfMonth = Carbon::now()->startOfMonth();
         $startOfYear = Carbon::now()->startOfYear();
 
-        // TEMP WIPE FOR TEST (Remove after 1 hit)
-        Schema::disableForeignKeyConstraints();
-        DB::table('invoice_payments')->truncate();
-        DB::table('credit_notes')->truncate();
-        DB::table('invoices')->truncate();
-        DB::table('order_lines')->truncate();
-        DB::table('orders')->truncate();
-        DB::table('receipt_lines')->truncate();
-        DB::table('receipts')->truncate();
-        DB::table('quote_lines')->truncate();
-        DB::table('quotes')->truncate();
-        Schema::enableForeignKeyConstraints();
-
         // 1. --- ANALYSE COMMERCIALE (VENTES) ---
         // On cherche par invoice_date OU created_at si invoice_date est nul
         $salesToday = Invoice::where(function($q) use ($today) {
