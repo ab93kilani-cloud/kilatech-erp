@@ -12,7 +12,7 @@ class InvoiceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Invoice::with(['order.client', 'payments']);
+        $query = Invoice::with(['order.client', 'order.lines.variant.product', 'payments']);
         if ($request->has('archived')) {
             $query->onlyTrashed();
         }
