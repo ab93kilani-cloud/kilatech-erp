@@ -331,8 +331,8 @@ class QuoteController extends Controller
 
         DB::beginTransaction();
         try {
-            $quote->lines()->delete();
-            $quote->delete();
+            $quote->lines()->forceDelete();
+            $quote->forceDelete();
             DB::commit();
             return response()->json(['message' => 'Devis supprimé avec succès']);
         } catch (\Exception $e) {
