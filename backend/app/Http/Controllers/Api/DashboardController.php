@@ -23,10 +23,33 @@ class DashboardController extends Controller
         $startOfMonth = Carbon::now()->startOfMonth();
         $startOfYear = Carbon::now()->startOfYear();
 
-        // --- VENTES (Invoices) ---
-        $salesToday = Invoice::whereDate('created_at', $today)->sum('total_amount');
-        $salesMonth = Invoice::whereBetween('created_at', [$startOfMonth, Carbon::now()])->sum('total_amount');
-        $salesYear = Invoice::whereBetween('created_at', [$startOfYear, Carbon::now()])->sum('total_amount');
+        // --- VENTES (Factures ou BL si factures vides) ---
+        $salesToday = Invoice::whereDate('invoice_date', $today)->sum('total_amount');
+        if ($salesToday == 0) {
+            $salesToday = DB::table('order_lines')
+                ->join('orders', 'order_lines.order_id', '=', 'orders.id')
+                ->whereNull('orders.deleted_at')
+                ->whereDate('orders.order_date', $today)
+                ->sum(DB::raw('unit_price * quantity'));
+        }
+
+        $salesMonth = Invoice::whereBetween('invoice_date', [$startOfMonth, Carbon::now()])->sum('total_amount');
+        if ($salesMonth == 0) {
+             $salesMonth = DB::table('order_lines')
+                ->join('orders', 'order_lines.order_id', '=', 'orders.id')
+                ->whereNull('orders.deleted_at')
+                ->whereBetween('orders.order_date', [$startOfMonth, Carbon::now()])
+                ->sum(DB::raw('unit_price * quantity'));
+        }
+
+        $salesYear = Invoice::whereBetween('invoice_date', [$startOfYear, Carbon::now()])->sum('total_amount');
+        if ($salesYear == 0) {
+             $salesYear = DB::table('order_lines')
+                ->join('orders', 'order_lines.order_id', '=', 'orders.id')
+                ->whereNull('orders.deleted_at')
+                ->whereBetween('orders.order_date', [$startOfYear, Carbon::now()])
+                ->sum(DB::raw('unit_price * quantity'));
+        }
 
         // --- ACHATS (PurchaseOrders via PoLines) ---
         // On calcule la somme de (unit_price * ordered_quantity) pour les PO créés sur les périodes
