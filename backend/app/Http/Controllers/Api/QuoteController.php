@@ -88,7 +88,7 @@ class QuoteController extends Controller
             'tva_breakdown' => $tvaBreakdown,
             'discount_amount' => $discountAmount,
             'total_ttc' => $totalTTC,
-            'payment_method' => 'Virement / Chèque',
+            'payment_method' => $quote->payment_method ?? 'Virement / Chèque',
             'condition_text' => '',
             'validity_date' => $quote->valid_until,
             'validity_message' => 'Devis valable jusqu\'au:',
