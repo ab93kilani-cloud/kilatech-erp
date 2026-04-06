@@ -260,6 +260,47 @@ class OrderController extends Controller
         }
     }
 
+    /**
+     * Génère manuellement une facture pour un Bon de Livraison existant.
+     */
+    public function generateInvoice(Order $order)
+    {
+        if ($order->invoice && $order->invoice->status !== 'cancelled') {
+            return response()->json(['message' => 'Une facture existe déjà pour ce Bon de Livraison.'], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            $totalAmount = 0;
+            foreach ($order->lines as $line) {
+                $discountPriceHT = $line->unit_price * (1 - ($line->discount_percent / 100));
+                $tvaRate = $line->variant?->tva_rate ?? 20;
+                $lineTTC = $discountPriceHT * $line->quantity * (1 + ($tvaRate / 100));
+                $totalAmount += $lineTTC;
+            }
+            $totalAmount -= $order->discount_amount ?? 0;
+
+            $invoiceNumber = 'FA-' . date('ym') . '-' . str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT);
+            $invoice = Invoice::create([
+                'order_id' => $order->id,
+                'invoice_number' => $invoiceNumber,
+                'total_amount' => $totalAmount,
+                'balance_due' => $totalAmount,
+                'status' => 'unpaid',
+                'discount_amount' => $order->discount_amount ?? 0,
+            ]);
+
+            DB::commit();
+            return response()->json([
+                'message' => 'Facture générée avec succès !',
+                'invoice' => $invoice
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Erreur lors de la génération de la facture.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function show($id)
     {
         $order = Order::withTrashed()->with(['client', 'quote' => function($q) { $q->withTrashed(); }, 'lines.variant', 'invoice' => function($q) { $q->withTrashed(); }])->findOrFail($id);
