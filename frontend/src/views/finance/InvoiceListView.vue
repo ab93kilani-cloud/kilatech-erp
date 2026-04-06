@@ -354,9 +354,7 @@ onMounted(() => {
       <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
       <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
         <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-          <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-7xl sm:p-8">
-            
-            <!-- Header Mode Devis -->
+          <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:            <!-- Header Mode Devis -->
             <div class="flex justify-between items-start border-b pb-6 mb-6">
                 <div>
                     <h2 class="text-3xl font-extrabold text-brand-700 tracking-tight">MODIFIER LA FACTURE</h2>
@@ -364,104 +362,108 @@ onMounted(() => {
                 </div>
                 <div class="text-right">
                     <img :src="logoUrl" alt="Kilatech" class="h-12 w-auto ml-auto mb-2 opacity-80">
-                    <div class="text-xs text-gray-400 font-medium">B2B SALES WORKFLOW SYSTEM            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4 bg-gray-50 p-6 rounded-xl border border-gray-100">
+                    <div class="text-xs text-gray-400 font-medium tracking-widest">B2B SALES WORKFLOW</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 bg-gray-50 p-6 rounded-xl border border-gray-100">
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Date Facture</label>
-                    <input type="date" v-model="editForm.invoice_date" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-11">
+                    <input type="date" v-model="editForm.invoice_date" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-11 transition">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Échéance</label>
-                    <input type="date" v-model="editForm.due_date" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-11">
+                    <input type="date" v-model="editForm.due_date" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-11 transition">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Mode de Paiement</label>
-                    <select v-model="editForm.payment_method" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-11">
+                    <select v-model="editForm.payment_method" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-11 transition">
                         <option value="Espèces">Espèces</option>
                         <option value="Chèque">Chèque</option>
                         <option value="Virement">Virement</option>
                         <option value="Effet">Effet</option>
                     </select>
                 </div>
-                <div>
-                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Client</label>
-                  <p class="mt-4 text-sm font-bold text-gray-900">{{ editForm.client_name }}</p>
+                <div class="text-right">
+                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Client Destinataire</label>
+                  <p class="mt-4 text-sm font-black text-gray-900 border-r-4 border-brand-500 pr-3">{{ editForm.client_name }}</p>
                 </div>
             </div>
 
             <!-- Barre de Recherche Katalogue (Style Devis) -->
-            <div class="relative mb-6">
-                <div class="flex items-center gap-3 bg-brand-50 p-3 rounded-xl border border-brand-100">
+            <div class="relative mb-8">
+                <div class="flex items-center gap-3 bg-brand-50/50 p-3 rounded-2xl border border-brand-100">
                     <div class="flex-1 relative">
-                        <input type="text" v-model="productSearch" @focus="showProductSearch = true" placeholder="🔍 Rechercher un produit à ajouter à cette facture..." class="w-full pl-10 pr-4 py-3 rounded-lg border-brand-200 focus:ring-brand-500 focus:border-brand-500 text-sm">
-                        <span class="absolute left-3 top-3.5 text-gray-400">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        <input type="text" v-model="productSearch" @focus="showProductSearch = true" placeholder="🔍 Rechercher un produit à ajouter à cette facture..." class="w-full pl-12 pr-4 py-4 rounded-xl border-brand-200 focus:ring-brand-500 focus:border-brand-500 text-sm shadow-inner transition">
+                        <span class="absolute left-4 top-4.5 text-brand-400">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                         </span>
                     </div>
                 </div>
                 <!-- Dropdown Résultats -->
-                <div v-if="showProductSearch && filteredCatalog.length > 0" class="absolute z-[60] w-full mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 max-h-80 overflow-y-auto">
-                    <div v-for="prod in filteredCatalog" :key="prod.id" @click="addSearchedProduct(prod)" class="flex items-center justify-between p-4 hover:bg-brand-50 cursor-pointer border-b last:border-0 transition">
+                <div v-if="showProductSearch && filteredCatalog.length > 0" class="absolute z-[100] w-full mt-3 bg-white rounded-2xl shadow-2xl border border-gray-200 max-h-96 overflow-y-auto ring-1 ring-black ring-opacity-5">
+                    <div v-for="prod in filteredCatalog" :key="prod.id" @click="addSearchedProduct(prod)" class="flex items-center justify-between p-5 hover:bg-brand-50 cursor-pointer border-b last:border-0 transition-colors">
                         <div>
-                            <div class="text-sm font-black text-gray-900">{{ prod.name }}</div>
-                            <div class="text-xs text-gray-500 uppercase">{{ prod.brand }} | Réf: {{ prod.reference }}</div>
+                            <div class="text-sm font-black text-gray-900 tracking-tight">{{ prod.name }}</div>
+                            <div class="text-[10px] text-gray-500 uppercase font-bold mt-0.5 tracking-wider">{{ prod.brand }} | Réf: {{ prod.reference }}</div>
                         </div>
-                        <div class="text-brand-600 font-bold text-sm">+ Ajouter</div>
+                        <div class="bg-brand-100 text-brand-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">+ Ajouter</div>
                     </div>
                 </div>
                 <!-- Overlay pour fermer le dropdown -->
-                <div v-if="showProductSearch" @click="showProductSearch = false" class="fixed inset-0 z-[55] bg-transparent"></div>
+                <div v-if="showProductSearch" @click="showProductSearch = false" class="fixed inset-0 z-[90] bg-transparent"></div>
             </div>
 
             <!-- Table Edition Panier (Style Devis) -->
-            <div class="overflow-hidden border border-gray-200 rounded-xl mb-8 shadow-sm">
+            <div class="overflow-hidden border border-gray-200 rounded-2xl mb-8 shadow-sm">
                 <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-100">
+                    <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Désignation Produit</th>
-                            <th class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Qté</th>
-                            <th class="px-4 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">P.U HT (MAD)</th>
-                            <th class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Remise (%)</th>
-                            <th class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">TVA (%)</th>
-                            <th class="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Total HT NET</th>
-                            <th class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Action</th>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-400 uppercase tracking-widest">Désignation</th>
+                            <th class="px-4 py-4 text-center text-xs font-black text-gray-400 uppercase tracking-widest">Qté</th>
+                            <th class="px-4 py-4 text-right text-xs font-black text-gray-400 uppercase tracking-widest">P.U HT (MAD)</th>
+                            <th class="px-4 py-4 text-center text-xs font-black text-gray-400 uppercase tracking-widest">Remise (%)</th>
+                            <th class="px-4 py-4 text-center text-xs font-black text-gray-400 uppercase tracking-widest">TVA (%)</th>
+                            <th class="px-6 py-4 text-right text-xs font-black text-gray-400 uppercase tracking-widest">Sous-Total</th>
+                            <th class="px-4 py-4 text-center text-xs font-black text-gray-400 uppercase tracking-widest">Action</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="(line, index) in editForm.lines" :key="index" class="hover:bg-gray-50 transition">
+                        <tr v-for="(line, index) in editForm.lines" :key="index" class="hover:bg-brand-50/20 transition-colors group">
                             <td class="px-6 py-4">
-                                <div class="text-sm font-bold text-gray-900">{{ line.name }}</div>
-                                <div v-if="!line.id" class="text-[10px] text-green-600 font-black uppercase mt-1 animate-pulse">Nouveau Produit ✨</div>
+                                <div class="text-sm font-bold text-gray-900 group-hover:text-brand-700 transition">{{ line.name }}</div>
+                                <div v-if="!line.id" class="text-[10px] text-green-600 font-black uppercase mt-1 flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></span>
+                                    Nouveau Produit ✨
+                                </div>
                             </td>
                             <td class="px-4 py-4">
-                                <input type="number" v-model.number="line.quantity" min="1" class="w-20 text-center border-gray-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-10 font-bold">
+                                <input type="number" v-model.number="line.quantity" min="1" class="w-20 text-center border-gray-200 rounded-xl shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-11 font-black bg-gray-50/50">
                             </td>
                             <td class="px-4 py-4">
-                                <input type="number" step="0.01" v-model.number="line.unit_price" class="w-32 text-right border-gray-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-10 font-bold">
+                                <input type="number" step="0.01" v-model.number="line.unit_price" class="w-32 text-right border-gray-200 rounded-xl shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-11 font-black bg-gray-50/50">
                             </td>
                             <td class="px-4 py-4">
-                                <input type="number" step="0.1" v-model.number="line.discount_percent" class="w-20 text-center border-gray-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-10">
+                                <input type="number" step="0.1" v-model.number="line.discount_percent" class="w-20 text-center border-gray-200 rounded-xl shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-11">
                             </td>
                             <td class="px-4 py-4">
-                                <select v-model.number="line.tax_rate" class="w-24 text-center border-gray-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-10">
+                                <select v-model.number="line.tax_rate" class="w-24 text-center border-gray-200 rounded-xl shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-11 font-bold">
                                     <option :value="20">20%</option>
                                     <option :value="10">10%</option>
                                     <option :value="7">7%</option>
-                                    <option :value="0">Exonéré</option>
+                                    <option :value="0">0%</option>
                                 </select>
                             </td>
-                            <td class="px-6 py-4 text-right text-sm font-extrabold text-brand-600">
+                            <td class="px-6 py-4 text-right text-sm font-black text-brand-600 tabular-nums">
                                 {{ calculateLineTotalHT(line).toFixed(2) }} MAD
                             </td>
                             <td class="px-4 py-4 text-center">
-                                <button @click="removeLine(index)" class="text-red-400 hover:text-red-700 transition" title="Supprimer la ligne">
-                                    <svg class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                <button @click="removeLine(index)" class="p-2 text-red-300 hover:text-red-600 hover:bg-red-50 rounded-full transition" title="Supprimer la ligne">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                 </button>
                             </td>
                         </tr>
                     </tbody>
-                </table>
-            </div>
-   </tbody>
                 </table>
             </div>
 
