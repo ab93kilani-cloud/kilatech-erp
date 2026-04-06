@@ -78,7 +78,7 @@ const navigation = computed(() => {
   }
 
   // All other modules
-  const modules = [
+  const modules: any[] = [
     { name: 'Clients (B2B)', to: { name: 'clients' } },
     { name: 'Catalogue', to: { name: 'catalog' } },
     { name: 'Fournisseurs', to: { name: 'suppliers' } },
@@ -88,15 +88,15 @@ const navigation = computed(() => {
     { name: 'Bons de Livraison (Ventes)', to: { name: 'orders' } },
     { name: 'Factures', to: { name: 'invoices' } },
     { name: 'Avoirs', to: { name: 'credit-notes' } },
-    { name: 'Règlements', to: { name: 'payments' } },
-    { name: 'Espace Marketing (SEO)', to: { name: 'marketing' } },
-    { name: 'Comptabilité', to: { name: 'accounting.dashboard' } },
+    { name: 'Règlements', to: { name: 'payments' } }
   ];
 
-  // Strategic Manager space
   if (roleName === 'Admin' || roleName === 'Gérant') {
-    modules.splice( modules.length - 2, 0, { name: 'Espace Manager', to: { name: 'manager.dashboard' } });
+    modules.push({ name: 'Espace Manager', to: { name: 'manager.dashboard' } });
   }
+
+  modules.push({ name: 'Espace Marketing (SEO)', to: { name: 'marketing' } });
+  modules.push({ name: 'Comptabilité', to: { name: 'accounting.dashboard' } });
 
   modules.forEach(m => {
     if (hasAccess(m.name)) menu.push(m);
