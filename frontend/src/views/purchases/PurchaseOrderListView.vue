@@ -9,9 +9,32 @@ interface PurchaseOrder {
   status: string;
   supplier: { name: string };
   expected_delivery_date: string | null;
+  receipts?: any[];
 }
 
 const pos = ref<PurchaseOrder[]>([])
+
+const handleArchiveInvoice = async (e: any, receiptId: number) => {
+    const file = e.target.files[0]
+    if (!file || !receiptId) return
+    
+    const formData = new FormData()
+    formData.append('invoice_file', file)
+    
+    try {
+        await api.post(`/receipts/${receiptId}/upload-invoice`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        alert("Facture enregistrée avec succès !")
+        fetchPOs()
+    } catch (err) {
+        alert("Erreur lors de l'envoi de la facture.")
+    }
+}
+
+const downloadInvoice = (path: string) => {
+    window.open(`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/storage/${path}`, '_blank')
+}
 const isLoading = ref(true)
 const error = ref('')
 const activeTab = ref('active') // 'active' ou 'archived'
@@ -197,8 +220,19 @@ onMounted(() => {
                      <span v-else class="text-gray-500 uppercase text-xs">{{ po.status }}</span>
                   </td>
                   
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      <div v-if="(po.status === 'received' || po.status === 'completed') && po.receipts?.length" class="flex items-center gap-2">
+                        <span v-if="po.receipts[0]?.invoice_status === 'received'" class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded text-[10px]">FACTURE OK</span>
+                        <span v-else class="text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded text-[10px]">FACTURE À RÉGLER</span>
+                        
+                        <input type="file" :id="'inv-upload-'+po.id" class="hidden" accept="application/pdf" @change="(e) => handleArchiveInvoice(e, po.receipts![0]?.id)">
+                        <label v-if="!po.receipts[0]?.invoice_path" :for="'inv-upload-'+po.id" class="cursor-pointer text-[10px] bg-brand-600 text-white px-2 py-0.5 rounded hover:bg-brand-700 font-bold uppercase transition-transform active:scale-95">Uploader PDF</label>
+                      </div>
+                  </td>
+                  
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-3">
-                     <button @click="downloadPDF(po.id)" class="text-gray-600 hover:text-gray-900 font-medium">📥 PDF</button>
+                     <button @click="downloadPDF(po.id)" class="text-gray-600 hover:text-gray-900 font-medium">📥 Commande</button>
+                     <button v-if="po.receipts?.length && po.receipts[0]?.invoice_path" @click="downloadInvoice(po.receipts[0].invoice_path)" class="text-blue-600 hover:text-blue-900 font-medium">🧾 Facture Fourn.</button>
                      <button v-if="po.status === 'draft'" @click="confirmPO(po.id)" class="text-brand-600 hover:text-brand-900 font-medium">Confirmer la Commande</button>
                      <button v-if="po.status === 'ordered' || po.status === 'partially_received'" @click="openReceiveModal(po.id)" class="text-green-600 hover:text-green-900 font-bold">Réceptionner</button>
                      <button v-if="po.status === 'ordered' || po.status === 'partially_received'" @click="archivePO(po.id)" class="text-gray-400 hover:text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-100 text-[10px] font-bold uppercase transition-colors" title="Archiver la commande">Archiver</button>

@@ -12,7 +12,7 @@ class PurchaseOrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = PurchaseOrder::with(['supplier', 'creator', 'lines.variant']);
+        $query = PurchaseOrder::with(['supplier', 'creator', 'lines.variant', 'receipts']);
         if ($request->has('archived')) {
             $query->onlyTrashed();
         }

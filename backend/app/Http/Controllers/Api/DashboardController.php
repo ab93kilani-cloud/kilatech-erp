@@ -55,12 +55,32 @@ class DashboardController extends Controller
         $marketingPendingCount = Article::where('status', 'draft')
             ->count();
 
+        // 6. Missing Supplier Invoices
+        $missingInvoicesCount = Receipt::where('invoice_status', 'pending')->count();
+
+        // Send a daily-like notification if missing invoices exist (simplified check)
+        if ($missingInvoicesCount > 0) {
+            $existing = \App\Models\InternalNotification::where('title', 'LIKE', '%Factures Fournisseur Manquantes%')
+                ->whereDate('created_at', Carbon::today())
+                ->exists();
+            
+            if (!$existing) {
+                \App\Models\InternalNotification::create([
+                    'title' => '🚨 Factures Fournisseur Manquantes (' . $missingInvoicesCount . ')',
+                    'message' => 'Il y a ' . $missingInvoicesCount . ' bons de réception sans facture PDF attachée. Veuillez les uploader dans les Archives Achats.',
+                    'action_url' => '/admin/purchases?archived=1',
+                    'type' => 'warning'
+                ]);
+            }
+        }
+
         return response()->json([
             'sales_today' => (float)$salesToday,
             'stock_alerts' => $stockAlertsCount,
             'pending_quotes' => $pendingQuotesCount,
             'qa_receptions' => $qaReceptionsCount,
             'marketing_pending' => $marketingPendingCount,
+            'missing_invoices' => $missingInvoicesCount,
         ]);
     }
 }
