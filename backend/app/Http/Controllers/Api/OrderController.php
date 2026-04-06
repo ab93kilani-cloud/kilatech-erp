@@ -205,6 +205,9 @@ class OrderController extends Controller
             // Archivage automatique du BL une fois facturé
             $order->delete();
 
+            // Archivage du devis source lors de la transformation
+            $quote->delete();
+
             DB::commit();
             return response()->json(['message' => 'Commande créée avec succès.'], 201);
         } catch (\Exception $e) {
@@ -334,8 +337,8 @@ class OrderController extends Controller
                 $quote->update(['status' => 'draft']);
             }
 
-            $order->lines()->delete();
-            $order->delete();
+            $order->lines()->forceDelete();
+            $order->forceDelete();
 
             DB::commit();
             return response()->json(['message' => 'Le Bon de Livraison a été annulé et le devis est repassé en brouillon.']);
