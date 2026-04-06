@@ -131,6 +131,44 @@ const downloadPdf = async (id: number) => {
     }
 }
 
+// --- Modal d'Édition ---
+const showEditModal = ref(false)
+const editForm = ref({
+    id: 0,
+    invoice_date: '',
+    lines: [] as any[]
+})
+
+const openEditModal = (invoice: any) => {
+    editForm.value.id = invoice.id
+    editForm.value.invoice_date = invoice.invoice_date || invoice.created_at.split('T')[0]
+    // Cloner les lignes pour l'édition
+    editForm.value.lines = invoice.order.lines.map((l: any) => ({
+        id: l.id,
+        name: (l.variant?.product?.name || 'Produit') + ' ' + (l.variant?.name_variation || ''),
+        quantity: l.quantity,
+        unit_price: l.unit_price
+    }))
+    showEditModal.value = true
+}
+
+const submitEdit = async () => {
+    isSubmitting.value = true
+    try {
+        await api.patch(`/invoices/${editForm.value.id}`, {
+            invoice_date: editForm.value.invoice_date,
+            lines: editForm.value.lines
+        })
+        showEditModal.value = false
+        fetchInvoices()
+        showAlert('✅ Facture, Stock et BL mis à jour avec succès.')
+    } catch (e: any) {
+        alert(e.response?.data?.message || "Erreur lors de la modification.")
+    } finally {
+        isSubmitting.value = false
+    }
+}
+
 onMounted(() => {
     fetchInvoices()
 })
@@ -182,7 +220,7 @@ onMounted(() => {
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <span class="flex items-center gap-2">
                           {{ inv.invoice_date || new Date(inv.created_at).toLocaleDateString('fr-FR') }}
-                          <button @click="updateInvoiceDate(inv)" class="text-gray-400 hover:text-brand-600 transition" title="Modifier la date">
+                          <button @click="openEditModal(inv)" class="text-gray-400 hover:text-brand-600 transition" title="Modifier">
                               <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                           </button>
                       </span>
@@ -208,6 +246,7 @@ onMounted(() => {
                         <button v-if="inv.balance_due > 0" @click="openPaymentModal(inv)" class="text-brand-600 font-bold hover:text-brand-900 border border-brand-200 bg-brand-50 px-3 py-1 rounded text-xs transition duration-150">
                             + Règlement
                         </button>
+                        <button @click="openEditModal(inv)" class="text-blue-500 hover:text-blue-700 text-xs font-bold uppercase tracking-tighter transition">Modifier</button>
                         <button v-if="inv.status === 'paid'" @click="archiveInvoice(inv)" class="text-amber-600 hover:text-amber-900 text-xs underline decoration-dotted">Archiver</button>
                     </template>
                     <span v-else class="text-gray-400 italic text-xs">Facture archivée</span>
@@ -224,6 +263,59 @@ onMounted(() => {
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Invoice Modal -->
+    <div v-if="showEditModal" class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+      <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+          <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Modifier la Facture #{{ editForm.id }}</h3>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Date de Facturation</label>
+                    <input type="date" v-model="editForm.invoice_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm">
+                </div>
+
+                <div class="overflow-hidden border border-gray-200 rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Désignation</th>
+                                <th class="px-4 py-2 text-center text-xs font-bold text-gray-500 uppercase">Quantité</th>
+                                <th class="px-4 py-2 text-right text-xs font-bold text-gray-500 uppercase">P.U HT</th>
+                                <th class="px-4 py-2 text-right text-xs font-bold text-gray-500 uppercase">Total HT</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="line in editForm.lines" :key="line.id">
+                                <td class="px-4 py-2 text-sm text-gray-900">{{ line.name }}</td>
+                                <td class="px-4 py-2">
+                                    <input type="number" v-model.number="line.quantity" min="1" class="w-20 text-center border-gray-300 rounded-md shadow-sm sm:text-sm">
+                                </td>
+                                <td class="px-4 py-2">
+                                    <input type="number" step="0.01" v-model.number="line.unit_price" class="w-32 text-right border-gray-300 rounded-md shadow-sm sm:text-sm">
+                                </td>
+                                <td class="px-4 py-2 text-right text-sm font-medium">
+                                    {{ (line.quantity * line.unit_price).toFixed(2) }} MAD
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button @click="showEditModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Annuler</button>
+                    <button @click="submitEdit" :disabled="isSubmitting" class="px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-md shadow-sm hover:bg-brand-700 disabled:opacity-50">
+                        {{ isSubmitting ? 'Synchronisation...' : 'Enregistrer & Synchroniser (Stock/BL/Devis)' }}
+                    </button>
+                </div>
+            </div>
           </div>
         </div>
       </div>

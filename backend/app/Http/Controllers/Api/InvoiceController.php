@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
@@ -20,9 +21,89 @@ class InvoiceController extends Controller
 
     public function update(Request $request, Invoice $invoice)
     {
-        $request->validate(['invoice_date' => 'nullable|date']);
-        $invoice->update($request->only('invoice_date'));
-        return response()->json(['message' => 'Date mise à jour.', 'invoice' => $invoice]);
+        $request->validate([
+            'invoice_date' => 'nullable|date',
+            'lines' => 'required|array',
+            'lines.*.id' => 'required|exists:order_lines,id',
+            'lines.*.quantity' => 'required|integer|min:1',
+            'lines.*.unit_price' => 'required|numeric'
+        ]);
+
+        $order = $invoice->order;
+        if (!$order) {
+            return response()->json(['message' => 'Commande associée introuvable.'], 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            // 1. Update basic info
+            $invoice->update($request->only('invoice_date'));
+
+            foreach ($request->lines as $lineData) {
+                $orderLine = \App\Models\OrderLine::find($lineData['id']);
+                if (!$orderLine) continue;
+
+                $oldQty = (int)$orderLine->quantity;
+                $newQty = (int)$lineData['quantity'];
+                $variantId = $orderLine->variant_id;
+
+                // Sync Stock based on quantity delta
+                if ($newQty > $oldQty) {
+                    // Need more items: withdraw extra
+                    $diff = $newQty - $oldQty;
+                    $availableUnits = \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
+                            $q->where('lot_number', $orderLine->lot_number);
+                        })
+                        ->where('status', 'disponible')
+                        ->limit($diff)
+                        ->get();
+                    
+                    if ($availableUnits->count() < $diff) {
+                         DB::rollBack();
+                         return response()->json(['message' => "Stock insuffisant pour augmenter la quantité. (Requis: {$diff}, Dispo: {$availableUnits->count()})"], 400);
+                    }
+
+                    foreach ($availableUnits as $unit) {
+                        $unit->update(['status' => 'vendue']);
+                    }
+                } elseif ($newQty < $oldQty) {
+                    // Reduced items: restore to stock
+                    $diff = $oldQty - $newQty;
+                    $soldUnits = \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
+                            $q->where('lot_number', $orderLine->lot_number);
+                        })
+                        ->where('status', 'vendue')
+                        ->limit($diff)
+                        ->get();
+                    
+                    foreach ($soldUnits as $unit) {
+                        $unit->update(['status' => 'disponible']);
+                    }
+                }
+
+                // Update the Order Line (BL)
+                $orderLine->update([
+                    'quantity' => $newQty,
+                    'unit_price' => $lineData['unit_price']
+                ]);
+
+                // Sync the original Quote Line (Devis) if linked
+                if ($order->quote_id) {
+                    \App\Models\QuoteLine::where('quote_id', $order->quote_id)
+                        ->where('variant_id', $variantId)
+                        ->update([
+                            'quantity' => $newQty,
+                            'unit_price' => $lineData['unit_price']
+                        ]);
+                }
+            }
+
+            DB::commit();
+            return response()->json(['message' => 'Facture et stocks mis à jour avec succès.', 'invoice' => $invoice->load('order.lines')]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Erreur lors de la modification.', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function show($id)
