@@ -579,19 +579,19 @@ class OrderController extends Controller
             if ($line->serial_numbers) {
                 $snArray = array_map('trim', explode(',', $line->serial_numbers));
                 \App\Models\StockUnit::whereIn('serial_number', $snArray)
-                    ->where('status', '!=', 'sold')
-                    ->update(['status' => 'sold']);
+                    ->where('status', '!=', 'vendue')
+                    ->update(['status' => 'vendue']);
             } elseif ($line->lot_number) {
                 // Si pas de SN précis, on prend la quantité dans le lot
                 $units = \App\Models\StockUnit::whereHas('lot', function($q) use ($line) {
                         $q->where('lot_number', $line->lot_number);
                     })
-                    ->where('status', '!=', 'sold')
+                    ->where('status', '!=', 'vendue')
                     ->limit($line->quantity)
                     ->get();
                 
                 foreach ($units as $unit) {
-                    $unit->update(['status' => 'sold']);
+                    $unit->update(['status' => 'vendue']);
                 }
             }
         }

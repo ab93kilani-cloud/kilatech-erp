@@ -82,7 +82,7 @@ class CreditNoteController extends Controller
                             foreach ($snArray as $sn) {
                                 StockUnit::updateOrCreate(
                                     ['serial_number' => $sn],
-                                    ['lot_id' => $returnLot->id, 'status' => 'available']
+                                    ['lot_id' => $returnLot->id, 'status' => 'disponible']
                                 );
                             }
                         } else {
@@ -90,7 +90,7 @@ class CreditNoteController extends Controller
                                 StockUnit::create([
                                     'lot_id' => $returnLot->id,
                                     'serial_number' => 'RET-' . strtoupper(Str::random(8)),
-                                    'status' => 'available'
+                                    'status' => 'disponible'
                                 ]);
                             }
                         }

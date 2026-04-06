@@ -227,7 +227,7 @@ class QuoteController extends Controller
                 $snList = null;
                 if ($lot) {
                     $units = \App\Models\StockUnit::where('lot_id', $lot->id)
-                        ->where('status', '!=', 'sold')
+                        ->where('status', '!=', 'vendue')
                         ->limit($line->quantity)
                         ->pluck('serial_number')
                         ->filter()
