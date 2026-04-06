@@ -23,22 +23,16 @@ class DashboardController extends Controller
         $today = Carbon::today();
         $startOfMonth = Carbon::now()->startOfMonth();
 
-        // 1. --- ANALYSE COMMERCIALE (VENTES) ---
-        // Les invoices ne sont jamais soft-deleted directement, on utilise la date de création comme fallback
+        // 1. --- CHIFFRE D'AFFAIRES ---
+        // IMPORTANT: withTrashed() car les factures payées sont soft-deleted (archivées)
+        $salesToday  = Invoice::withTrashed()->whereDate('created_at', $today)->sum('total_amount');
+        $salesMonth  = Invoice::withTrashed()->whereBetween('created_at', [$startOfMonth, Carbon::now()])->sum('total_amount');
+        $salesYear   = Invoice::withTrashed()->whereYear('created_at', $today->year)->sum('total_amount');
 
-        // Aujourd'hui : invoice_date OU created_at
-        $salesToday = Invoice::whereDate('created_at', $today)->sum('total_amount');
-        
-        // Mois en cours
-        $salesMonth = Invoice::whereBetween('created_at', [$startOfMonth, Carbon::now()])->sum('total_amount');
-        
-        // Année en cours
-        $salesYear = Invoice::whereYear('created_at', $today->year)->sum('total_amount');
-
-        // 2. --- ANALYSE TRÉSORERIE ---
-        $totalInvoiced = Invoice::sum('total_amount');
-        $totalPaid     = Invoice::sum(DB::raw('total_amount - balance_due'));
-        $totalUnpaid   = Invoice::sum('balance_due');
+        // 2. --- TRÉSORERIE ---
+        $totalInvoiced = Invoice::withTrashed()->sum('total_amount');
+        $totalPaid     = Invoice::withTrashed()->sum(DB::raw('total_amount - balance_due'));
+        $totalUnpaid   = Invoice::withTrashed()->sum('balance_due');
 
         $recoveryWarning = $totalInvoiced > 0 && ($totalUnpaid > ($totalInvoiced * 0.25));
 
@@ -61,12 +55,7 @@ class DashboardController extends Controller
         $chartData = [];
         for ($i = 11; $i >= 0; $i--) {
             $monthDate = Carbon::now()->subMonths($i);
-            $monthSales = Invoice::where(function($q) use ($monthDate) {
-                $q->whereYear('invoice_date', $monthDate->year)->whereMonth('invoice_date', $monthDate->month)
-                  ->orWhere(function($sub) use ($monthDate) {
-                      $sub->whereNull('invoice_date')->whereYear('created_at', $monthDate->year)->whereMonth('created_at', $monthDate->month);
-                  });
-            })->sum('total_amount');
+            $monthSales = Invoice::withTrashed()->whereYear('created_at', $monthDate->year)->whereMonth('created_at', $monthDate->month)->sum('total_amount');
             
             $chartData[] = [
                 'label' => $monthDate->translatedFormat('M Y'),
