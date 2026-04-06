@@ -54,13 +54,13 @@ const navigation = computed(() => {
       case 'Commercial':
         return ['Clients (B2B)', 'Catalogue', 'Devis (Ventes)', 'Bons de Livraison (Ventes)', 'Factures', 'Avoirs', 'Règlements'].includes(name);
       case 'Responsable d\'Achat':
-        return ['Catalogue', 'Fournisseurs', 'Achats / Bons Commande', 'Bons de Réception'].includes(name);
+        return ['Catalogue', 'Fournisseurs', 'Achats / Bons Commande'].includes(name);
       case 'Comptable':
         return ['Comptabilité'].includes(name);
       case 'Responsable Marketing':
         return ['Catalogue', 'Espace Marketing (SEO)'].includes(name);
       case 'Logisticien':
-        return ['Bons de Réception', 'Stocks & Lots'].includes(name);
+        return ['Stocks & Lots'].includes(name);
       default:
         return false;
     }
@@ -83,7 +83,6 @@ const navigation = computed(() => {
     { name: 'Catalogue', to: { name: 'catalog' } },
     { name: 'Fournisseurs', to: { name: 'suppliers' } },
     { name: 'Achats / Bons Commande', to: { name: 'purchases' } },
-    { name: 'Bons de Réception', to: { name: 'receipts' } },
     { name: 'Stocks & Lots', to: { name: 'stock' } },
     { name: 'Devis (Ventes)', to: { name: 'quotes' } },
     { name: 'Bons de Livraison (Ventes)', to: { name: 'orders' } },
