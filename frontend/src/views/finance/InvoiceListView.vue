@@ -30,7 +30,10 @@ const fetchInvoices = async () => {
     isLoading.value = true
     try {
         const response = await api.get('/invoices', {
-            params: viewArchived.value ? { archived: 1 } : {}
+            params: { 
+                ...(viewArchived.value ? { archived: 1 } : {}),
+                _t: Date.now() // Force refresh
+            }
         })
         invoices.value = response.data
     } catch (e: any) {
@@ -136,6 +139,10 @@ const editForm = ref({
 })
 
 const openEditModal = (invoice: any) => {
+    if (!invoice.order || !invoice.order.lines) {
+        alert("Impossible de modifier cette facture : Données de commande (BL) introuvables.");
+        return;
+    }
     editForm.value.id = invoice.id
     editForm.value.invoice_date = invoice.invoice_date || invoice.created_at.split('T')[0]
     // Cloner les lignes pour l'édition
@@ -265,7 +272,7 @@ onMounted(() => {
     </div>
 
     <!-- Edit Invoice Modal -->
-    <div v-if="showEditModal" class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div v-if="showEditModal" class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
       <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
         <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
