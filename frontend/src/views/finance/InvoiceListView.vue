@@ -138,8 +138,38 @@ const editForm = ref({
     invoice_number: '',
     client_name: '',
     invoice_date: '',
+    due_date: '',
+    payment_method: '',
     lines: [] as any[]
 })
+
+// Moteur de recherche de produits (Catalogue)
+const allVariants = ref<any[]>([])
+const products = computed(() => {
+    const map = new Map<number, any>()
+    allVariants.value.forEach(v => {
+        if (!v.product) return
+        if (!map.has(v.product.id)) {
+            map.set(v.product.id, { id: v.product.id, name: v.product.name, brand: v.product.brand, variants: [] })
+        }
+        map.get(v.product.id).variants.push(v)
+    })
+    return Array.from(map.values())
+})
+const productSearch = ref('')
+const showProductSearch = ref(false)
+const filteredCatalog = computed(() => {
+    if (!productSearch.value) return products.value.slice(0, 50)
+    const term = productSearch.value.toLowerCase()
+    return products.value.filter(p => p.name.toLowerCase().includes(term) || p.brand?.toLowerCase().includes(term)).slice(0, 50)
+})
+
+const fetchCatalog = async () => {
+    try {
+        const res = await api.get('/product-variants')
+        allVariants.value = res.data
+    } catch (e) {}
+}
 
 const openEditModal = (invoice: any) => {
     if (!invoice.order || !invoice.order.lines) {
@@ -150,17 +180,42 @@ const openEditModal = (invoice: any) => {
     editForm.value.invoice_number = invoice.invoice_number
     editForm.value.client_name = invoice.order?.client?.company_name || invoice.order?.client?.contact_name || 'Client Inconnu'
     editForm.value.invoice_date = invoice.invoice_date || invoice.created_at.split('T')[0]
+    editForm.value.due_date = invoice.due_date || ''
+    editForm.value.payment_method = invoice.payment_method || ''
     
     // Cloner les lignes pour l'édition avec tous les champs financiers
     editForm.value.lines = invoice.order.lines.map((l: any) => ({
         id: l.id,
         name: (l.variant?.product?.name || 'Produit') + ' ' + (l.variant?.name_variation || ''),
+        variant_id: l.variant_id,
         quantity: l.quantity,
         unit_price: l.unit_price,
         discount_percent: l.discount_percent || 0,
         tax_rate: l.tax_rate || 20
     }))
     showEditModal.value = true
+}
+
+const addSearchedProduct = (product: any) => {
+    const v = product.variants[0] // Prendre la premiere variante par defaut
+    const tva = v?.tva_rate || 20
+    const price = (v?.public_price || 0) / (1 + tva/100)
+    editForm.value.lines.push({
+        name: product.name + (v?.name_variation ? ' ' + v.name_variation : ''),
+        variant_id: v.id,
+        quantity: 1,
+        unit_price: Number(price.toFixed(4)),
+        discount_percent: 0,
+        tax_rate: tva
+    })
+    productSearch.value = ''
+    showProductSearch.value = false
+}
+
+const removeLine = (index: number) => {
+    if (confirm('Supprimer cet article de la facture ? (Le stock sera réintégré lors de la validation)')) {
+        editForm.value.lines.splice(index, 1)
+    }
 }
 
 const calculateLineTotalHT = (line: any) => {
@@ -183,15 +238,12 @@ const currentTotals = computed(() => {
 const submitEdit = async () => {
     isSubmitting.value = true
     try {
-        await api.patch(`/invoices/${editForm.value.id}`, {
-            invoice_date: editForm.value.invoice_date,
-            lines: editForm.value.lines
-        })
+        await api.patch(`/invoices/${editForm.value.id}`, editForm.value)
         showEditModal.value = false
         fetchInvoices()
-        showAlert('✅ Facture, Stock et BL mis à jour avec succès.')
+        showAlert('✅ Modification synchronisée avec succès (Stock/BL/Devis).')
     } catch (e: any) {
-        alert(e.response?.data?.message || "Erreur lors de la modification.")
+        alert('Erreur : ' + (e.response?.data?.message || e.message))
     } finally {
         isSubmitting.value = false
     }
@@ -199,6 +251,7 @@ const submitEdit = async () => {
 
 onMounted(() => {
     fetchInvoices()
+    fetchCatalog()
 })
 </script>
 
@@ -311,23 +364,52 @@ onMounted(() => {
                 </div>
                 <div class="text-right">
                     <img :src="logoUrl" alt="Kilatech" class="h-12 w-auto ml-auto mb-2 opacity-80">
-                    <div class="text-xs text-gray-400 font-medium">B2B SALES WORKFLOW SYSTEM</div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 bg-gray-50 p-6 rounded-xl border border-gray-100">
+                    <div class="text-xs text-gray-400 font-medium">B2B SALES WORKFLOW SYSTEM            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4 bg-gray-50 p-6 rounded-xl border border-gray-100">
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Date de Facturation</label>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Date Facture</label>
                     <input type="date" v-model="editForm.invoice_date" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-11">
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Client Destinataire</label>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Échéance</label>
+                    <input type="date" v-model="editForm.due_date" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-11">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Mode de Paiement</label>
+                    <select v-model="editForm.payment_method" class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-11">
+                        <option value="Espèces">Espèces</option>
+                        <option value="Chèque">Chèque</option>
+                        <option value="Virement">Virement</option>
+                        <option value="Effet">Effet</option>
+                    </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Client</label>
                   <p class="mt-4 text-sm font-bold text-gray-900">{{ editForm.client_name }}</p>
                 </div>
-                <div class="text-right">
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Statut Document</label>
-                    <span class="inline-flex mt-3 items-center rounded-md bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-700/10 uppercase">EN COURS D'ÉDITION</span>
+            </div>
+
+            <!-- Barre de Recherche Katalogue (Style Devis) -->
+            <div class="relative mb-6">
+                <div class="flex items-center gap-3 bg-brand-50 p-3 rounded-xl border border-brand-100">
+                    <div class="flex-1 relative">
+                        <input type="text" v-model="productSearch" @focus="showProductSearch = true" placeholder="🔍 Rechercher un produit à ajouter à cette facture..." class="w-full pl-10 pr-4 py-3 rounded-lg border-brand-200 focus:ring-brand-500 focus:border-brand-500 text-sm">
+                        <span class="absolute left-3 top-3.5 text-gray-400">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        </span>
+                    </div>
                 </div>
+                <!-- Dropdown Résultats -->
+                <div v-if="showProductSearch && filteredCatalog.length > 0" class="absolute z-[60] w-full mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 max-h-80 overflow-y-auto">
+                    <div v-for="prod in filteredCatalog" :key="prod.id" @click="addSearchedProduct(prod)" class="flex items-center justify-between p-4 hover:bg-brand-50 cursor-pointer border-b last:border-0 transition">
+                        <div>
+                            <div class="text-sm font-black text-gray-900">{{ prod.name }}</div>
+                            <div class="text-xs text-gray-500 uppercase">{{ prod.brand }} | Réf: {{ prod.reference }}</div>
+                        </div>
+                        <div class="text-brand-600 font-bold text-sm">+ Ajouter</div>
+                    </div>
+                </div>
+                <!-- Overlay pour fermer le dropdown -->
+                <div v-if="showProductSearch" @click="showProductSearch = false" class="fixed inset-0 z-[55] bg-transparent"></div>
             </div>
 
             <!-- Table Edition Panier (Style Devis) -->
@@ -341,12 +423,14 @@ onMounted(() => {
                             <th class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Remise (%)</th>
                             <th class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">TVA (%)</th>
                             <th class="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Total HT NET</th>
+                            <th class="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Action</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="line in editForm.lines" :key="line.id" class="hover:bg-gray-50 transition">
+                        <tr v-for="(line, index) in editForm.lines" :key="index" class="hover:bg-gray-50 transition">
                             <td class="px-6 py-4">
                                 <div class="text-sm font-bold text-gray-900">{{ line.name }}</div>
+                                <div v-if="!line.id" class="text-[10px] text-green-600 font-black uppercase mt-1 animate-pulse">Nouveau Produit ✨</div>
                             </td>
                             <td class="px-4 py-4">
                                 <input type="number" v-model.number="line.quantity" min="1" class="w-20 text-center border-gray-300 rounded-lg shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm h-10 font-bold">
@@ -368,8 +452,16 @@ onMounted(() => {
                             <td class="px-6 py-4 text-right text-sm font-extrabold text-brand-600">
                                 {{ calculateLineTotalHT(line).toFixed(2) }} MAD
                             </td>
+                            <td class="px-4 py-4 text-center">
+                                <button @click="removeLine(index)" class="text-red-400 hover:text-red-700 transition" title="Supprimer la ligne">
+                                    <svg class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                            </td>
                         </tr>
                     </tbody>
+                </table>
+            </div>
+   </tbody>
                 </table>
             </div>
 

@@ -29,98 +29,142 @@ class InvoiceController extends Controller
     {
         $request->validate([
             'invoice_date' => 'nullable|date',
+            'due_date' => 'nullable|date',
+            'payment_method' => 'nullable|string',
             'lines' => 'required|array',
-            'lines.*.id' => 'required|exists:order_lines,id',
             'lines.*.quantity' => 'required|integer|min:1',
-            'lines.*.unit_price' => 'required|numeric',
-            'lines.*.discount_percent' => 'nullable|numeric|min:0|max:100',
-            'lines.*.tax_rate' => 'nullable|numeric'
+            'lines.*.unit_price' => 'required|numeric'
         ]);
 
         $user = $request->user();
         if (!$user->role || !in_array($user->role->name, ['Admin', 'Gérant'])) {
-            return response()->json(['message' => 'Accès refusé. Seul le Gérant ou l\'Admin peut modifier une facture.'], 403);
+            return response()->json(['message' => 'Accès refusé.'], 403);
         }
 
-        $order = $invoice->order;
+        $order = $invoice->order()->withTrashed()->first();
         if (!$order) {
-            return response()->json(['message' => 'Commande associée introuvable.'], 404);
+            return response()->json(['message' => 'Commande introuvable.'], 404);
         }
 
         DB::beginTransaction();
         try {
             // 1. Update basic info
-            $invoice->update($request->only('invoice_date'));
+            $invoice->update($request->only('invoice_date', 'due_date', 'payment_method'));
 
+            $requestedLineIds = collect($request->lines)->pluck('id')->filter()->toArray();
+            $existingLines = $order->lines()->withTrashed()->get();
+
+            // 2. Handle Deletions (Lines in DB not in request)
+            foreach ($existingLines as $existingLine) {
+                if (!in_array($existingLine->id, $requestedLineIds)) {
+                     // Restore ALL stock for this line
+                     \App\Models\StockUnit::whereHas('lot', function($q) use ($existingLine) {
+                             $q->where('lot_number', $existingLine->lot_number);
+                         })
+                         ->where('status', 'vendue')
+                         ->limit($existingLine->quantity)
+                         ->update(['status' => 'disponible']);
+                     
+                     // Delete line from Order and Quote
+                     $vId = $existingLine->variant_id;
+                     $existingLine->forceDelete(); // Truly remove if we are "correcting" an invoice
+                     if ($order->quote_id) {
+                         \App\Models\QuoteLine::withTrashed()
+                             ->where('quote_id', $order->quote_id)
+                             ->where('variant_id', $vId)
+                             ->forceDelete();
+                     }
+                }
+            }
+
+            // 3. Handle Updates and Additions
             foreach ($request->lines as $lineData) {
-                $orderLine = \App\Models\OrderLine::withTrashed()->find($lineData['id']);
-                if (!$orderLine) continue;
+                if (isset($lineData['id'])) {
+                    // UPDATE EXISTING
+                    $orderLine = \App\Models\OrderLine::withTrashed()->find($lineData['id']);
+                    if (!$orderLine) continue;
 
-                $oldQty = (int)$orderLine->quantity;
-                $newQty = (int)$lineData['quantity'];
-                $variantId = $orderLine->variant_id;
+                    $oldQty = (int)$orderLine->quantity;
+                    $newQty = (int)$lineData['quantity'];
 
-                // Sync Stock based on quantity delta
-                if ($newQty > $oldQty) {
-                    // Need more items: withdraw extra
-                    $diff = $newQty - $oldQty;
-                    $availableUnits = \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
-                            $q->where('lot_number', $orderLine->lot_number);
+                    if ($newQty > $oldQty) {
+                        $diff = $newQty - $oldQty;
+                        $units = \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
+                                $q->where('lot_number', $orderLine->lot_number);
+                            })
+                            ->where('status', 'disponible')
+                            ->limit($diff)
+                            ->get();
+                        if ($units->count() < $diff) throw new \Exception("Stock insuffisant pour {$orderLine->variant_id}");
+                        foreach ($units as $u) $u->update(['status' => 'vendue']);
+                    } elseif ($newQty < $oldQty) {
+                        $diff = $oldQty - $newQty;
+                        \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
+                                $q->where('lot_number', $orderLine->lot_number);
+                            })
+                            ->where('status', 'vendue')
+                            ->limit($diff)
+                            ->update(['status' => 'disponible']);
+                    }
+
+                    $orderLine->update([
+                        'quantity' => $newQty,
+                        'unit_price' => $lineData['unit_price'],
+                        'discount_percent' => $lineData['discount_percent'] ?? 0,
+                        'tax_rate' => $lineData['tax_rate'] ?? 20
+                    ]);
+
+                    if ($order->quote_id) {
+                        \App\Models\QuoteLine::withTrashed()->where('quote_id', $order->quote_id)->where('variant_id', $orderLine->variant_id)
+                            ->update(['quantity' => $newQty, 'unit_price' => $lineData['unit_price'], 'discount_percent' => $lineData['discount_percent'] ?? 0, 'tax_rate' => $lineData['tax_rate'] ?? 20]);
+                    }
+                } else {
+                    // ADD NEW LINE
+                    $variantId = $lineData['variant_id'];
+                    $qty = (int)$lineData['quantity'];
+
+                    // FIFO Stock withdrawal
+                    $availableUnits = \App\Models\StockUnit::with('lot')->whereHas('lot', function($q) use ($variantId) {
+                            $q->where('variant_id', $variantId);
                         })
                         ->where('status', 'disponible')
-                        ->limit($diff)
+                        ->orderBy('created_at', 'asc') // FIFO
+                        ->limit($qty)
                         ->get();
-                    
-                    if ($availableUnits->count() < $diff) {
-                         DB::rollBack();
-                         return response()->json(['message' => "Stock insuffisant pour augmenter la quantité. (Requis: {$diff}, Dispo: {$availableUnits->count()})"], 400);
-                    }
 
-                    foreach ($availableUnits as $unit) {
-                        $unit->update(['status' => 'vendue']);
-                    }
-                } elseif ($newQty < $oldQty) {
-                    // Reduced items: restore to stock
-                    $diff = $oldQty - $newQty;
-                    $soldUnits = \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
-                            $q->where('lot_number', $orderLine->lot_number);
-                        })
-                        ->where('status', 'vendue')
-                        ->limit($diff)
-                        ->get();
-                    
-                    foreach ($soldUnits as $unit) {
-                        $unit->update(['status' => 'disponible']);
-                    }
-                }
+                    if ($availableUnits->count() < $qty) throw new \Exception("Stock insuffisant pour le nouveau produit variant #{$variantId}");
 
-                // Update the Order Line (BL)
-                $orderLine->update([
-                    'quantity' => $newQty,
-                    'unit_price' => $lineData['unit_price'],
-                    'discount_percent' => $lineData['discount_percent'] ?? 0,
-                    'tax_rate' => $lineData['tax_rate'] ?? 20
-                ]);
+                    $lotNumber = $availableUnits->first()->lot->lot_number;
+                    foreach ($availableUnits as $u) $u->update(['status' => 'vendue']);
 
-                // Sync the original Quote Line (Devis) if linked
-                if ($order->quote_id) {
-                    \App\Models\QuoteLine::withTrashed()
-                        ->where('quote_id', $order->quote_id)
-                        ->where('variant_id', $variantId)
-                        ->update([
-                            'quantity' => $newQty,
+                    $newOrderLine = \App\Models\OrderLine::create([
+                        'order_id' => $order->id,
+                        'variant_id' => $variantId,
+                        'lot_number' => $lotNumber,
+                        'quantity' => $qty,
+                        'unit_price' => $lineData['unit_price'],
+                        'discount_percent' => $lineData['discount_percent'] ?? 0,
+                        'tax_rate' => $lineData['tax_rate'] ?? 20
+                    ]);
+
+                    if ($order->quote_id) {
+                        \App\Models\QuoteLine::create([
+                            'quote_id' => $order->quote_id,
+                            'variant_id' => $variantId,
+                            'quantity' => $qty,
                             'unit_price' => $lineData['unit_price'],
                             'discount_percent' => $lineData['discount_percent'] ?? 0,
                             'tax_rate' => $lineData['tax_rate'] ?? 20
                         ]);
+                    }
                 }
             }
 
             DB::commit();
-            return response()->json(['message' => 'Facture et stocks mis à jour avec succès.', 'invoice' => $invoice->load('order.lines')]);
+            return response()->json(['message' => 'Facture mise à jour intégralement.', 'invoice' => $invoice->load(['order' => fn($q) => $q->withTrashed(), 'order.lines' => fn($q) => $q->withTrashed()])]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Erreur lors de la modification.', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 
