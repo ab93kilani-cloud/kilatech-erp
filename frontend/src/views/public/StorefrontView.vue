@@ -26,6 +26,7 @@ interface Product {
   public_price: number | string;
   is_medical: boolean;
   image_path: string | null;
+  is_showcase: boolean;
   variants: Variant[];
 }
 
@@ -69,6 +70,9 @@ const categories = computed(() => {
 
 const filteredProducts = computed(() => {
     return products.value.filter(p => {
+        // --- FILTRE VITRINE ---
+        if (!p.is_showcase) return false
+
         const matchesSearch = p.name.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
                              p.category.toLowerCase().includes(searchQuery.value.toLowerCase())
         const matchesCategory = activeCategory.value === 'Tous' || p.category === activeCategory.value
