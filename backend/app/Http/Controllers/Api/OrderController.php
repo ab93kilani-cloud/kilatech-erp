@@ -8,7 +8,6 @@ use App\Models\OrderLine;
 use App\Models\Quote;
 use App\Models\QuoteLine;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Mail\PublicQuoteRequest;
 use Illuminate\Support\Facades\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
