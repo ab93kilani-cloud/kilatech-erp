@@ -213,6 +213,7 @@ class QuoteController extends Controller
                 'order_date' => $docDate->toDateString(),
                 'status' => 'pending', 
                 'discount_amount' => $quote->discount_amount ?? 0,
+                'payment_method' => $quote->payment_method,
             ]);
 
             foreach ($quote->lines as $line) {

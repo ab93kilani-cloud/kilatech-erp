@@ -9,7 +9,7 @@ class Order extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['quote_id', 'client_id', 'order_number', 'order_date', 'status', 'discount_amount'];
+    protected $fillable = ['quote_id', 'client_id', 'order_number', 'order_date', 'status', 'discount_amount', 'payment_method'];
 
     public function client()
     {

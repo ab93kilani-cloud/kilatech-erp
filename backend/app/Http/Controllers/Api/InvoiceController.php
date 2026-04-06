@@ -93,7 +93,7 @@ class InvoiceController extends Controller
             'tva_breakdown' => $tvaBreakdown,
             'discount_amount' => $discountAmount,
             'total_ttc' => $totalTTC,
-            'payment_method' => 'Virement / Espèce',
+            'payment_method' => $invoice->payment_method ?? 'Virement / Espèce',
             'condition_text' => 'Avance à la livraison et le reste selon accords.',
             'validity_date' => null,
             'validity_message' => '',

@@ -9,9 +9,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // 1. Clear Invoices and Payments
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+        // 1. Clear Invoices, Credits and Payments
         DB::table('invoice_payments')->delete();
         DB::table('invoice_items')->delete();
+        DB::table('credit_note_items')->delete();
+        DB::table('credit_notes')->delete();
         DB::table('invoices')->delete();
 
         // 2. Clear Orders (BL)
@@ -21,6 +25,8 @@ return new class extends Migration
         // 3. Clear Quotes
         DB::table('quote_lines')->delete();
         DB::table('quotes')->delete();
+
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
     }
 
     public function down(): void

@@ -76,13 +76,23 @@ class CreditNoteController extends Controller
                             ]
                         );
 
-                        // Recréer les unités de stock retournées
-                        for ($i = 0; $i < $line->quantity; $i++) {
-                            StockUnit::create([
-                                'lot_id' => $returnLot->id,
-                                'serial_number' => 'RET-' . strtoupper(Str::random(8)),
-                                'status' => 'available'
-                            ]);
+                        // Recréer ou réactiver les unités de stock retournées
+                        if ($line->serial_numbers) {
+                            $snArray = array_map('trim', explode(',', $line->serial_numbers));
+                            foreach ($snArray as $sn) {
+                                StockUnit::updateOrCreate(
+                                    ['serial_number' => $sn],
+                                    ['lot_id' => $returnLot->id, 'status' => 'available']
+                                );
+                            }
+                        } else {
+                            for ($i = 0; $i < $line->quantity; $i++) {
+                                StockUnit::create([
+                                    'lot_id' => $returnLot->id,
+                                    'serial_number' => 'RET-' . strtoupper(Str::random(8)),
+                                    'status' => 'available'
+                                ]);
+                            }
                         }
                     }
                 }
@@ -165,7 +175,7 @@ class CreditNoteController extends Controller
             'total_ht' => $totalHT,
             'total_tva' => $totalTVA,
             'total_ttc' => $totalTTC,
-            'payment_method' => 'N/A',
+            'payment_method' => $creditNote->invoice?->payment_method ?? 'N/A',
             'condition_text' => 'Avoir applicable sur vos prochaines factures.',
             'validity_date' => null,
             'validity_message' => '',

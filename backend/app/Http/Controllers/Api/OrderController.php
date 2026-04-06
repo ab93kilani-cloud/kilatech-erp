@@ -145,6 +145,7 @@ class OrderController extends Controller
                 'order_date' => $docDate->toDateString(),
                 'status' => 'confirmed',
                 'discount_amount' => $quote->discount_amount ?? 0,
+                'payment_method' => $quote->payment_method,
             ]);
 
             $totalAmount = 0;
@@ -200,7 +201,11 @@ class OrderController extends Controller
                 'balance_due' => $totalAmount, // Total to pay initially
                 'status' => 'unpaid',
                 'discount_amount' => $quote->discount_amount ?? 0,
+                'payment_method' => $quote->payment_method,
             ]);
+
+            // Sortie de stock
+            $this->withdrawStock($order);
 
             // Archivage automatique du BL une fois facturé
             $order->delete();
@@ -253,7 +258,11 @@ class OrderController extends Controller
                 'balance_due' => $totalAmount,
                 'status' => 'unpaid',
                 'discount_amount' => $order->discount_amount ?? 0,
+                'payment_method' => $order->payment_method,
             ]);
+
+            // Sortie de stock
+            $this->withdrawStock($order);
 
             // Archivage automatique du BL une fois facturé
             $order->delete();
@@ -297,7 +306,11 @@ class OrderController extends Controller
                 'balance_due' => $totalAmount,
                 'status' => 'unpaid',
                 'discount_amount' => $order->discount_amount ?? 0,
+                'payment_method' => $order->payment_method,
             ]);
+
+            // Sortie de stock
+            $this->withdrawStock($order);
 
             // Archivage automatique du BL une fois facturé
             $order->delete();
@@ -544,7 +557,7 @@ class OrderController extends Controller
             'total_tva' => $rawTTC - $totalHT,
             'discount_amount' => $discountAmount,
             'total_ttc' => $totalTTC,
-            'payment_method' => 'Virement / Chèque',
+            'payment_method' => $quote->payment_method ?? 'Virement / Chèque',
             'condition_text' => '',
             'validity_date' => $quote->valid_until,
             'validity_message' => 'Devis valable jusqu\'au:',
@@ -556,5 +569,32 @@ class OrderController extends Controller
         ];
 
         return Pdf::loadView('pdf.document', $data);
+    }
+
+    /**
+     * Marque les unités de stock liées à cette commande comme vendues.
+     */
+    private function withdrawStock(Order $order)
+    {
+        foreach ($order->lines as $line) {
+            if ($line->serial_numbers) {
+                $snArray = array_map('trim', explode(',', $line->serial_numbers));
+                \App\Models\StockUnit::whereIn('serial_number', $snArray)
+                    ->where('status', '!=', 'sold')
+                    ->update(['status' => 'sold']);
+            } elseif ($line->lot_number) {
+                // Si pas de SN précis, on prend la quantité dans le lot
+                $units = \App\Models\StockUnit::whereHas('lot', function($q) use ($line) {
+                        $q->where('lot_number', $line->lot_number);
+                    })
+                    ->where('status', '!=', 'sold')
+                    ->limit($line->quantity)
+                    ->get();
+                
+                foreach ($units as $unit) {
+                    $unit->update(['status' => 'sold']);
+                }
+            }
+        }
     }
 }
