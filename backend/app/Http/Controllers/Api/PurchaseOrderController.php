@@ -231,7 +231,7 @@ class PurchaseOrderController extends Controller
         DB::beginTransaction();
         try {
             $purchaseOrder->lines()->delete();
-            $purchaseOrder->delete();
+            $purchaseOrder->forceDelete();
             DB::commit();
             return response()->json(null, 204);
         } catch (\Exception $e) {
