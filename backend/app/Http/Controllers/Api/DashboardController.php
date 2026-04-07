@@ -25,9 +25,9 @@ class DashboardController extends Controller
 
         // 1. --- CHIFFRE D'AFFAIRES ---
         // IMPORTANT: withTrashed() car les factures payées sont soft-deleted (archivées)
-        $salesToday  = Invoice::withTrashed()->whereDate(DB::raw('COALESCE(invoice_date, created_at)'), $today)->sum('total_amount');
-        $salesMonth  = Invoice::withTrashed()->whereBetween(DB::raw('COALESCE(invoice_date, created_at)'), [$startOfMonth, Carbon::now()])->sum('total_amount');
-        $salesYear   = Invoice::withTrashed()->whereYear(DB::raw('COALESCE(invoice_date, created_at)'), $today->year)->sum('total_amount');
+        $salesToday  = Invoice::withTrashed()->whereDate(DB::raw('IFNULL(invoice_date, created_at)'), $today)->sum('total_amount');
+        $salesMonth  = Invoice::withTrashed()->whereBetween(DB::raw('IFNULL(invoice_date, created_at)'), [$startOfMonth, Carbon::now()])->sum('total_amount');
+        $salesYear   = Invoice::withTrashed()->whereYear(DB::raw('IFNULL(invoice_date, created_at)'), $today->year)->sum('total_amount');
 
         // 2. --- TRÉSORERIE ---
         $totalInvoiced = Invoice::withTrashed()->sum('total_amount');
@@ -56,8 +56,8 @@ class DashboardController extends Controller
         for ($i = 11; $i >= 0; $i--) {
             $monthDate = Carbon::now()->subMonths($i);
             $monthSales = Invoice::withTrashed()
-                ->whereYear(DB::raw('COALESCE(invoice_date, created_at)'), $monthDate->year)
-                ->whereMonth(DB::raw('COALESCE(invoice_date, created_at)'), $monthDate->month)
+                ->whereYear(DB::raw('IFNULL(invoice_date, created_at)'), $monthDate->year)
+                ->whereMonth(DB::raw('IFNULL(invoice_date, created_at)'), $monthDate->month)
                 ->sum('total_amount');
             
             $chartData[] = [
