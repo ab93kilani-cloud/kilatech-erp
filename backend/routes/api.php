@@ -115,6 +115,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('manager/catalogues', [\App\Http\Controllers\Api\CatalogueController::class, 'store']);
         Route::delete('manager/catalogues/{catalogue}', [\App\Http\Controllers\Api\CatalogueController::class, 'destroy']);
         Route::patch('manager/catalogues/{catalogue}/toggle', [\App\Http\Controllers\Api\CatalogueController::class, 'toggleStatus']);
+        
+        Route::get('manager/documents', [\App\Http\Controllers\Api\ManagerController::class, 'getDocuments']);
+        Route::post('manager/documents', [\App\Http\Controllers\Api\ManagerController::class, 'uploadDocument']);
+        Route::delete('manager/documents/{id}', [\App\Http\Controllers\Api\ManagerController::class, 'deleteDocument']);
     });
     // Marketing Hub
     Route::get('marketing/config-status', [\App\Http\Controllers\Api\MissingSearchController::class, 'configStatus']);

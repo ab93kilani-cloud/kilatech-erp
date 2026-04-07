@@ -41,17 +41,39 @@ const showCatUpload = ref(false)
 const catUploadError = ref('')
 const catUploadSuccess = ref(false)
 
+// Documents Management
+const documents = ref<any[]>([])
+const docTypes = {
+    purchase_invoice: 'Facture d\'Achat (Bureautique, PC, etc.)',
+    rent_receipt: 'Reçu de Loyer',
+    salary_cnss: 'Salaire & CNSS'
+}
+const docForm = ref({
+    type: 'purchase_invoice',
+    title: '',
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+    amount: null as number | null,
+    file: null as File | null
+})
+const showDocUpload = ref(false)
+const isUploadingDoc = ref(false)
+const docUploadError = ref('')
+const docUploadSuccess = ref(false)
+
 const fetchData = async () => {
     isLoading.value = true
     try {
-        const [statsRes, perfRes, catRes] = await Promise.all([
+        const [statsRes, perfRes, catRes, docRes] = await Promise.all([
             api.get('/manager/stats'),
             api.get('/manager/performance'),
-            api.get('/manager/catalogues')
+            api.get('/manager/catalogues'),
+            api.get('/manager/documents')
         ])
         stats.value = statsRes.data
         performance.value = perfRes.data
         catalogues.value = catRes.data
+        documents.value = docRes.data
     } catch (e) {
         console.error('Failed to load manager data')
     } finally {
@@ -147,6 +169,57 @@ const toggleCatStatus = async (cat: any) => {
         if (index !== -1) catalogues.value[index] = res.data
     } catch (e) {
         console.error('Toggle failed')
+    }
+}
+
+const handleDocFileChange = (e: any) => {
+    docForm.value.file = e.target.files[0]
+}
+
+const submitDocUpload = async () => {
+    if (!docForm.value.file || !docForm.value.title) return
+    isUploadingDoc.value = true
+    docUploadError.value = ''
+    docUploadSuccess.value = false
+
+    const formData = new FormData()
+    formData.append('file', docForm.value.file)
+    formData.append('title', docForm.value.title)
+    formData.append('type', docForm.value.type)
+    formData.append('month', docForm.value.month.toString())
+    formData.append('year', docForm.value.year.toString())
+    if (docForm.value.amount) formData.append('amount', docForm.value.amount.toString())
+
+    try {
+        await api.post('/manager/documents', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        docUploadSuccess.value = true
+        docForm.value.title = ''
+        docForm.value.amount = null
+        docForm.value.file = null
+        
+        setTimeout(() => { 
+            docUploadSuccess.value = false; 
+            showDocUpload.value = false; 
+        }, 2000)
+        
+        const res = await api.get('/manager/documents')
+        documents.value = res.data
+    } catch (e: any) {
+        docUploadError.value = e.response?.data?.message || 'Erreur lors de l\'envoi du document.'
+    } finally {
+        isUploadingDoc.value = false
+    }
+}
+
+const deleteDocument = async (id: number) => {
+    if (!confirm('Supprimer ce document ?')) return
+    try {
+        await api.delete(`/manager/documents/${id}`)
+        documents.value = documents.value.filter((d: any) => d.id !== id)
+    } catch (e) {
+        console.error('Delete failed')
     }
 }
 
@@ -402,6 +475,120 @@ onMounted(fetchData)
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ADMINISTRATIVE DOCUMENTS TABLE -->
+        <div class="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-xl shadow-gray-100/50 border border-gray-100 mt-10">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                   <h2 class="text-xl font-bold text-gray-900 uppercase tracking-tighter">Documents <span class="text-indigo-600">Administratifs & Financiers</span></h2>
+                   <p class="text-[10px] text-gray-500 font-bold mt-1 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 w-fit">Factures d'Achats (Bureautique), Loyers, Salaires & CNSS</p>
+                </div>
+                <div class="flex gap-4">
+                    <div class="text-[10px] font-black bg-gray-900 text-white px-4 py-2 rounded-xl flex items-center">
+                        {{ documents.length }} DOCUMENTS
+                    </div>
+                    <button @click="showDocUpload = !showDocUpload" class="px-6 py-2 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+                        {{ showDocUpload ? 'Fermer' : 'Ajouter un document' }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- DOC UPLOAD FORM (CONDITIONAL) -->
+            <div v-if="showDocUpload" class="mb-8 bg-indigo-50/50 p-6 rounded-3xl border border-dashed border-indigo-200 animate-in slide-in-from-top duration-300">
+                <form @submit.prevent="submitDocUpload" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <select v-model="docForm.type" class="bg-white border-0 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 text-indigo-900">
+                        <option value="purchase_invoice">Facture d'Achat (Bureautique, Imprimante, PC, etc.)</option>
+                        <option value="rent_receipt">Reçus de Loyer</option>
+                        <option value="salary_cnss">Salaires et Prélèvements CNSS</option>
+                    </select>
+                    
+                    <input v-model="docForm.title" type="text" placeholder="Titre / Description" class="bg-white border-0 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500" required />
+                    
+                    <input v-model="docForm.amount" type="number" step="0.01" placeholder="Montant (optionnel)" class="bg-white border-0 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500" />
+                    
+                    <div class="flex gap-4">
+                        <select v-model="docForm.month" class="bg-white border-0 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 flex-1">
+                            <option v-for="m in 12" :key="m" :value="m">Mois {{ m }}</option>
+                        </select>
+                        <select v-model="docForm.year" class="bg-white border-0 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 w-28">
+                            <option :value="2026">2026</option>
+                            <option :value="2025">2025</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-4 bg-white rounded-xl px-4 md:col-span-1">
+                        <input type="file" @change="handleDocFileChange" accept="application/pdf,image/*" class="flex-1 text-[10px] file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" required />
+                    </div>
+
+                    <button type="submit" :disabled="isUploadingDoc || !docForm.file" class="px-8 py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 disabled:opacity-50 md:col-span-1">
+                        {{ isUploadingDoc ? 'Envoi...' : 'Enregistrer le document' }}
+                    </button>
+                    
+                    <div v-if="docUploadError" class="md:col-span-3 mt-2 text-xs text-red-500 font-bold border-l-2 border-red-500 pl-3">
+                        {{ docUploadError }}
+                    </div>
+                    <div v-if="docUploadSuccess" class="md:col-span-3 mt-2 text-xs text-emerald-500 font-bold border-l-2 border-emerald-500 pl-3">
+                        Document enregistré avec succès !
+                    </div>
+                </form>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr>
+                            <th class="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Document</th>
+                            <th class="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Type</th>
+                            <th class="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Période</th>
+                            <th class="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Montant</th>
+                            <th class="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        <tr v-for="doc in documents" :key="doc.id" class="group hover:bg-gray-50/50 transition-colors">
+                            <td class="py-5">
+                                <div class="flex items-center gap-4">
+                                    <div class="p-3 bg-indigo-50 text-indigo-600 rounded-2xl group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-black text-gray-900 group-hover:text-indigo-600 transition-colors">{{ doc.title || 'Document sans titre' }}</div>
+                                        <div class="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Ajouté par {{ doc.uploader?.name }} le {{ new Date(doc.created_at).toLocaleDateString() }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-5 text-center">
+                                <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                                    {{ docTypes[doc.type as keyof typeof docTypes] || doc.type }}
+                                </span>
+                            </td>
+                            <td class="py-5 text-center">
+                                <span class="text-xs font-bold text-gray-600" v-if="doc.month && doc.year">{{ doc.month }}/{{ doc.year }}</span>
+                                <span v-else class="text-xs text-gray-400">-</span>
+                            </td>
+                            <td class="py-5 text-right font-black text-gray-900">
+                                {{ doc.amount ? formatCurrency(doc.amount) : '-' }}
+                            </td>
+                            <td class="py-5 text-right">
+                                <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <a :href="getStorageUrl(doc.file_path)" target="_blank" class="p-2.5 bg-brand-50 text-brand-600 rounded-xl hover:bg-brand-600 hover:text-white transition-all shadow-sm border border-brand-100">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    </a>
+                                    <button @click="deleteDocument(doc.id)" class="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm border border-red-100">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-if="documents.length === 0">
+                            <td colspan="5" class="py-10 text-center">
+                                <div class="text-sm font-bold text-gray-400">Aucun document enregistré.</div>
                             </td>
                         </tr>
                     </tbody>

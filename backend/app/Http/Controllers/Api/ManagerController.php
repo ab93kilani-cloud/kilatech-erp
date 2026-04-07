@@ -11,7 +11,8 @@ use App\Models\Quote;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\ManagerDocument;
+use Illuminate\Support\Facades\Storage;
 class ManagerController extends Controller
 {
     public function stats(Request $request)
@@ -83,5 +84,52 @@ class ManagerController extends Controller
         });
 
         return response()->json($performance);
+    }
+
+    public function getDocuments(Request $request)
+    {
+        $type = $request->query('type');
+        $query = ManagerDocument::with('uploader');
+        
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        return response()->json($query->orderBy('created_at', 'desc')->get());
+    }
+
+    public function uploadDocument(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file',
+            'type' => 'required|in:purchase_invoice,rent_receipt,salary_cnss',
+            'title' => 'nullable|string',
+            'month' => 'nullable|integer',
+            'year' => 'nullable|integer',
+            'amount' => 'nullable|numeric',
+        ]);
+
+        $path = $request->file('file')->store('manager_documents', 'public');
+
+        $document = ManagerDocument::create([
+            'title' => $request->title,
+            'type' => $request->type,
+            'month' => $request->month,
+            'year' => $request->year,
+            'amount' => $request->amount,
+            'file_path' => $path,
+            'uploaded_by' => auth()->id(),
+        ]);
+
+        return response()->json($document->load('uploader'), 201);
+    }
+
+    public function deleteDocument($id)
+    {
+        $document = ManagerDocument::findOrFail($id);
+        Storage::disk('public')->delete($document->file_path);
+        $document->delete();
+        
+        return response()->json(['message' => 'Document deleted successfully']);
     }
 }
