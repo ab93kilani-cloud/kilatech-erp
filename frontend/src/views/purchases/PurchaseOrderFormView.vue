@@ -14,6 +14,7 @@ const poId = computed(() => route.params.id)
 
 const form = ref({
     supplier_id: '',
+    po_date: '',
     expected_delivery_date: '',
     payment_method: 'Virement',
     payment_conditions: 'A reception de facture',
@@ -114,6 +115,7 @@ const savePurchaseOrder = async () => {
     try {
         const payload = {
             supplier_id: form.value.supplier_id,
+            po_date: form.value.po_date,
             expected_delivery_date: form.value.expected_delivery_date,
             payment_method: form.value.payment_method,
             payment_conditions: form.value.payment_conditions,
@@ -140,6 +142,7 @@ const savePurchaseOrder = async () => {
 
 onMounted(async () => {
     const d = new Date()
+    form.value.po_date = d.toISOString().split('T')[0]
     d.setDate(d.getDate() + 14)
     form.value.expected_delivery_date = d.toISOString().split('T')[0] || ''
     
@@ -150,6 +153,7 @@ onMounted(async () => {
             const res = await api.get(`/purchase-orders/${poId.value}`)
             const po = res.data
             form.value.supplier_id = po.supplier_id
+            form.value.po_date = po.po_date || po.created_at.split('T')[0]
             form.value.expected_delivery_date = po.expected_delivery_date || ''
             form.value.payment_method = po.payment_method || 'Virement'
             form.value.payment_conditions = po.payment_conditions || ''
@@ -191,17 +195,24 @@ onMounted(async () => {
 
         <!-- Informations PO -->
         <div class="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6 border-b pb-8 border-gray-100">
-            <div class="sm:col-span-3">
+            <div class="sm:col-span-2">
                 <label class="block text-sm font-medium leading-6 text-gray-900">Fournisseur *</label>
                 <div class="mt-2">
-                    <select v-model="form.supplier_id" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6">
-                        <option value="" disabled>Sélectionner un fournisseur...</option>
+                    <select v-model="form.supplier_id" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-2">
+                        <option value="" disabled>Sélectionner...</option>
                         <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
                     </select>
                 </div>
             </div>
 
-            <div class="sm:col-span-3">
+            <div class="sm:col-span-2">
+                <label class="block text-sm font-medium leading-6 text-gray-900">Date d'Émission *</label>
+                <div class="mt-2">
+                    <input v-model="form.po_date" required type="date" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
+                </div>
+            </div>
+
+            <div class="sm:col-span-2">
                 <label class="block text-sm font-medium leading-6 text-gray-900">Date de Livraison Prévue *</label>
                 <div class="mt-2">
                     <input v-model="form.expected_delivery_date" required type="date" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">

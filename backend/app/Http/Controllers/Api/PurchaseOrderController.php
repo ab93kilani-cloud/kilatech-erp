@@ -35,10 +35,14 @@ class PurchaseOrderController extends Controller
             $nextId = (PurchaseOrder::withTrashed()->max('id') ?? 0) + 1;
             $poNumber = 'PO-' . date('ym') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
 
+            $poDate = $request->po_date ? \Carbon\Carbon::parse($request->po_date) : \Carbon\Carbon::now();
+            $poNumber = 'PO-' . $poDate->format('ym') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+
             $po = PurchaseOrder::create([
                 'supplier_id' => $request->supplier_id,
                 'created_by' => $request->user()->id,
                 'po_number' => $poNumber,
+                'po_date' => $poDate->toDateString(),
                 'status' => 'draft',
                 'payment_method' => $request->payment_method ?? 'Non défini',
                 'payment_conditions' => $request->payment_conditions ?? 'A reception de facture',
@@ -93,6 +97,7 @@ class PurchaseOrderController extends Controller
         try {
             $purchaseOrder->update([
                 'supplier_id' => $request->supplier_id,
+                'po_date' => $request->po_date ?? $purchaseOrder->po_date,
                 'payment_method' => $request->payment_method ?? 'Non défini',
                 'payment_conditions' => $request->payment_conditions ?? 'A reception de facture',
                 'expected_delivery_date' => $request->expected_delivery_date ?? null,
@@ -191,7 +196,7 @@ class PurchaseOrderController extends Controller
         $data = [
             'document_type' => 'BON DE COMMANDE',
             'document_number' => $purchaseOrder->po_number,
-            'document_date' => $purchaseOrder->created_at,
+            'document_date' => $purchaseOrder->po_date ?? $purchaseOrder->created_at,
             'client_name' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->name ?? 'Fournisseur Inconnu') : 'Fournisseur Non Défini',
             'client_ice' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->ice ?? '-') : '-',
             'client_address' => $purchaseOrder->supplier ? ($purchaseOrder->supplier->address ?? '-') : '-',

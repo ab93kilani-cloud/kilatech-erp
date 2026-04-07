@@ -9,7 +9,7 @@ class PurchaseOrder extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['supplier_id', 'created_by', 'po_number', 'status', 'payment_method', 'payment_conditions', 'expected_delivery_date'];
+    protected $fillable = ['supplier_id', 'created_by', 'po_number', 'po_date', 'status', 'payment_method', 'payment_conditions', 'expected_delivery_date'];
 
     public function lines()
     {
