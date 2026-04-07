@@ -1,3 +1,5 @@
+
+# Force deployment trigger
 name: Deploy Hybrid Application (Vue.js + Laravel) to Hostinger
 
 on:
