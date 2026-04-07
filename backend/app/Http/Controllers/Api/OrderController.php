@@ -588,8 +588,13 @@ class OrderController extends Controller
                     ->limit($line->quantity)
                     ->get();
                 
+                $snList = [];
                 foreach ($units as $unit) {
                     $unit->update(['status' => 'vendue']);
+                    if ($unit->serial_number) $snList[] = $unit->serial_number;
+                }
+                if (!empty($snList)) {
+                    $line->update(['serial_numbers' => implode(', ', $snList)]);
                 }
             } else {
                 // S'il n'y a ni numéro de série ni lot, on retire du stock le plus ancien (FIFO)
@@ -601,10 +606,20 @@ class OrderController extends Controller
                     ->limit($line->quantity)
                     ->get();
 
+                $snList = [];
+                $lotNumber = null;
                 foreach ($units as $unit) {
                     $unit->update(['status' => 'vendue']);
-                    // Optionnel : on peut mettre à jour la ligne d'ordre avec le numéro de lot pour garder la trace
-                    // if (!$line->lot_number) $line->update(['lot_number' => $unit->lot->lot_number]);
+                    if ($unit->serial_number) $snList[] = $unit->serial_number;
+                    if (!$lotNumber && $unit->lot) $lotNumber = $unit->lot->lot_number;
+                }
+                
+                $updateData = [];
+                if (!empty($snList)) $updateData['serial_numbers'] = implode(', ', $snList);
+                if ($lotNumber) $updateData['lot_number'] = $lotNumber;
+                
+                if (!empty($updateData)) {
+                    $line->update($updateData);
                 }
             }
         }

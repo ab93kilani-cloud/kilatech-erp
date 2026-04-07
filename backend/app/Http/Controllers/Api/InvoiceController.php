@@ -91,6 +91,8 @@ class InvoiceController extends Controller
                     $oldQty = (int)$orderLine->quantity;
                     $newQty = (int)$lineData['quantity'];
 
+                    $snListForUpdate = $orderLine->serial_numbers ? array_map('trim', explode(',', $orderLine->serial_numbers)) : [];
+                    
                     if ($newQty > $oldQty) {
                         $diff = $newQty - $oldQty;
                         $units = \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
@@ -105,10 +107,13 @@ class InvoiceController extends Controller
                             ->limit($diff)
                             ->get();
                         if ($units->count() < $diff) throw new \Exception("Stock insuffisant pour {$orderLine->variant_id}");
-                        foreach ($units as $u) $u->update(['status' => 'vendue']);
+                        foreach ($units as $u) {
+                            $u->update(['status' => 'vendue']);
+                            if ($u->serial_number) $snListForUpdate[] = $u->serial_number;
+                        }
                     } elseif ($newQty < $oldQty) {
                         $diff = $oldQty - $newQty;
-                        \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
+                        $restoredUnits = \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
                                 if ($orderLine->lot_number) {
                                     $q->where('lot_number', $orderLine->lot_number);
                                 } else {
@@ -116,11 +121,20 @@ class InvoiceController extends Controller
                                 }
                             })
                             ->where('status', 'vendue')
+                            ->orderBy('updated_at', 'desc') // Remove recently sold first
                             ->limit($diff)
-                            ->update(['status' => 'disponible']);
+                            ->get();
+                        
+                        foreach ($restoredUnits as $u) {
+                            $u->update(['status' => 'disponible']);
+                            if ($u->serial_number && ($key = array_search($u->serial_number, $snListForUpdate)) !== false) {
+                                unset($snListForUpdate[$key]);
+                            }
+                        }
                     }
 
                     $orderLine->update([
+                        'serial_numbers' => !empty($snListForUpdate) ? implode(', ', $snListForUpdate) : null,
                         'quantity' => $newQty,
                         'unit_price' => $lineData['unit_price'],
                         'discount_percent' => $lineData['discount_percent'] ?? 0,
@@ -148,12 +162,17 @@ class InvoiceController extends Controller
                     if ($availableUnits->count() < $qty) throw new \Exception("Stock insuffisant pour le nouveau produit variant #{$variantId}");
 
                     $lotNumber = $availableUnits->first()->lot->lot_number;
-                    foreach ($availableUnits as $u) $u->update(['status' => 'vendue']);
+                    $snList = [];
+                    foreach ($availableUnits as $u) {
+                        $u->update(['status' => 'vendue']);
+                        if ($u->serial_number) $snList[] = $u->serial_number;
+                    }
 
                     $newOrderLine = \App\Models\OrderLine::create([
                         'order_id' => $order->id,
                         'variant_id' => $variantId,
                         'lot_number' => $lotNumber,
+                        'serial_numbers' => !empty($snList) ? implode(', ', $snList) : null,
                         'quantity' => $qty,
                         'unit_price' => $lineData['unit_price'],
                         'discount_percent' => $lineData['discount_percent'] ?? 0,
