@@ -25,9 +25,9 @@ class DashboardController extends Controller
 
         // 1. --- CHIFFRE D'AFFAIRES ---
         // IMPORTANT: withTrashed() car les factures payées sont soft-deleted (archivées)
-        $salesToday  = Invoice::withTrashed()->whereDate('created_at', $today)->sum('total_amount');
-        $salesMonth  = Invoice::withTrashed()->whereBetween('created_at', [$startOfMonth, Carbon::now()])->sum('total_amount');
-        $salesYear   = Invoice::withTrashed()->whereYear('created_at', $today->year)->sum('total_amount');
+        $salesToday  = Invoice::withTrashed()->whereDate(DB::raw('COALESCE(invoice_date, created_at)'), $today)->sum('total_amount');
+        $salesMonth  = Invoice::withTrashed()->whereBetween(DB::raw('COALESCE(invoice_date, created_at)'), [$startOfMonth, Carbon::now()])->sum('total_amount');
+        $salesYear   = Invoice::withTrashed()->whereYear(DB::raw('COALESCE(invoice_date, created_at)'), $today->year)->sum('total_amount');
 
         // 2. --- TRÉSORERIE ---
         $totalInvoiced = Invoice::withTrashed()->sum('total_amount');
@@ -55,7 +55,10 @@ class DashboardController extends Controller
         $chartData = [];
         for ($i = 11; $i >= 0; $i--) {
             $monthDate = Carbon::now()->subMonths($i);
-            $monthSales = Invoice::withTrashed()->whereYear('created_at', $monthDate->year)->whereMonth('created_at', $monthDate->month)->sum('total_amount');
+            $monthSales = Invoice::withTrashed()
+                ->whereYear(DB::raw('COALESCE(invoice_date, created_at)'), $monthDate->year)
+                ->whereMonth(DB::raw('COALESCE(invoice_date, created_at)'), $monthDate->month)
+                ->sum('total_amount');
             
             $chartData[] = [
                 'label' => $monthDate->translatedFormat('M Y'),
@@ -65,8 +68,13 @@ class DashboardController extends Controller
 
         // 5. --- ALERTES ---
         $lowStockCount = ProductVariant::whereHas('product')
-            ->withCount(['units' => function($q) { $q->where('status', 'available'); }])
+            ->withCount(['units' => function($q) { $q->where('status', 'disponible'); }])
             ->get()->filter(function($v) { return $v->units_count < 10; })->count();
+        
+        $expiringLotsCount = Lot::where('expiration_date', '<=', Carbon::today()->addDays(30))
+            ->where('expiration_date', '>=', Carbon::today())
+            ->whereHas('units', function($q) { $q->where('status', 'disponible'); })
+            ->count();
 
         return response()->json([
             'sales' => [
@@ -81,7 +89,7 @@ class DashboardController extends Controller
             ],
             'top_products' => $topProducts,
             'chart' => $chartData,
-            'stock_alerts' => $lowStockCount + Lot::where('expiration_date', '<=', Carbon::today()->addDays(30))->where('expiration_date', '>=', Carbon::today())->count(),
+            'stock_alerts' => $lowStockCount + $expiringLotsCount,
             'pending_quotes' => Quote::whereIn('status', ['draft', 'pending_approval'])->count(),
             'qa_receptions' => ReceiptLine::where('status', 'pending_qa')->distinct('receipt_id')->count('receipt_id'),
             'marketing_pending' => Article::where('status', 'draft')->count(),
