@@ -591,6 +591,21 @@ class OrderController extends Controller
                 foreach ($units as $unit) {
                     $unit->update(['status' => 'vendue']);
                 }
+            } else {
+                // S'il n'y a ni numéro de série ni lot, on retire du stock le plus ancien (FIFO)
+                $units = \App\Models\StockUnit::with('lot')->whereHas('lot', function($q) use ($line) {
+                        $q->where('variant_id', $line->variant_id);
+                    })
+                    ->where('status', 'disponible')
+                    ->orderBy('created_at', 'asc')
+                    ->limit($line->quantity)
+                    ->get();
+
+                foreach ($units as $unit) {
+                    $unit->update(['status' => 'vendue']);
+                    // Optionnel : on peut mettre à jour la ligne d'ordre avec le numéro de lot pour garder la trace
+                    // if (!$line->lot_number) $line->update(['lot_number' => $unit->lot->lot_number]);
+                }
             }
         }
     }

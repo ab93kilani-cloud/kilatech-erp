@@ -59,7 +59,11 @@ class InvoiceController extends Controller
                 if (!in_array($existingLine->id, $requestedLineIds)) {
                      // Restore ALL stock for this line
                      \App\Models\StockUnit::whereHas('lot', function($q) use ($existingLine) {
-                             $q->where('lot_number', $existingLine->lot_number);
+                             if ($existingLine->lot_number) {
+                                 $q->where('lot_number', $existingLine->lot_number);
+                             } else {
+                                 $q->where('variant_id', $existingLine->variant_id);
+                             }
                          })
                          ->where('status', 'vendue')
                          ->limit($existingLine->quantity)
@@ -90,9 +94,14 @@ class InvoiceController extends Controller
                     if ($newQty > $oldQty) {
                         $diff = $newQty - $oldQty;
                         $units = \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
-                                $q->where('lot_number', $orderLine->lot_number);
+                                if ($orderLine->lot_number) {
+                                    $q->where('lot_number', $orderLine->lot_number);
+                                } else {
+                                    $q->where('variant_id', $orderLine->variant_id);
+                                }
                             })
                             ->where('status', 'disponible')
+                            ->orderBy('created_at', 'asc') // FIFO
                             ->limit($diff)
                             ->get();
                         if ($units->count() < $diff) throw new \Exception("Stock insuffisant pour {$orderLine->variant_id}");
@@ -100,7 +109,11 @@ class InvoiceController extends Controller
                     } elseif ($newQty < $oldQty) {
                         $diff = $oldQty - $newQty;
                         \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
-                                $q->where('lot_number', $orderLine->lot_number);
+                                if ($orderLine->lot_number) {
+                                    $q->where('lot_number', $orderLine->lot_number);
+                                } else {
+                                    $q->where('variant_id', $orderLine->variant_id);
+                                }
                             })
                             ->where('status', 'vendue')
                             ->limit($diff)
