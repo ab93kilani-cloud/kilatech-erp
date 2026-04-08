@@ -101,7 +101,6 @@ onMounted(() => {
         <h1 class="text-2xl font-semibold text-gray-900">Catalogue Produits</h1>
         <p class="mt-2 text-sm text-gray-700">Gérez les équipements médicaux, les prix publics et les variantes (SKU).</p>
       </div>
-      </div>
       <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center gap-3">
         <div class="relative rounded-md shadow-sm">
           <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">

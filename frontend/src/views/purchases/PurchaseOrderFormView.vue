@@ -142,7 +142,7 @@ const savePurchaseOrder = async () => {
 
 onMounted(async () => {
     const d = new Date()
-    form.value.po_date = d.toISOString().split('T')[0]
+    form.value.po_date = d.toISOString().split('T')[0] || ''
     d.setDate(d.getDate() + 14)
     form.value.expected_delivery_date = d.toISOString().split('T')[0] || ''
     
