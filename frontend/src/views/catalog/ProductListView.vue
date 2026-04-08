@@ -135,11 +135,11 @@ onMounted(() => {
 
     <!-- Product Table -->
     <div v-else class="mt-8 flex flex-col">
-      <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+      <div class="-my-2 -mx-4 sm:-mx-6 lg:-mx-8">
         <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-          <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+          <div class="overflow-auto max-h-[75vh] shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
             <table class="min-w-full divide-y divide-gray-300">
-              <thead class="bg-gray-50">
+              <thead class="bg-gray-50 sticky top-0 z-20 outline outline-1 outline-gray-200">
                 <tr>
                   <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Image</th>
                   <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">Produit & Catégorie</th>
@@ -147,8 +147,7 @@ onMounted(() => {
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Prix Achat</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Prix Public</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Variantes (SKU)</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Variantes (SKU)</th>
-                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 sticky right-0 bg-gray-50 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)] z-10 w-24">
+                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 sticky right-0 bg-gray-50 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)] z-30 w-24 outline outline-1 outline-gray-200">
                     <span class="sr-only">Modifier</span>
                   </th>
                 </tr>
