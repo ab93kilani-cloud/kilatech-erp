@@ -15,7 +15,12 @@ class ReceiptController extends Controller
 {
     public function index()
     {
-        return response()->json(Receipt::with(['purchaseOrder.supplier', 'receiver', 'lines.poLine.variant.product', 'lines.stockMovements.unit.lot'])->get());
+        return response()->json(Receipt::with([
+            'purchaseOrder' => function($q) { $q->withTrashed()->with('supplier'); }, 
+            'receiver', 
+            'lines.poLine.variant.product', 
+            'lines.stockMovements.unit.lot'
+        ])->get());
     }
 
     /**
