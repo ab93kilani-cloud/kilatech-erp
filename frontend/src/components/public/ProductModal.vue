@@ -15,10 +15,12 @@ const cartStore = useCartStore()
 
 const selectedVariant = ref(props.product?.variants?.[0] || null)
 const quantity = ref(1)
+const selectedImage = ref(props.product?.image_path)
 
 watch(() => props.product, (newProduct) => {
   selectedVariant.value = newProduct?.variants?.[0] || null
   quantity.value = 1
+  selectedImage.value = newProduct?.image_path
 }, { deep: true })
 
 const displayPrice = computed(() => {
@@ -44,13 +46,33 @@ const handleAddToCart = () => {
         <div class="bg-white px-4 pt-5 pb-4 sm:p-0">
           <div class="sm:flex sm:items-start">
             <!-- Image Section -->
-            <div class="w-full sm:w-1/2 bg-gray-50 aspect-square overflow-hidden relative">
-               <img :src="getImageUrl(product.image_path)" :alt="product.name" class="w-full h-full object-cover" />
-               <button @click="emit('close')" class="absolute top-6 left-6 p-2 bg-white/80 backdrop-blur rounded-full shadow-lg hover:bg-white transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                  </svg>
-               </button>
+            <div class="w-full sm:w-1/2 flex flex-col bg-gray-50 border-r border-gray-100">
+               <div class="aspect-square overflow-hidden relative bg-white">
+                  <img :src="getImageUrl(selectedImage || product.image_path)" :alt="product.name" class="w-full h-full object-contain p-4 transition-all duration-300" />
+                  <button @click="emit('close')" class="absolute top-6 left-6 p-2 bg-white/80 backdrop-blur rounded-full shadow-lg hover:bg-white transition-colors z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+               </div>
+               
+               <!-- Thumbnails Gallery -->
+               <div v-if="product.images && product.images.length > 0" class="flex gap-3 p-6 overflow-x-auto bg-gray-50">
+                  <button 
+                     @click="selectedImage = product.image_path"
+                     :class="['h-20 w-20 p-1 rounded-xl border-2 flex-shrink-0 transition-all bg-white', selectedImage === product.image_path ? 'border-brand-600 shadow-md scale-105' : 'border-gray-200 hover:border-brand-300 opacity-70 hover:opacity-100']"
+                  >
+                     <img :src="getImageUrl(product.image_path)" class="w-full h-full object-contain rounded-lg" />
+                  </button>
+                  <button 
+                     v-for="(img, idx) in product.images" 
+                     :key="idx"
+                     @click="selectedImage = img"
+                     :class="['h-20 w-20 p-1 rounded-xl border-2 flex-shrink-0 transition-all bg-white', selectedImage === img ? 'border-brand-600 shadow-md scale-105' : 'border-gray-200 hover:border-brand-300 opacity-70 hover:opacity-100']"
+                  >
+                     <img :src="getImageUrl(img)" class="w-full h-full object-contain rounded-lg" />
+                  </button>
+               </div>
             </div>
 
             <!-- Content Section -->
