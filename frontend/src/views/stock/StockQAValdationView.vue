@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import api from '@/plugins/axios'
 
 // Liste des bons de réceptions contenant au moins une ligne en attente (Logistique Fournisseur)
