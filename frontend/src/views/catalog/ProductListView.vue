@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import api from '@/plugins/axios'
 import { useConfig } from '@/composables/useConfig'
 
@@ -7,6 +7,7 @@ const { getImageUrl: getStorageUrl } = useConfig()
 
 interface Product {
   id: number;
+  reference?: string | null;
   name: string;
   category: string;
   is_showcase: boolean;
@@ -15,6 +16,7 @@ interface Product {
   cost_price?: string | null;
   is_medical: boolean;
   image_path: string | null;
+  images?: string[] | null;
   supplier?: {
     id: number;
     name: string;
@@ -31,6 +33,24 @@ interface Product {
 const products = ref<Product[]>([])
 const isLoading = ref(true)
 const error = ref('')
+const searchQuery = ref('')
+
+const filteredAndSortedProducts = computed(() => {
+    let result = products.value;
+    
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase()
+        result = result.filter(p => 
+            p.name.toLowerCase().includes(query) || 
+            (p.category && p.category.toLowerCase().includes(query)) ||
+            (p.brand && p.brand.toLowerCase().includes(query)) ||
+            (p.reference && p.reference.toLowerCase().includes(query))
+        )
+    }
+    
+    // Default sort A-Z by name
+    return result.sort((a, b) => a.name.localeCompare(b.name))
+})
 
 const fetchProducts = async () => {
     try {
@@ -81,7 +101,16 @@ onMounted(() => {
         <h1 class="text-2xl font-semibold text-gray-900">Catalogue Produits</h1>
         <p class="mt-2 text-sm text-gray-700">Gérez les équipements médicaux, les prix publics et les variantes (SKU).</p>
       </div>
+      </div>
       <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center gap-3">
+        <div class="relative rounded-md shadow-sm">
+          <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <input type="text" v-model="searchQuery" class="block w-full rounded-md border-gray-300 pl-10 focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-10" placeholder="Rechercher un produit..." />
+        </div>
         <router-link :to="{ name: 'catalog.create' }" class="inline-flex items-center justify-center rounded-md border border-transparent bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 sm:w-auto">
           Nouveau Produit
         </router-link>
@@ -119,15 +148,21 @@ onMounted(() => {
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Prix Achat</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Prix Public</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Variantes (SKU)</th>
-                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Variantes (SKU)</th>
+                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 sticky right-0 bg-gray-50 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)] z-10 w-24">
                     <span class="sr-only">Modifier</span>
                   </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
-                <tr v-for="product in products" :key="product.id">
+                <tr v-for="product in filteredAndSortedProducts" :key="product.id" class="hover:bg-gray-50/50">
                   <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                    <img :src="getImageUrl(product.image_path)" alt="Product Image" class="h-10 w-10 rounded-md object-cover border border-gray-200" />
+                    <div class="relative group w-10 h-10">
+                      <img :src="getImageUrl(product.image_path)" alt="Product Image" class="h-10 w-10 rounded-md object-cover border border-gray-200" />
+                      <div v-if="product.images && product.images.length" class="absolute -top-2 -right-2 bg-brand-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10 shadow-sm border border-white">
+                        +{{ product.images.length }}
+                      </div>
+                    </div>
                   </td>
                   <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm">
                     <div class="flex items-center gap-3">
@@ -186,17 +221,21 @@ onMounted(() => {
                     </div>
                   </td>
 
-                  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 sticky right-0 bg-white shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)] z-10">
                     <div class="flex items-center justify-end gap-3">
-                        <router-link :to="{ name: 'catalog.edit', params: { id: product.id } }" class="text-brand-600 hover:text-brand-900 font-bold">Modifier</router-link>
-                        <button @click="deleteProduct(product.id)" class="text-red-400 hover:text-red-600 transition-colors" title="Supprimer le produit">
+                        <router-link :to="{ name: 'catalog.edit', params: { id: product.id } }" class="text-brand-600 hover:text-brand-900 font-bold p-2 bg-brand-50 rounded-md hover:bg-brand-100 transition-colors">Modifier</router-link>
+                        <button @click="deleteProduct(product.id)" class="text-red-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-md" title="Supprimer le produit">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>
                   </td>
                 </tr>
-                <tr v-if="products.length === 0">
-                    <td colspan="6" class="py-8 text-center text-gray-500">Aucun produit trouvé dans le catalogue.</td>
+                <tr v-if="filteredAndSortedProducts.length === 0">
+                    <td colspan="7" class="py-12 text-center text-gray-500">
+                        <svg class="mx-auto h-12 w-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                        <p class="text-lg font-medium text-gray-900">Aucun produit trouvé</p>
+                        <p class="mt-1 text-sm text-gray-500">Essayez de modifier votre recherche ou ajoutez un nouveau produit.</p>
+                    </td>
                 </tr>
               </tbody>
             </table>

@@ -52,6 +52,7 @@ class ProductController extends Controller
             'local_geo_context' => 'nullable|string',
             'is_medical' => 'boolean',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
 
         $variantsData = json_decode($request->input('variants', '[]'), true);
@@ -105,7 +106,15 @@ class ProductController extends Controller
             }
 
             if ($request->hasFile('image')) {
-                $this->processAndStoreImage($request->file('image'), $product);
+                $this->processAndStoreImage($request->file('image'), $product, true);
+            }
+
+            if ($request->hasFile('images')) {
+                $images = [];
+                foreach ($request->file('images') as $file) {
+                    $images[] = $this->processAndStoreImage($file, $product, false);
+                }
+                $product->update(['images' => $images]);
             }
 
             DB::commit();
@@ -161,6 +170,8 @@ class ProductController extends Controller
             'local_geo_context' => 'nullable|string',
             'is_medical' => 'boolean',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'images_to_delete' => 'nullable|array',
         ]);
 
         $variantsInput = $request->input('variants', '[]');
@@ -188,7 +199,7 @@ class ProductController extends Controller
 
         DB::beginTransaction();
         try {
-            $product->update($request->except(['image', 'variants', 'deleted_variant_ids']));
+            $product->update($request->except(['image', 'images', 'variants', 'deleted_variant_ids', 'images_to_delete']));
 
             if (!empty($deletedIds)) {
                 $product->variants()->whereIn('id', $deletedIds)->delete();
@@ -210,9 +221,24 @@ class ProductController extends Controller
                 }
             }
 
-            if ($request->hasFile('image')) {
-                $this->processAndStoreImage($request->file('image'), $product);
+            $currentImages = $product->images ?? [];
+            if ($request->has('images_to_delete')) {
+                $toDelete = $request->input('images_to_delete');
+                $currentImages = array_filter($currentImages, function ($img) use ($toDelete) {
+                    return !in_array($img, $toDelete);
+                });
             }
+
+            if ($request->hasFile('image')) {
+                $this->processAndStoreImage($request->file('image'), $product, true);
+            }
+
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $file) {
+                    $currentImages[] = $this->processAndStoreImage($file, $product, false);
+                }
+            }
+            $product->update(['images' => array_values($currentImages)]);
 
             DB::commit();
             return response()->json($product->load('variants'));
@@ -248,26 +274,26 @@ class ProductController extends Controller
     /**
      * Process image: Store in its original format
      */
-    private function processAndStoreImage($file, Product $product)
+    private function processAndStoreImage($file, Product $product, $isMain = true)
     {
         $extension = $file->getClientOriginalExtension();
-        $fileName = Str::slug($product->name) . '-' . time() . '.' . $extension;
+        $fileName = Str::slug($product->name) . '-' . uniqid() . '.' . $extension;
         
-        // 1. Stockage standard dans le disque 'public' de Laravel (storage/app/public/products) Maya.
         $path = $file->storeAs('products', $fileName, 'public');
         
-        // 2. Fallback Hostinger : Si le lien symbolique n'existe pas, on copie dans /public/storage. Maya.
         $publicStoragePath = public_path('storage/products');
         if (!is_dir($publicStoragePath)) {
             mkdir($publicStoragePath, 0755, true);
         }
         
-        // On vérifie si c'est un lien symbolique ou un dossier réel Maya.
         if (!is_link(public_path('storage'))) {
             copy(storage_path('app/public/products/' . $fileName), $publicStoragePath . '/' . $fileName);
         }
         
-        // 3. Mise à jour DB avec le chemin relatif standard Maya.
-        $product->update(['image_path' => 'products/' . $fileName]);
+        if ($isMain) {
+            $product->update(['image_path' => 'products/' . $fileName]);
+        }
+        
+        return 'products/' . $fileName;
     }
 }

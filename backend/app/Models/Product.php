@@ -16,7 +16,7 @@ class Product extends Model
         'social_linkedin_post', 'social_facebook_post', 'social_instagram_post', 'local_geo_context',
         'is_medical', 'cost_price', 
         'price_ht', 'tva_rate', 'public_price', 
-        'margin_percent', 'image_path', 'is_showcase'
+        'margin_percent', 'image_path', 'images', 'is_showcase'
     ];
 
     protected $casts = [
@@ -27,6 +27,7 @@ class Product extends Model
         'public_price' => 'decimal:4',
         'tva_rate' => 'decimal:2',
         'margin_percent' => 'decimal:2',
+        'images' => 'array',
     ];
 
     public function supplier()

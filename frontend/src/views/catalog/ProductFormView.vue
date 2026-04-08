@@ -44,7 +44,7 @@ const filteredSuppliers = computed(() => {
 
 const brands = ref<string[]>([]) // List of unique brands from existing products
 
-const imageFile = ref<File | null>(null)
+const imageFiles = ref<File[]>([])
 
 // Dynamic form for Variants
 interface ConfigVariant {
@@ -198,7 +198,7 @@ onMounted(() => {
 const handleImageUpload = (event: Event) => {
     const target = event.target as HTMLInputElement;
     if (target.files && target.files.length > 0) {
-        imageFile.value = target.files[0] || null;
+        imageFiles.value = Array.from(target.files);
     }
 }
 
@@ -252,8 +252,13 @@ const saveProduct = async () => {
         formData.append('variants', JSON.stringify(variantsToSave));
         formData.append('deleted_variant_ids', JSON.stringify(deletedVariantIds.value));
 
-        if (imageFile.value) {
-            formData.append('image', imageFile.value as Blob);
+        if (imageFiles.value.length > 0) {
+            // First image as main image
+            formData.append('image', imageFiles.value[0] as Blob);
+            // Rest as additional images
+            for (let i = 1; i < imageFiles.value.length; i++) {
+                formData.append('images[]', imageFiles.value[i] as Blob);
+            }
         }
 
         await (isEditing.value 
@@ -362,11 +367,19 @@ const saveProduct = async () => {
                 </div>
 
                 <div class="sm:col-span-3">
-                    <label class="block text-sm font-medium leading-6 text-gray-900">Image du Produit (JPG, PNG, WEBP)</label>
-                    <div class="mt-2">
-                        <input type="file" accept="image/*" @change="handleImageUpload" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                    <label class="block text-sm font-medium leading-6 text-gray-900">Images du Produit (JPG, PNG, WEBP)</label>
+                    <div class="mt-2 text-sm text-gray-600">
+                      Vous pouvez sélectionner plusieurs photos en même temps (Ctrl + Clic). La première sera l'image principale.
                     </div>
-                    <p class="mt-1 text-xs text-gray-500">Sera automatiquement redimensionnée et convertie en WEBP par le serveur.</p>
+                    <div class="mt-2">
+                        <input type="file" multiple accept="image/*" @change="handleImageUpload" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                    </div>
+                    <div v-if="imageFiles.length > 0" class="mt-2 flex gap-2 flex-wrap text-xs text-brand-600 font-medium">
+                        <span v-for="(file, i) in imageFiles" :key="file.name" class="bg-brand-50 px-2 py-1 rounded">
+                            {{ i === 0 ? 'Principale: ' : 'Extra: ' }}{{ file.name }}
+                        </span>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Sera automatiquement redimensionnée.</p>
                 </div>
 
                 <div class="sm:col-span-6 flex flex-col gap-4 mt-4">
