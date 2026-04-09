@@ -473,30 +473,17 @@ const saveProduct = async () => {
                     <div v-if="variant.suppliers && variant.suppliers.length > 0" class="p-4 bg-white border-t border-gray-50">
                         <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                             <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                            Fournisseurs Alternatifs & Prix Négociés
+                            Autres Fournisseurs Possibles
                         </h4>
-                        <div class="space-y-2">
-                            <div v-for="(ps, psIdx) in variant.suppliers" :key="psIdx" class="grid grid-cols-12 gap-3 items-center">
-                                <div class="col-span-4">
-                                    <select v-model="ps.supplier_id" class="block w-full rounded-lg border-gray-100 py-1.5 px-3 text-xs bg-gray-50 focus:bg-white transition-all border">
-                                        <option value="0" disabled>Sélectionner fournisseur...</option>
-                                        <option v-for="sup in suppliers" :key="sup.id" :value="sup.id">{{ sup.name }}</option>
-                                    </select>
-                                </div>
-                                <div class="col-span-3">
-                                    <input v-model="ps.supplier_ref" type="text" placeholder="Ref. Fournisseur" class="block w-full rounded-lg border-gray-100 py-1.5 px-3 text-xs border">
-                                </div>
-                                <div class="col-span-3">
-                                    <div class="relative">
-                                        <input v-model.number="ps.purchase_price" type="number" step="0.01" class="block w-full rounded-lg border-gray-100 py-1.5 pl-3 pr-8 text-xs font-bold text-brand-700 border">
-                                        <div class="absolute inset-y-0 right-2 flex items-center text-[8px] font-bold text-gray-400">DH</div>
-                                    </div>
-                                </div>
-                                <div class="col-span-2 flex justify-end">
-                                    <button @click="removeSupplierFromVariant(variant, psIdx)" type="button" class="text-red-300 hover:text-red-500 transition-colors">
-                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                </div>
+                        <div class="flex flex-wrap gap-2">
+                            <div v-for="(ps, psIdx) in variant.suppliers" :key="psIdx" class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5 focus-within:border-brand-300 transition-all">
+                                <select v-model="ps.supplier_id" class="block w-48 rounded-md border-0 py-0 text-xs font-bold bg-transparent focus:ring-0">
+                                    <option value="0" disabled>Choisir fournisseur...</option>
+                                    <option v-for="sup in suppliers" :key="sup.id" :value="sup.id">{{ sup.name }}</option>
+                                </select>
+                                <button @click="removeSupplierFromVariant(variant, psIdx)" type="button" class="text-red-300 hover:text-red-500 transition-colors">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
                             </div>
                         </div>
                     </div>
