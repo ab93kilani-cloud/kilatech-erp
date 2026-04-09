@@ -229,26 +229,33 @@ class PurchaseOrderController extends Controller
         return $pdf->download('Bon_de_Commande_' . $purchaseOrder->po_number . '.pdf');
     }
 
-    public function destroy(PurchaseOrder $purchaseOrder)
+    public function destroy($id)
     {
+        // On récupère le PO même s'il est déjà archivé (soft-deleted)
+        $purchaseOrder = PurchaseOrder::withTrashed()->findOrFail($id);
+
         // On autorise la suppression en Brouillon OU si Commandé sans aucune réception
-        if ($purchaseOrder->status !== 'draft' && $purchaseOrder->status !== 'ordered') {
-            return response()->json(['message' => 'Ce bon de commande ne peut plus être supprimé (déjà en cours de réception)'], 400);
+        if ($purchaseOrder->status === 'received' || $purchaseOrder->status === 'completed') {
+            return response()->json(['message' => 'Ce bon de commande ne peut plus être supprimé car il est déjà complété ou reçu.'], 400);
         }
 
         if ($purchaseOrder->receipts()->count() > 0) {
-            return response()->json(['message' => 'Suppression impossible : des réceptions ont déjà été enregistrées pour ce BC'], 400);
+            return response()->json(['message' => 'Suppression impossible : des réceptions (même partielles) ont déjà été enregistrées pour ce BC. Supprimez d\'abord les réceptions liées.'], 400);
         }
 
         DB::beginTransaction();
         try {
+            // Supprimer les lignes associées en premier
             $purchaseOrder->lines()->delete();
+            
+            // Suppression définitive (Force delete)
             $purchaseOrder->forceDelete();
+            
             DB::commit();
-            return response()->json(null, 204);
+            return response()->json(['message' => 'Bon de commande supprimé définitivement.'], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Erreur lors de la suppression du PO'], 500);
+            return response()->json(['message' => 'Erreur technique lors de la suppression : ' . $e->getMessage()], 500);
         }
     }
 }
