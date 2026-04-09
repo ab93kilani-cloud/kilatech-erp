@@ -111,8 +111,8 @@ class ProductController extends Controller
                             \App\Models\ProductSupplier::create([
                                 'variant_id' => $variant->id,
                                 'supplier_id' => $ps['supplier_id'],
-                                'supplier_ref' => $ps['supplier_ref'] ?? null,
-                                'purchase_price' => $ps['purchase_price'] ?? ($variant->cost_price ?? 0),
+                                'supplier_ref' => !empty($ps['supplier_ref']) ? $ps['supplier_ref'] : null,
+                                'purchase_price' => (isset($ps['purchase_price']) && $ps['purchase_price'] !== '') ? $ps['purchase_price'] : ($variant->cost_price ?? 0),
                             ]);
                         }
                     }
@@ -243,8 +243,8 @@ class ProductController extends Controller
                             \App\Models\ProductSupplier::create([
                                 'variant_id' => $variant->id,
                                 'supplier_id' => $ps['supplier_id'],
-                                'supplier_ref' => $ps['supplier_ref'] ?? null,
-                                'purchase_price' => $ps['purchase_price'] ?? ($variant->cost_price ?? 0),
+                                'supplier_ref' => !empty($ps['supplier_ref']) ? $ps['supplier_ref'] : null,
+                                'purchase_price' => (isset($ps['purchase_price']) && $ps['purchase_price'] !== '') ? $ps['purchase_price'] : ($variant->cost_price ?? 0),
                             ]);
                         }
                     }
