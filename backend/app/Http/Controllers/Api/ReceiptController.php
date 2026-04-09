@@ -48,8 +48,17 @@ class ReceiptController extends Controller
 
         DB::beginTransaction();
         try {
-            $maxId = Receipt::withTrashed()->max('id') ?? 0;
-            $receiptNumber = 'REC-' . date('ym') . '-' . str_pad($maxId + 1, 4, '0', STR_PAD_LEFT);
+            $prefix = 'REC-' . date('ym');
+            $lastRec = Receipt::withTrashed()
+                ->where('receipt_number', 'like', $prefix . '-%')
+                ->get()
+                ->sortByDesc(function($r) {
+                    $parts = explode('-', $r->receipt_number);
+                    return (int) end($parts);
+                })
+                ->first();
+            $nextNum = $lastRec ? ((int) end(explode('-', $lastRec->receipt_number))) + 1 : 1;
+            $receiptNumber = $prefix . '-' . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
 
             $receipt = Receipt::create([
                 'purchase_order_id' => $po->id,

@@ -31,12 +31,19 @@ class PurchaseOrderController extends Controller
 
         DB::beginTransaction();
         try {
-            // Generates PO number like PO-2602-0001
-            $nextId = (PurchaseOrder::withTrashed()->max('id') ?? 0) + 1;
-            $poNumber = 'PO-' . date('ym') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
-
             $poDate = $request->po_date ? \Carbon\Carbon::parse($request->po_date) : \Carbon\Carbon::now();
-            $poNumber = 'PO-' . $poDate->format('ym') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+            $prefix = 'PO-' . $poDate->format('ym');
+            
+            $lastPO = PurchaseOrder::withTrashed()
+                ->where('po_number', 'like', $prefix . '-%')
+                ->get()
+                ->sortByDesc(function($p) {
+                    $parts = explode('-', $p->po_number);
+                    return (int) end($parts);
+                })
+                ->first();
+            $nextNum = $lastPO ? ((int) end(explode('-', $lastPO->po_number))) + 1 : 1;
+            $poNumber = $prefix . '-' . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
 
             $po = PurchaseOrder::create([
                 'supplier_id' => $request->supplier_id,

@@ -19,9 +19,17 @@ class Quote extends Model
 
         static::creating(function ($quote) {
             if (empty($quote->quote_number)) {
-                $lastQuote = static::withTrashed()->orderBy('id', 'desc')->first();
-                $lastId = $lastQuote ? $lastQuote->id : 0;
-                $quote->quote_number = 'DEV-' . date('ym') . '-' . str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
+                $prefix = 'DEV-' . date('ym');
+                $lastQuote = static::withTrashed()
+                    ->where('quote_number', 'like', $prefix . '-%')
+                    ->get()
+                    ->sortByDesc(function($q) {
+                        $parts = explode('-', $q->quote_number);
+                        return (int) end($parts);
+                    })
+                    ->first();
+                $nextNum = $lastQuote ? ((int) end(explode('-', $lastQuote->quote_number))) + 1 : 1;
+                $quote->quote_number = $prefix . '-' . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
             }
         });
     }

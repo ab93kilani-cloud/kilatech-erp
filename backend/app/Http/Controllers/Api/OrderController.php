@@ -134,8 +134,16 @@ class OrderController extends Controller
         try {
             $docDate = $quote->quote_date ? \Carbon\Carbon::parse($quote->quote_date) : \Carbon\Carbon::now();
             $prefix = 'BL-' . $docDate->format('ym');
-            $count = Order::withTrashed()->where('order_number', 'like', $prefix . '%')->count();
-            $orderNumber = $prefix . '-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+            $lastOrder = Order::withTrashed()
+                ->where('order_number', 'like', $prefix . '-%')
+                ->get()
+                ->sortByDesc(function($o) {
+                    $parts = explode('-', $o->order_number);
+                    return (int) end($parts);
+                })
+                ->first();
+            $nextNum = $lastOrder ? ((int) end(explode('-', $lastOrder->order_number))) + 1 : 1;
+            $orderNumber = $prefix . '-' . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
 
             $order = Order::create([
                 'quote_id' => $quote->id,
@@ -189,10 +197,21 @@ class OrderController extends Controller
                 $totalAmount += $lineTTC;
             }
 
-            // Génération de la facture initiale (en supposant $totalAmount global et discount_amount global)
-            $totalAmount -= $quote->discount_amount ?? 0; // Appliquer aussi la remise globale du devis si elle existe
+            // Génération de la facture initiale
+            $totalAmount -= $quote->discount_amount ?? 0;
 
-            $invoiceNumber = 'FA-' . date('ym') . '-' . str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT);
+            $prefixFA = 'FA-' . date('ym');
+            $lastInvoice = Invoice::withTrashed()
+                ->where('invoice_number', 'like', $prefixFA . '-%')
+                ->get()
+                ->sortByDesc(function($i) {
+                    $parts = explode('-', $i->invoice_number);
+                    return (int) end($parts);
+                })
+                ->first();
+            $nextInvoiceNum = $lastInvoice ? ((int) end(explode('-', $lastInvoice->invoice_number))) + 1 : 1;
+            $invoiceNumber = $prefixFA . '-' . str_pad($nextInvoiceNum, 4, '0', STR_PAD_LEFT);
+
             Invoice::create([
                 'order_id' => $order->id,
                 'invoice_number' => $invoiceNumber,
@@ -247,7 +266,18 @@ class OrderController extends Controller
             }
             $totalAmount -= $order->discount_amount ?? 0;
 
-            $invoiceNumber = 'FA-' . date('ym') . '-' . str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT);
+            $prefixFA = 'FA-' . date('ym');
+            $lastInvoice = Invoice::withTrashed()
+                ->where('invoice_number', 'like', $prefixFA . '-%')
+                ->get()
+                ->sortByDesc(function($i) {
+                    $parts = explode('-', $i->invoice_number);
+                    return (int) end($parts);
+                })
+                ->first();
+            $nextInvoiceNum = $lastInvoice ? ((int) end(explode('-', $lastInvoice->invoice_number))) + 1 : 1;
+            $invoiceNumber = $prefixFA . '-' . str_pad($nextInvoiceNum, 4, '0', STR_PAD_LEFT);
+
             $invoice = Invoice::create([
                 'order_id' => $order->id,
                 'invoice_number' => $invoiceNumber,
@@ -295,7 +325,18 @@ class OrderController extends Controller
             }
             $totalAmount -= $order->discount_amount ?? 0;
 
-            $invoiceNumber = 'FA-' . date('ym') . '-' . str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT);
+            $prefixFA = 'FA-' . date('ym');
+            $lastInvoice = Invoice::withTrashed()
+                ->where('invoice_number', 'like', $prefixFA . '-%')
+                ->get()
+                ->sortByDesc(function($i) {
+                    $parts = explode('-', $i->invoice_number);
+                    return (int) end($parts);
+                })
+                ->first();
+            $nextInvoiceNum = $lastInvoice ? ((int) end(explode('-', $lastInvoice->invoice_number))) + 1 : 1;
+            $invoiceNumber = $prefixFA . '-' . str_pad($nextInvoiceNum, 4, '0', STR_PAD_LEFT);
+
             $invoice = Invoice::create([
                 'order_id' => $order->id,
                 'invoice_number' => $invoiceNumber,
@@ -400,9 +441,20 @@ class OrderController extends Controller
 
             \Illuminate\Support\Facades\Log::info('Maya Debug: Step 2 - Order Creation');
             // 2. Create Order (Pending) Maya.
+            $prefixCMD = 'CMD-' . date('ym');
+            $lastCMD = Order::withTrashed()
+                ->where('order_number', 'like', $prefixCMD . '-%')
+                ->get()
+                ->sortByDesc(function($o) {
+                    $parts = explode('-', $o->order_number);
+                    return (int) end($parts);
+                })
+                ->first();
+            $nextCMDNum = $lastCMD ? ((int) end(explode('-', $lastCMD->order_number))) + 1 : 1;
+            
             $order = Order::create([
                 'client_id' => $client->id,
-                'order_number' => 'CMD-' . date('ym') . '-' . str_pad(Order::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT),
+                'order_number' => $prefixCMD . '-' . str_pad($nextCMDNum, 4, '0', STR_PAD_LEFT),
                 'status' => 'pending',
                 'discount_amount' => 0,
             ]);
