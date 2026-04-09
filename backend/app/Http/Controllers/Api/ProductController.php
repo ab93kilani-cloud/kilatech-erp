@@ -17,7 +17,7 @@ class ProductController extends Controller
 {
     public function index()
     {
-        return response()->json(Product::with(['variants', 'supplier'])->get());
+        return response()->json(Product::with(['variants.suppliers', 'supplier'])->get());
     }
 
     public function getNextReference()
@@ -102,7 +102,21 @@ class ProductController extends Controller
             }
 
             foreach ($variantsData as $v) {
-                $product->variants()->create($v);
+                $variant = $product->variants()->create($v);
+                
+                // Maya: Enregistrement des fournisseurs alternatifs
+                if (!empty($v['suppliers']) && is_array($v['suppliers'])) {
+                    foreach ($v['suppliers'] as $ps) {
+                        if (!empty($ps['supplier_id'])) {
+                            \App\Models\ProductSupplier::create([
+                                'variant_id' => $variant->id,
+                                'supplier_id' => $ps['supplier_id'],
+                                'supplier_ref' => $ps['supplier_ref'] ?? null,
+                                'purchase_price' => $ps['purchase_price'] ?? ($variant->cost_price ?? 0),
+                            ]);
+                        }
+                    }
+                }
             }
 
             if ($request->hasFile('image')) {
@@ -127,11 +141,11 @@ class ProductController extends Controller
 
     public function show($id)
     {
-        $product = Product::with(['variants', 'supplier'])->find($id);
+        $product = Product::with(['variants.suppliers.supplier', 'supplier'])->find($id);
         
         if (!$product) {
             // Handle soft-deleted or missing products
-            $product = Product::onlyTrashed()->with(['variants', 'supplier'])->find($id);
+            $product = Product::onlyTrashed()->with(['variants.suppliers.supplier', 'supplier'])->find($id);
             if ($product) {
                 return response()->json(['message' => 'Produit archivé (corbeille)'], 404);
             }
@@ -207,7 +221,8 @@ class ProductController extends Controller
 
             foreach ($variantsData as $v) {
                 if (!empty($v['id'])) {
-                    $product->variants()->where('id', $v['id'])->update([
+                    $variant = \App\Models\ProductVariant::findOrFail($v['id']);
+                    $variant->update([
                         'sku' => trim($v['sku']),
                         'name_variation' => $v['name_variation'] ?? null,
                         'cost_price' => $v['cost_price'] ?? null,
@@ -217,7 +232,22 @@ class ProductController extends Controller
                         'margin_percent' => $v['margin_percent'] ?? 0,
                     ]);
                 } else {
-                    $product->variants()->create($v);
+                    $variant = $product->variants()->create($v);
+                }
+
+                // Maya: Sync des fournisseurs par variante
+                if (isset($v['suppliers']) && is_array($v['suppliers'])) {
+                    $variant->suppliers()->delete(); // On repart à neuf pour cette variante
+                    foreach ($v['suppliers'] as $ps) {
+                        if (!empty($ps['supplier_id'])) {
+                            \App\Models\ProductSupplier::create([
+                                'variant_id' => $variant->id,
+                                'supplier_id' => $ps['supplier_id'],
+                                'supplier_ref' => $ps['supplier_ref'] ?? null,
+                                'purchase_price' => $ps['purchase_price'] ?? ($variant->cost_price ?? 0),
+                            ]);
+                        }
+                    }
                 }
             }
 
