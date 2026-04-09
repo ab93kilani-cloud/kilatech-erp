@@ -177,6 +177,14 @@ const addVariantRow = () => {
     })
 }
 
+const addSupplier = (event: Event) => {
+    const id = Number((event.target as HTMLSelectElement).value);
+    if (id && !selectedSupplierIds.value.includes(id)) {
+        selectedSupplierIds.value.push(id);
+    }
+    (event.target as HTMLSelectElement).value = '';
+}
+
 const removeVariantRow = (index: number) => {
     if (variants.value.length > 1) {
         const varToRemove = variants.value[index]
@@ -270,11 +278,7 @@ const saveProduct = async () => {
                         </span>
                         <p v-if="selectedSupplierIds.length === 0" class="text-[10px] text-gray-400 italic py-1.5">Aucun fournisseur choisi...</p>
                     </div>
-                    <select @change="(e) => { 
-                        const id = Number((e.target as HTMLSelectElement).value); 
-                        if(id && !selectedSupplierIds.includes(id)) selectedSupplierIds.push(id);
-                        (e.target as HTMLSelectElement).value = '';
-                    }" class="block w-full rounded-xl border-gray-200 py-2.5 text-xs font-bold focus:ring-brand-500 shadow-sm">
+                    <select @change="addSupplier" class="block w-full rounded-xl border-gray-200 py-2.5 text-xs font-bold focus:ring-brand-500 shadow-sm">
                         <option value="">+ Ajouter un fournisseur à la liste...</option>
                         <option v-for="sup in suppliers" :key="sup.id" :value="sup.id">{{ sup.name }}</option>
                     </select>
