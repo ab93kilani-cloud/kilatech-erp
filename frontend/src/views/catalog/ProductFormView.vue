@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '@/plugins/axios'
 
@@ -213,17 +213,17 @@ const saveProduct = async () => {
         formData.append('variants', JSON.stringify(variantsToSave));
         formData.append('deleted_variant_ids', JSON.stringify(deletedVariantIds.value));
         
-        if (selectedSupplierIds.value.length > 0) {
-            formData.append('supplier_id', selectedSupplierIds.value[0].toString());
+        if (imageFiles.value.length > 0) {
+            imageFiles.value.forEach((file, i) => {
+                formData.append(i === 0 ? 'image' : 'images[]', file);
+            });
         }
 
-        imageFiles.value.forEach((file, i) => {
-            formData.append(i === 0 ? 'image' : 'images[]', file);
-        });
-
-        await (isEditing.value 
-            ? api.post(`/products/${productId.value}?_method=PUT`, formData)
-            : api.post('/products', formData));
+        if (isEditing.value && productId.value) {
+            await api.post(`/products/${productId.value}?_method=PUT`, formData);
+        } else {
+            await api.post('/products', formData);
+        }
 
         router.push({ name: 'catalog' })
     } catch (e: any) {
@@ -295,9 +295,14 @@ const saveProduct = async () => {
             </div>
 
             <div class="sm:col-span-2">
-                <label class="block text-xs font-black text-gray-400 uppercase mb-2">Marque</label>
-                <input v-model="product.brand" list="brands-list" type="text" class="block w-full rounded-xl border-gray-200 py-2.5 px-4 text-sm font-bold">
+                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Marque</label>
+                <input v-model="product.brand" list="brands-list" type="text" class="block w-full rounded-xl border-gray-200 py-2.5 px-4 text-sm font-bold shadow-sm">
                 <datalist id="brands-list"><option v-for="b in brands" :key="b" :value="b">{{ b }}</option></datalist>
+            </div>
+
+            <div class="col-span-full">
+                <label class="block text-xs font-black text-gray-400 uppercase mb-2">Images (JPG, PNG, WEBP)</label>
+                <input type="file" multiple accept="image/*" @change="handleImageUpload" class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 border p-1 rounded-xl">
             </div>
         </div>
 
@@ -347,6 +352,27 @@ const saveProduct = async () => {
         <button type="submit" :disabled="isSubmitting" class="rounded-xl bg-brand-600 px-10 py-3 text-sm font-black text-white shadow-lg hover:bg-brand-700 disabled:opacity-50">
           {{ isSubmitting ? 'EN COURS...' : (isEditing ? 'ENREGISTRER LES MODIFICATIONS' : 'CRÉER LE PRODUIT') }}
         </button>
+      </div>
+
+      <!-- Modal Nouvelle Catégorie Maya -->
+      <div v-if="isCategoryModalOpen" class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center">
+          <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="isCategoryModalOpen = false"></div>
+          <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6">
+            <div>
+              <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Créer une Famille Maya</h3>
+              <input v-model="newCategoryName" type="text" placeholder="Nom de la catégorie..." class="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-3 py-2 border">
+            </div>
+            <div class="mt-5 sm:mt-6 flex gap-3">
+              <button @click="createCategory" :disabled="isCreatingCategory" class="inline-flex w-full justify-center rounded-md border border-transparent bg-brand-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-brand-700 sm:text-sm">
+                {{ isCreatingCategory ? '...' : 'Ajouter' }}
+              </button>
+              <button @click="isCategoryModalOpen = false" class="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 sm:text-sm">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </form>
   </div>
