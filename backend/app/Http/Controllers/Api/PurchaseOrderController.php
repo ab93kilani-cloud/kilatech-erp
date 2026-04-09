@@ -245,10 +245,10 @@ class PurchaseOrderController extends Controller
 
         DB::beginTransaction();
         try {
-            // Supprimer les lignes associées en premier
-            $purchaseOrder->lines()->delete();
+            // Suppression DÉFINITIVE des lignes pour éviter le conflit SQL
+            $purchaseOrder->lines()->forceDelete();
             
-            // Suppression définitive (Force delete)
+            // Suppression DÉFINITIVE du bon de commande (Force delete)
             $purchaseOrder->forceDelete();
             
             DB::commit();
