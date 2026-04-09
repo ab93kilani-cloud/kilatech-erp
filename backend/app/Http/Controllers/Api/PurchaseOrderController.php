@@ -42,7 +42,12 @@ class PurchaseOrderController extends Controller
                     return (int) end($parts);
                 })
                 ->first();
-            $nextNum = $lastPO ? ((int) end(explode('-', $lastPO->po_number))) + 1 : 1;
+            if ($lastPO) {
+                $parts = explode('-', $lastPO->po_number);
+                $nextNum = ((int) end($parts)) + 1;
+            } else {
+                $nextNum = 1;
+            }
             $poNumber = $prefix . '-' . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
 
             $po = PurchaseOrder::create([

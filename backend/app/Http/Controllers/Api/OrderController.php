@@ -142,7 +142,13 @@ class OrderController extends Controller
                     return (int) end($parts);
                 })
                 ->first();
-            $nextNum = $lastOrder ? ((int) end(explode('-', $lastOrder->order_number))) + 1 : 1;
+            
+            if ($lastOrder) {
+                $parts = explode('-', $lastOrder->order_number);
+                $nextNum = ((int) end($parts)) + 1;
+            } else {
+                $nextNum = 1;
+            }
             $orderNumber = $prefix . '-' . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
 
             $order = Order::create([
@@ -209,7 +215,12 @@ class OrderController extends Controller
                     return (int) end($parts);
                 })
                 ->first();
-            $nextInvoiceNum = $lastInvoice ? ((int) end(explode('-', $lastInvoice->invoice_number))) + 1 : 1;
+            if ($lastInvoice) {
+                $parts = explode('-', $lastInvoice->invoice_number);
+                $nextInvoiceNum = ((int) end($parts)) + 1;
+            } else {
+                $nextInvoiceNum = 1;
+            }
             $invoiceNumber = $prefixFA . '-' . str_pad($nextInvoiceNum, 4, '0', STR_PAD_LEFT);
 
             Invoice::create([
@@ -275,7 +286,12 @@ class OrderController extends Controller
                     return (int) end($parts);
                 })
                 ->first();
-            $nextInvoiceNum = $lastInvoice ? ((int) end(explode('-', $lastInvoice->invoice_number))) + 1 : 1;
+            if ($lastInvoice) {
+                $parts = explode('-', $lastInvoice->invoice_number);
+                $nextInvoiceNum = ((int) end($parts)) + 1;
+            } else {
+                $nextInvoiceNum = 1;
+            }
             $invoiceNumber = $prefixFA . '-' . str_pad($nextInvoiceNum, 4, '0', STR_PAD_LEFT);
 
             $invoice = Invoice::create([
@@ -334,7 +350,12 @@ class OrderController extends Controller
                     return (int) end($parts);
                 })
                 ->first();
-            $nextInvoiceNum = $lastInvoice ? ((int) end(explode('-', $lastInvoice->invoice_number))) + 1 : 1;
+            if ($lastInvoice) {
+                $parts = explode('-', $lastInvoice->invoice_number);
+                $nextInvoiceNum = ((int) end($parts)) + 1;
+            } else {
+                $nextInvoiceNum = 1;
+            }
             $invoiceNumber = $prefixFA . '-' . str_pad($nextInvoiceNum, 4, '0', STR_PAD_LEFT);
 
             $invoice = Invoice::create([
@@ -450,7 +471,13 @@ class OrderController extends Controller
                     return (int) end($parts);
                 })
                 ->first();
-            $nextCMDNum = $lastCMD ? ((int) end(explode('-', $lastCMD->order_number))) + 1 : 1;
+
+            if ($lastCMD) {
+                $parts = explode('-', $lastCMD->order_number);
+                $nextCMDNum = ((int) end($parts)) + 1;
+            } else {
+                $nextCMDNum = 1;
+            }
             
             $order = Order::create([
                 'client_id' => $client->id,

@@ -28,7 +28,12 @@ class Quote extends Model
                         return (int) end($parts);
                     })
                     ->first();
-                $nextNum = $lastQuote ? ((int) end(explode('-', $lastQuote->quote_number))) + 1 : 1;
+                if ($lastQuote) {
+                    $parts = explode('-', $lastQuote->quote_number);
+                    $nextNum = ((int) end($parts)) + 1;
+                } else {
+                    $nextNum = 1;
+                }
                 $quote->quote_number = $prefix . '-' . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
             }
         });

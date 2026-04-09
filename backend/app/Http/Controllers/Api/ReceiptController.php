@@ -57,7 +57,12 @@ class ReceiptController extends Controller
                     return (int) end($parts);
                 })
                 ->first();
-            $nextNum = $lastRec ? ((int) end(explode('-', $lastRec->receipt_number))) + 1 : 1;
+            if ($lastRec) {
+                $parts = explode('-', $lastRec->receipt_number);
+                $nextNum = ((int) end($parts)) + 1;
+            } else {
+                $nextNum = 1;
+            }
             $receiptNumber = $prefix . '-' . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
 
             $receipt = Receipt::create([
