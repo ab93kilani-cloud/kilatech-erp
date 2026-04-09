@@ -94,11 +94,12 @@ const onProductSelect = (line: any) => {
     line.variant_id = ''
 }
 
-// Quand la variante change, on peut pré-remplir le prix d'achat
+// Quand la variante change, on pré-remplit le prix d'achat enregistré dans le catalogue
 const onVariantSelect = (line: any) => {
     const variant = allVariants.value.find(v => v.id === Number(line.variant_id));
-    if (variant && variant.product) {
-        line.unit_price = variant.product.cost_price || 0;
+    if (variant) {
+        // On récupère le prix d'achat de la variante (pas du produit parent)
+        line.unit_price = variant.cost_price ? Number(variant.cost_price) : 0;
     }
 }
 
