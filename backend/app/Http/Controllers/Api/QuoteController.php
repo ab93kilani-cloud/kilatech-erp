@@ -231,6 +231,16 @@ class QuoteController extends Controller
     }
 
     /**
+     * Confirmer et Envoyer le devis par email
+     */
+    public function confirmAndSend(Quote $quote)
+    {
+        // For now, just change status
+        $quote->update(['status' => 'sent']);
+        return response()->json(['message' => 'Devis validé et marqué comme envoyé.']);
+    }
+
+    /**
      * Confirmer et convertir en Commande
      */
     public function confirm(Quote $quote)
