@@ -198,14 +198,27 @@ const saveProduct = async () => {
     errorMsg.value = ''
     try {
         const formData = new FormData();
-        Object.entries(product.value).forEach(([key, value]) => {
-            // On ignore les clés image/images ici car elles sont gérées séparément plus bas pour les fichiers
-            if (key !== 'image' && key !== 'images' && value !== null && value !== undefined) {
-                formData.append(key, typeof value === 'boolean' ? (value ? '1' : '0') : value.toString());
-            }
-        });
+        
+        // 1. Informations de base (Explicite pour plus de stabilité)
+        formData.append('reference', product.value.reference || '');
+        formData.append('name', product.value.name || '');
+        formData.append('category', product.value.category || '');
+        formData.append('brand', product.value.brand || '');
+        formData.append('description', product.value.description || '');
+        formData.append('slug', product.value.slug || '');
+        formData.append('unit', product.value.unit || 'U');
+        formData.append('is_medical', product.value.is_medical ? '1' : '0');
+        formData.append('is_showcase', product.value.is_showcase ? '1' : '0');
+        
+        // 2. Marketing & SEO
+        formData.append('meta_title', product.value.meta_title || '');
+        formData.append('meta_description', product.value.meta_description || '');
+        formData.append('meta_keywords', product.value.meta_keywords || '');
+        formData.append('local_geo_context', product.value.local_geo_context || '');
+        formData.append('social_linkedin_post', product.value.social_linkedin_post || '');
+        formData.append('social_facebook_post', product.value.social_facebook_post || '');
 
-        // Sync suppliers to variants (product level management but saved per variant for system compatibility)
+        // 3. Synchronisation Multi-Fournisseurs sur les variantes
         const variantsToSave = variants.value.map(v => ({
             ...v,
             suppliers: selectedSupplierIds.value.map(id => ({ supplier_id: id }))
@@ -214,30 +227,39 @@ const saveProduct = async () => {
         formData.append('variants', JSON.stringify(variantsToSave));
         formData.append('deleted_variant_ids', JSON.stringify(deletedVariantIds.value));
         
-        // Gestion des fichiers images (seulement si de nouveaux fichiers ont été choisis)
+        // 4. Gestion des fichiers images (Explicite avec nom de fichier)
         if (imageFiles.value.length > 0) {
-            const mainFile = imageFiles.value[0] as Blob;
-            formData.append('image', mainFile); // Image principale
+            const firstFile = imageFiles.value[0];
+            if (firstFile instanceof File) {
+                formData.append('image', firstFile, firstFile.name);
+            }
             
             if (imageFiles.value.length > 1) {
                 for (let i = 1; i < imageFiles.value.length; i++) {
-                    const extraFile = imageFiles.value[i] as Blob;
-                    if (extraFile) {
-                        formData.append('images[]', extraFile);
+                    const extraFile = imageFiles.value[i];
+                    if (extraFile instanceof File) {
+                        formData.append('images[]', extraFile, extraFile.name);
                     }
                 }
             }
         }
 
+        // 5. Envoi au serveur (Spoofing _method=PUT pour Laravel)
         if (isEditing.value && productId.value) {
+            console.log('Mise à jour du produit ID:', productId.value);
             formData.append('_method', 'PUT');
-            await api.post(`/products/${productId.value}`, formData);
+            await api.post(`/products/${productId.value}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
         } else {
-            await api.post('/products', formData);
+            await api.post('/products', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
         }
 
         router.push({ name: 'catalog' })
     } catch (e: any) {
+        console.error('Erreur lors de la sauvegarde:', e.response?.data);
         errorMsg.value = e.response?.data?.message || 'Erreur lors de la sauvegarde.'
     } finally { isSubmitting.value = false }
 }
