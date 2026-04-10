@@ -214,10 +214,19 @@ const saveProduct = async () => {
         formData.append('variants', JSON.stringify(variantsToSave));
         formData.append('deleted_variant_ids', JSON.stringify(deletedVariantIds.value));
         
+        // Gestion des fichiers images (seulement si de nouveaux fichiers ont été choisis)
         if (imageFiles.value.length > 0) {
-            imageFiles.value.forEach((file, i) => {
-                formData.append(i === 0 ? 'image' : 'images[]', file);
-            });
+            const mainFile = imageFiles.value[0] as Blob;
+            formData.append('image', mainFile); // Image principale
+            
+            if (imageFiles.value.length > 1) {
+                for (let i = 1; i < imageFiles.value.length; i++) {
+                    const extraFile = imageFiles.value[i] as Blob;
+                    if (extraFile) {
+                        formData.append('images[]', extraFile);
+                    }
+                }
+            }
         }
 
         if (isEditing.value && productId.value) {
