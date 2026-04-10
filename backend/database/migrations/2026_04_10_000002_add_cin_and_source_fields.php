@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::table('clients', function (Blueprint $table) {
             $table->string('cin')->nullable()->after('type'); // Pour les particuliers
+            $table->string('source')->default('erp')->after('cin'); // 'erp' ou 'web'
         });
 
         Schema::table('quotes', function (Blueprint $table) {

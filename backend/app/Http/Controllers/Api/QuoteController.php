@@ -19,9 +19,18 @@ class QuoteController extends Controller
     public function index(Request $request)
     {
         $query = Quote::with(['client', 'lockedBy', 'lines.variant']);
+        
         if ($request->has('archived')) {
             $query->onlyTrashed();
         }
+
+        if ($request->has('source')) {
+            $query->where('source', $request->source);
+        }
+        if ($request->has('exclude_source')) {
+            $query->where('source', '!=', $request->exclude_source);
+        }
+
         return response()->json($query->get());
     }
 
@@ -148,6 +157,46 @@ class QuoteController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Erreur création du devis', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        $quote = Quote::findOrFail($id);
+        
+        $validated = $request->validate([
+            'client_id' => 'nullable|exists:clients,id',
+            'valid_until' => 'nullable|date',
+            'quote_date' => 'nullable|date',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'status' => 'nullable|string',
+            'source' => 'nullable|string|in:erp,web',
+            'lines' => 'nullable|array',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $quote->update($request->only(['client_id', 'valid_until', 'quote_date', 'discount_amount', 'status', 'source']));
+
+            if ($request->has('lines')) {
+                $quote->lines()->delete();
+                foreach ($request->lines as $line) {
+                    QuoteLine::create([
+                        'quote_id' => $quote->id,
+                        'variant_id' => $line['variant_id'],
+                        'unit_price' => $line['unit_price'],
+                        'quantity' => $line['quantity'],
+                        'discount_percent' => $line['discount_percent'] ?? 0,
+                        'tax_rate' => $line['tax_rate'] ?? 20.00,
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return response()->json($quote->load('lines.variant'));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Erreur modification du devis'], 500);
         }
     }
 
@@ -382,6 +431,7 @@ class QuoteController extends Controller
                     'address'      => $request->address ?? '',
                     'city'         => $request->city ?? '',
                     'status'       => 'Prospect',
+                    'source'       => 'web',
                 ]
             );
 

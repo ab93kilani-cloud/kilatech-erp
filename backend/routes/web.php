@@ -28,6 +28,9 @@ Route::post('/api/public/orders', [\App\Http\Controllers\Api\OrderController::cl
 Route::post('/public/quote-request', [\App\Http\Controllers\Api\QuoteController::class, 'publicQuoteStore']);
 Route::post('/api/public/quote-request', [\App\Http\Controllers\Api\QuoteController::class, 'publicQuoteStore']);
 
+Route::post('/public/contact', [\App\Http\Controllers\Api\ContactController::class, 'store']);
+Route::post('/api/public/contact', [\App\Http\Controllers\Api\ContactController::class, 'store']);
+
 Route::apiResource('products', \App\Http\Controllers\Api\ProductController::class)->only(['index', 'show']);
 Route::get('/api/products', [\App\Http\Controllers\Api\ProductController::class, 'index']);
 Route::get('/api/api/products', [\App\Http\Controllers\Api\ProductController::class, 'index']); // Maya: Double prefix fix for Hostinger index.

@@ -70,6 +70,7 @@ const navigation = computed(() => {
   // For now, let's keep Dashboard for everyone except Accountant who is "uniquement" Accounting Space
   if (roleName !== 'Comptable') {
     menu.push({ name: 'Tableau de bord', to: { name: 'dashboard' }, icon: 'HomeIcon' });
+    menu.push({ name: '🌍 Vitrinerie (Web)', to: { name: 'vitrinerie' }, icon: 'IdentificationIcon' });
   }
 
   // Admin section

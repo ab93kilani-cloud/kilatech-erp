@@ -74,7 +74,9 @@ const openEditModal = (client: any) => {
 
 const fetchClients = async () => {
     try {
-        const response = await api.get('/clients')
+        const response = await api.get('/clients', {
+            params: { exclude_source: 'web' }
+        })
         clients.value = response.data
     } catch (e: any) {
         error.value = 'Erreur lors du chargement des clients.'

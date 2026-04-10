@@ -21,41 +21,49 @@
               N’hésitez pas à nous contacter pour toute question ou préoccupation. Vous pouvez utiliser le formulaire sur notre site web ou nous envoyer un email directement. Nous vous remercions de l’intérêt que vous portez à notre société et serons ravis de vous lire.
             </p>
 
-            <form @submit.prevent class="space-y-6 bg-gray-50 p-8 rounded-3xl border border-gray-100 shadow-sm">
+            <form @submit.prevent="handleSubmit" class="space-y-6 bg-gray-50 p-8 rounded-3xl border border-gray-100 shadow-sm">
               <div class="grid md:grid-cols-2 gap-6">
                  <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Votre prénom *</label>
-                    <input type="text" placeholder="Entrez votre prénom ici" class="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none" required />
+                    <input v-model="form.first_name" type="text" placeholder="Entrez votre prénom ici" class="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none" required />
                  </div>
                  <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Votre nom *</label>
-                    <input type="text" placeholder="Entrez votre nom ici" class="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none" required />
+                    <input v-model="form.last_name" type="text" placeholder="Entrez votre nom ici" class="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none" required />
                  </div>
               </div>
 
               <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Votre adresse e-mail *</label>
-                <input type="email" placeholder="Entrez votre e-mail ici" class="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none" required />
+                <input v-model="form.email" type="email" placeholder="Entrez votre e-mail ici" class="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none" required />
               </div>
 
               <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Votre pays</label>
-                <input type="text" value="Maroc" class="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none" />
+                <input v-model="form.country" type="text" class="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none" />
               </div>
 
               <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Votre Téléphone *</label>
-                <input type="tel" placeholder="+212" class="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none" required />
+                <input v-model="form.phone" type="tel" placeholder="+212" class="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none" required />
               </div>
 
               <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Votre message *</label>
-                <textarea rows="4" placeholder="Écrivons votre message ici" class="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none resize-none" required></textarea>
+                <textarea v-model="form.message" rows="4" placeholder="Écrivons votre message ici" class="w-full px-5 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none resize-none" required></textarea>
               </div>
 
-              <button type="submit" class="w-full py-4 bg-[#0a1435] text-white rounded-full font-bold uppercase tracking-widest text-sm hover:bg-brand-700 transition-all shadow-lg hover:shadow-brand-200 active:scale-95">
-                 Envoyer votre message
+              <button type="submit" :disabled="isSubmitting" class="w-full py-4 bg-[#0a1435] text-white rounded-full font-bold uppercase tracking-widest text-sm hover:bg-brand-700 transition-all shadow-lg hover:shadow-brand-200 active:scale-95 disabled:opacity-50">
+                 <span v-if="isSubmitting">Envoi en cours...</span>
+                 <span v-else>Envoyer votre message</span>
               </button>
+
+              <div v-if="successMsg" class="mt-4 p-4 bg-green-50 text-green-700 rounded-xl border border-green-100 font-bold text-center">
+                {{ successMsg }}
+              </div>
+              <div v-if="errorMsg" class="mt-4 p-4 bg-red-50 text-red-700 rounded-xl border border-red-100 font-bold text-center">
+                {{ errorMsg }}
+              </div>
             </form>
           </div>
 
@@ -133,7 +141,47 @@
 </template>
 
 <script setup lang="ts">
-// Contact implementation
+import { ref } from 'vue'
+import axios from 'axios'
+
+const form = ref({
+    first_name: '',
+    last_name: '',
+    email: '',
+    country: 'Maroc',
+    phone: '',
+    message: ''
+})
+
+const isSubmitting = ref(false)
+const successMsg = ref('')
+const errorMsg = ref('')
+
+const handleSubmit = async () => {
+    isSubmitting.value = true
+    successMsg.value = ''
+    errorMsg.value = ''
+    
+    try {
+        // Direct axios for Hostinger compatibility
+        const response = await axios.post('/public/contact', form.value)
+        successMsg.value = response.data.message
+        
+        // Reset form
+        form.value = {
+            first_name: '',
+            last_name: '',
+            email: '',
+            country: 'Maroc',
+            phone: '',
+            message: ''
+        }
+    } catch (e: any) {
+        errorMsg.value = e.response?.data?.message || "Erreur lors de l'envoi du message."
+    } finally {
+        isSubmitting.value = false
+    }
+}
 </script>
 
 <style scoped>

@@ -63,6 +63,12 @@ const router = createRouter({
                     meta: { roles: ['Admin', 'Gérant'] }
                 },
                 {
+                    path: 'vitrinerie',
+                    name: 'vitrinerie',
+                    component: () => import('../views/vitrinerie/VitrinerieHubView.vue'),
+                    meta: { roles: ['Admin', 'Gérant', 'Commercial'] }
+                },
+                {
                     path: 'catalog/create',
                     name: 'catalog.create',
                     component: () => import('../views/catalog/ProductFormView.vue')

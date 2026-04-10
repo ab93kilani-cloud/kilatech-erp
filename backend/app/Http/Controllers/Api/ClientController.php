@@ -8,9 +8,18 @@ use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Client::all());
+        $query = Client::query();
+        
+        if ($request->has('source')) {
+            $query->where('source', $request->source);
+        }
+        if ($request->has('exclude_source')) {
+            $query->where('source', '!=', $request->exclude_source);
+        }
+
+        return response()->json($query->get());
     }
 
     public function store(Request $request)
@@ -44,11 +53,12 @@ class ClientController extends Controller
     public function update(Request $request, Client $client)
     {
         $validated = $request->validate([
-            'type' => 'required|in:company,individual',
-            'company_name' => 'required_if:type,company|nullable|string|max:255',
-            'contact_name' => 'required|string|max:255',
+            'type' => 'nullable|in:company,individual',
+            'company_name' => 'nullable|string|max:255',
+            'contact_name' => 'nullable|string|max:255',
             'email' => 'nullable|email',
-            'phone' => 'required_if:type,individual|nullable|string|max:50',
+            'phone' => 'nullable|string|max:50',
+            'source' => 'nullable|string|in:erp,web',
             'telephone_fix' => 'nullable|string|max:50',
             'fax' => 'nullable|string|max:50',
             'address' => 'required_if:type,individual|nullable|string',
