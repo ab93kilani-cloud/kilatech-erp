@@ -230,7 +230,8 @@ const saveProduct = async () => {
         }
 
         if (isEditing.value && productId.value) {
-            await api.post(`/products/${productId.value}?_method=PUT`, formData);
+            formData.append('_method', 'PUT');
+            await api.post(`/products/${productId.value}`, formData);
         } else {
             await api.post('/products', formData);
         }
