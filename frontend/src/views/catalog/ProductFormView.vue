@@ -199,7 +199,8 @@ const saveProduct = async () => {
     try {
         const formData = new FormData();
         Object.entries(product.value).forEach(([key, value]) => {
-            if (value !== null && value !== undefined) {
+            // On ignore les clés image/images ici car elles sont gérées séparément plus bas pour les fichiers
+            if (key !== 'image' && key !== 'images' && value !== null && value !== undefined) {
                 formData.append(key, typeof value === 'boolean' ? (value ? '1' : '0') : value.toString());
             }
         });
