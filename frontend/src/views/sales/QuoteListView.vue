@@ -27,7 +27,6 @@ const fetchQuotes = async () => {
         const response = await api.get('/quotes', {
             params: {
               ...(viewArchived.value ? { archived: 1 } : {}),
-              exclude_source: 'web',
               _t: Date.now()
             }
         })

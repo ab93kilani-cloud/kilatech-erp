@@ -19,18 +19,9 @@ class QuoteController extends Controller
     public function index(Request $request)
     {
         $query = Quote::with(['client', 'lockedBy', 'lines.variant']);
-        
         if ($request->has('archived')) {
             $query->onlyTrashed();
         }
-
-        if ($request->has('source')) {
-            $query->where('source', $request->source);
-        }
-        if ($request->has('exclude_source')) {
-            $query->where('source', '!=', $request->exclude_source);
-        }
-
         return response()->json($query->get());
     }
 

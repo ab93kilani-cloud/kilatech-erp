@@ -151,8 +151,8 @@ const fetchData = async () => {
     isLoading.value = true
     try {
         const [qRes, cRes, mRes] = await Promise.all([
-            api.get('/quotes', { params: { source: 'web' } }),
-            api.get('/clients', { params: { source: 'web' } }),
+            api.get('/vitrinerie/quotes'),
+            api.get('/vitrinerie/clients'),
             api.get('/vitrinerie/messages')
         ])
         webQuotes.value = qRes.data

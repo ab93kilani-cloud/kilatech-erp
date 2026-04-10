@@ -8,18 +8,9 @@ use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $query = Client::query();
-        
-        if ($request->has('source')) {
-            $query->where('source', $request->source);
-        }
-        if ($request->has('exclude_source')) {
-            $query->where('source', '!=', $request->exclude_source);
-        }
-
-        return response()->json($query->get());
+        return response()->json(Client::all());
     }
 
     public function store(Request $request)

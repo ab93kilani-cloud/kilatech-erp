@@ -9,7 +9,7 @@ class Client extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['type', 'company_name', 'contact_name', 'email', 'phone', 'telephone_fix', 'fax', 'address', 'city', 'ice', 'rc', 'if', 'patente', 'status'];
+    protected $fillable = ['type', 'company_name', 'contact_name', 'email', 'phone', 'telephone_fix', 'fax', 'address', 'city', 'ice', 'rc', 'if', 'patente', 'status', 'cin', 'source'];
 
     public function quotes()
     {

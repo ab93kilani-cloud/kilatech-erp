@@ -81,9 +81,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('quotes', \App\Http\Controllers\Api\QuoteController::class);
         
         // Vitrinerie (Tri du web)
-        Route::get('vitrinerie/messages', [ContactController::class, 'index']);
-        Route::post('vitrinerie/messages/{id}/read', [ContactController::class, 'markAsRead']);
-        Route::delete('vitrinerie/messages/{id}', [ContactController::class, 'destroy']);
+        // Vitrinerie (Tri du web - Devis, Prospects, Messages)
+        Route::get('vitrinerie/quotes', [\App\Http\Controllers\Api\VitrinerieController::class, 'getQuotes']);
+        Route::get('vitrinerie/clients', [\App\Http\Controllers\Api\VitrinerieController::class, 'getClients']);
+        Route::get('vitrinerie/messages', [\App\Http\Controllers\Api\VitrinerieController::class, 'getMessages']);
+        Route::post('vitrinerie/messages/{id}/read', [\App\Http\Controllers\Api\VitrinerieController::class, 'markMessageAsRead']);
+        Route::delete('vitrinerie/messages/{id}', [\App\Http\Controllers\Api\VitrinerieController::class, 'deleteMessage']);
         
         Route::post('orders/from-quote', [\App\Http\Controllers\Api\OrderController::class, 'storeFromQuote']);
         Route::post('orders/{order}/confirm-pending', [\App\Http\Controllers\Api\OrderController::class, 'confirmPending']);

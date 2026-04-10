@@ -10,7 +10,8 @@ class Quote extends Model
     use SoftDeletes;
     protected $fillable = [
         'quote_number', 'client_id', 'version', 'status', 'locked_by_user_id', 'locked_at',
-        'valid_until', 'discount_amount', 'payment_method', 'payment_term', 'quote_date'
+        'valid_until', 'discount_amount', 'payment_method', 'payment_term', 'quote_date',
+        'source'
     ];
 
     protected static function boot()
