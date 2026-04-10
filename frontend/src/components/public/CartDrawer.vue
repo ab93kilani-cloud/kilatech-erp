@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useCartStore } from '@/stores/cart'
-import api from '@/plugins/axios'
 import axios from 'axios'
 import { useConfig } from '@/composables/useConfig'
 
