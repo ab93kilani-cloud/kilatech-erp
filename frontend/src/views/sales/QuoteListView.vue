@@ -13,7 +13,6 @@ interface Quote {
   locked_by_user_id: number | null;
   locked_by: { name: string } | null;
   locked_at: string | null;
-  source: string;
 }
 
 const quotes = ref<Quote[]>([])
@@ -74,31 +73,10 @@ const confirmQuote = async (quote: Quote) => {
     }
 }
 
-// Maya: Envoyer le devis au client après validation agent.
-const confirmAndSend = async (quote: Quote) => {
-    try {
-        const res = await api.post(`/quotes/${quote.id}/confirm-and-send`)
-        fetchQuotes()
-        showAlert(res.data.message || '✅ Devis envoyé au client avec succès.')
-    } catch (e: any) {
-        showAlert('❌ Erreur envoi : ' + (e.response?.data?.message || e.message))
-    }
-}
-
 const downloadPdf = async (id: number) => {
     try {
         const response = await api.get(`/quotes/${id}/pdf`, { responseType: 'blob' })
-        // Vérification de l'intégrité de la réponse
         const blob = new Blob([response.data], { type: 'application/pdf' })
-        if (blob.size === 0) {
-            alert('Le document généré est vide (0 octets). Erreur serveur.')
-            return
-        }
-        if (response.data.type && response.data.type.includes('text/html')) {
-            alert('Le serveur a retourné une page d\'erreur HTML au lieu d\'un PDF.')
-            return
-        }
-
         const url = window.URL.createObjectURL(blob)
         window.open(url, '_blank')
     } catch (error) {
@@ -144,7 +122,7 @@ onMounted(() => {
             <table class="min-w-full divide-y divide-gray-300">
               <thead class="bg-gray-50">
                 <tr>
-                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">ID / Source</th>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">ID</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Client</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Statut</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Verrou (Edition)</th>
@@ -155,24 +133,18 @@ onMounted(() => {
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
                 <tr v-for="quote in quotes" :key="quote.id" :class="{'bg-yellow-50': quote.locked_by_user_id}">
-                  
                   <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
                     #{{ quote.id }} <span class="text-gray-400 font-normal">(v{{ quote.version }})</span>
-                    <div v-if="quote.source === 'web'" class="mt-1">
-                       <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 uppercase tracking-tighter">🌍 En Ligne</span>
-                    </div>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     {{ quote.client?.company_name || quote.client?.contact_name || 'Client Inconnu' }}
                   </td>
                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      <span v-if="quote.status === 'pending_approval'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">⏳ En attente de validation</span>
-                      <span v-else-if="quote.status === 'draft'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Brouillon</span>
+                      <span v-if="quote.status === 'draft'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Brouillon</span>
                       <span v-else-if="quote.status === 'sent'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">📧 Envoyé client</span>
                       <span v-else-if="quote.status === 'confirmed'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Confirmé</span>
                       <span v-else class="text-gray-500 capitalize">{{ quote.status }}</span>
                    </td>
-                  
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                      <div v-if="quote.locked_by_user_id" class="flex items-center text-amber-600">
                         <svg class="mr-1.5 h-4 w-4 flex-shrink-0 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
@@ -182,16 +154,7 @@ onMounted(() => {
                      </div>
                      <span v-else class="text-gray-400">Libre</span>
                   </td>
-
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-3">
-                    <!-- Maya: Bouton Confirmer et Envoyer pour les devis issus de la vitrine -->
-                    <button
-                      v-if="quote.status === 'pending_approval' && !viewArchived"
-                      @click="confirmAndSend(quote)"
-                      class="text-white bg-brand-600 hover:bg-brand-700 font-bold border border-brand-700 px-3 py-1 rounded text-xs transition"
-                    >
-                      ✅ Confirmer & Envoyer
-                    </button>
                     <button v-if="quote.status === 'draft' && !viewArchived" @click="confirmQuote(quote)" class="text-green-600 hover:text-green-900 font-bold border border-green-200 bg-green-50 px-2 py-1 rounded text-xs">
                         Transformer en BL
                     </button>
@@ -202,7 +165,6 @@ onMounted(() => {
                         <router-link :to="{ name: 'quotes.edit', params: { id: quote.id } }" class="text-brand-600 hover:text-brand-900 ml-4 hover:underline transition">Modifier</router-link>
                     </template>
                     <span v-else class="text-gray-400 italic">Document archivé</span>
-
                     <button @click="downloadPdf(quote.id)" title="Télécharger le PDF" class="text-blue-500 hover:text-blue-700 ml-4">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

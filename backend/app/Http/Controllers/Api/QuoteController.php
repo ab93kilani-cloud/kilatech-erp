@@ -18,7 +18,7 @@ class QuoteController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Quote::with(['client', 'lockedBy', 'lines.variant']);
+        $query = Quote::with(['client', 'lockedBy']);
         if ($request->has('archived')) {
             $query->onlyTrashed();
         }
@@ -27,7 +27,7 @@ class QuoteController extends Controller
 
     public function generatePDF($id)
     {
-        $quote = Quote::withTrashed()->with(['client', 'lines.variant.product'])->findOrFail($id);
+        $quote = Quote::withTrashed()->with(['client', 'lines.variant'])->findOrFail($id);
         $pdf = $this->getQuotePdf($quote);
         return $pdf->download($quote->quote_number . '.pdf');
     }
