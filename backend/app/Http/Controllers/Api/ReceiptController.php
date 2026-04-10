@@ -48,7 +48,7 @@ class ReceiptController extends Controller
 
         DB::beginTransaction();
         try {
-            $prefix = 'REC-' . date('ym');
+            $prefix = 'REC-' . date('Y');
             $lastRec = Receipt::withTrashed()
                 ->where('receipt_number', 'like', $prefix . '-%')
                 ->get()

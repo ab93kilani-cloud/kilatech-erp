@@ -133,7 +133,7 @@ class OrderController extends Controller
         DB::beginTransaction();
         try {
             $docDate = $quote->quote_date ? \Carbon\Carbon::parse($quote->quote_date) : \Carbon\Carbon::now();
-            $prefix = 'BL-' . $docDate->format('ym');
+            $prefix = 'BL-' . $docDate->format('Y');
             $lastOrder = Order::withTrashed()
                 ->where('order_number', 'like', $prefix . '-%')
                 ->get()
@@ -206,7 +206,7 @@ class OrderController extends Controller
             // Génération de la facture initiale
             $totalAmount -= $quote->discount_amount ?? 0;
 
-            $prefixFA = 'FA-' . date('ym');
+            $prefixFA = 'FA-' . date('Y');
             $lastInvoice = Invoice::withTrashed()
                 ->where('invoice_number', 'like', $prefixFA . '-%')
                 ->get()
@@ -277,7 +277,7 @@ class OrderController extends Controller
             }
             $totalAmount -= $order->discount_amount ?? 0;
 
-            $prefixFA = 'FA-' . date('ym');
+            $prefixFA = 'FA-' . date('Y');
             $lastInvoice = Invoice::withTrashed()
                 ->where('invoice_number', 'like', $prefixFA . '-%')
                 ->get()
@@ -341,7 +341,7 @@ class OrderController extends Controller
             }
             $totalAmount -= $order->discount_amount ?? 0;
 
-            $prefixFA = 'FA-' . date('ym');
+            $prefixFA = 'FA-' . date('Y');
             $lastInvoice = Invoice::withTrashed()
                 ->where('invoice_number', 'like', $prefixFA . '-%')
                 ->get()

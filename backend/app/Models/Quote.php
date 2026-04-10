@@ -19,7 +19,7 @@ class Quote extends Model
 
         static::creating(function ($quote) {
             if (empty($quote->quote_number)) {
-                $prefix = 'DEV-' . date('ym');
+                $prefix = 'DEV-' . date('Y');
                 $lastQuote = static::withTrashed()
                     ->where('quote_number', 'like', $prefix . '-%')
                     ->get()

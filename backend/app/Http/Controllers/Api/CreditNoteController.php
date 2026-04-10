@@ -47,7 +47,7 @@ class CreditNoteController extends Controller
             // Generate Credit Note Number
             $lastCreditNote = CreditNote::orderBy('id', 'desc')->first();
             $nextId = $lastCreditNote ? $lastCreditNote->id + 1 : 1;
-            $cnNumber = 'AV-' . date('ym') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+            $cnNumber = 'AV-' . date('Y') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
 
             $creditNote = CreditNote::create([
                 'credit_note_number' => $cnNumber,
