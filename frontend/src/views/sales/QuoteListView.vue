@@ -13,6 +13,7 @@ interface Quote {
   locked_by_user_id: number | null;
   locked_by: { name: string } | null;
   locked_at: string | null;
+  source: string;
 }
 
 const quotes = ref<Quote[]>([])
@@ -143,7 +144,7 @@ onMounted(() => {
             <table class="min-w-full divide-y divide-gray-300">
               <thead class="bg-gray-50">
                 <tr>
-                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">ID / Vers.</th>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">ID / Source</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Client</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Statut</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Verrou (Edition)</th>
@@ -157,6 +158,9 @@ onMounted(() => {
                   
                   <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
                     #{{ quote.id }} <span class="text-gray-400 font-normal">(v{{ quote.version }})</span>
+                    <div v-if="quote.source === 'web'" class="mt-1">
+                       <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 uppercase tracking-tighter">🌍 En Ligne</span>
+                    </div>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     {{ quote.client?.company_name || quote.client?.contact_name || 'Client Inconnu' }}

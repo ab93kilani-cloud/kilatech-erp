@@ -21,7 +21,8 @@ const form = ref({
   company_name: '',
   ice: '',
   address: '',
-  city: ''
+  city: '',
+  cin: ''
 })
 
 const isSubmitting = ref(false)
@@ -48,6 +49,9 @@ const handleSubmit = async () => {
   if (!form.value.client_phone) {
     errors.value.client_phone = ['Le numéro de téléphone est obligatoire.']
   }
+  if (form.value.client_type === 'individual' && !form.value.cin) {
+    errors.value.cin = ["Le CIN est obligatoire pour les particuliers."]
+  }
   if (Object.keys(errors.value).length > 0) return
   
   isSubmitting.value = true
@@ -59,6 +63,7 @@ const handleSubmit = async () => {
       client_phone: form.value.client_phone,
       company_name: form.value.company_name,
       ice: form.value.ice,
+      cin: form.value.cin,
       address: form.value.address,
       city: form.value.city,
       lines: cartStore.items.map(item => ({
@@ -189,9 +194,15 @@ const handleSubmit = async () => {
                     </div>
 
                     <div>
-                      <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nom du Contact</label>
+                      <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nom du {{ form.client_type === 'individual' ? 'Particulier' : 'Contact' }} *</label>
                       <input v-model="form.client_name" type="text" placeholder="Ex: Jean Dupont" :class="errors.client_name ? 'border-red-500 bg-red-50' : 'bg-gray-50 border-transparent'" class="w-full p-4 border rounded-2xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition-all font-medium" />
                       <p v-if="errors.client_name" class="mt-1 text-xs text-red-500 font-bold">{{ errors.client_name[0] }}</p>
+                    </div>
+
+                    <div v-if="form.client_type === 'individual'">
+                      <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">CIN (Carte d'Identité Nationale) *</label>
+                      <input v-model="form.cin" type="text" placeholder="Ex: AB123456" :class="errors.cin ? 'border-red-500 bg-red-50' : 'bg-gray-50 border-transparent'" class="w-full p-4 border rounded-2xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition-all font-medium" />
+                      <p v-if="errors.cin" class="mt-1 text-xs text-red-500 font-bold">{{ errors.cin[0] }}</p>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4">
@@ -208,13 +219,13 @@ const handleSubmit = async () => {
                     </div>
 
                     <div>
-                      <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Adresse de Livraison</label>
+                      <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Adresse {{ form.client_type === 'individual' ? '*' : '' }}</label>
                       <input v-model="form.address" type="text" placeholder="N°, Rue, Quartier..." :class="errors.address ? 'border-red-500 bg-red-50' : 'bg-gray-50 border-transparent'" class="w-full p-4 border rounded-2xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition-all font-medium" />
                       <p v-if="errors.address" class="mt-1 text-xs text-red-500 font-bold">{{ errors.address[0] }}</p>
                     </div>
 
                     <div>
-                      <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Ville</label>
+                      <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Ville {{ form.client_type === 'individual' ? '*' : '' }}</label>
                       <input v-model="form.city" type="text" placeholder="Ex: Casablanca" :class="errors.city ? 'border-red-500 bg-red-50' : 'bg-gray-50 border-transparent'" class="w-full p-4 border rounded-2xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition-all font-medium" />
                       <p v-if="errors.city" class="mt-1 text-xs text-red-500 font-bold">{{ errors.city[0] }}</p>
                     </div>

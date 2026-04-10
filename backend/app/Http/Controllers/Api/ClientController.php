@@ -18,16 +18,17 @@ class ClientController extends Controller
         $validated = $request->validate([
             'type' => 'required|in:company,individual',
             'company_name' => 'required_if:type,company|nullable|string|max:255',
-            'contact_name' => 'required_if:type,individual|nullable|string|max:255',
+            'contact_name' => 'required|string|max:255',
             'email' => 'nullable|email',
-            'phone' => 'nullable|string|max:50',
+            'phone' => 'required_if:type,individual|nullable|string|max:50',
             'telephone_fix' => 'nullable|string|max:50',
             'fax' => 'nullable|string|max:50',
-            'address' => 'nullable|string',
+            'address' => 'required_if:type,individual|nullable|string',
+            'cin' => 'required_if:type,individual|nullable|string|max:50',
             'ice' => 'required_if:type,company|nullable|string|max:100',
-            'rc' => 'required_if:type,company|nullable|string|max:100',
-            'if' => 'required_if:type,company|nullable|string|max:100',
-            'patente' => 'required_if:type,company|nullable|string|max:100',
+            'rc' => 'nullable|string|max:100',
+            'if' => 'nullable|string|max:100',
+            'patente' => 'nullable|string|max:100',
         ]);
 
         $client = Client::create($validated);
@@ -45,16 +46,17 @@ class ClientController extends Controller
         $validated = $request->validate([
             'type' => 'required|in:company,individual',
             'company_name' => 'required_if:type,company|nullable|string|max:255',
-            'contact_name' => 'required_if:type,individual|nullable|string|max:255',
+            'contact_name' => 'required|string|max:255',
             'email' => 'nullable|email',
-            'phone' => 'nullable|string|max:50',
+            'phone' => 'required_if:type,individual|nullable|string|max:50',
             'telephone_fix' => 'nullable|string|max:50',
             'fax' => 'nullable|string|max:50',
-            'address' => 'nullable|string',
+            'address' => 'required_if:type,individual|nullable|string',
+            'cin' => 'required_if:type,individual|nullable|string|max:50',
             'ice' => 'required_if:type,company|nullable|string|max:100',
-            'rc' => 'required_if:type,company|nullable|string|max:100',
-            'if' => 'required_if:type,company|nullable|string|max:100',
-            'patente' => 'required_if:type,company|nullable|string|max:100',
+            'rc' => 'nullable|string|max:100',
+            'if' => 'nullable|string|max:100',
+            'patente' => 'nullable|string|max:100',
         ]);
 
         $client->update($validated);

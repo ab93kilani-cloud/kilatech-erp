@@ -12,6 +12,11 @@ interface Client {
   telephone_fix: string;
   fax: string;
   address: string;
+  ice?: string;
+  rc?: string;
+  if?: string;
+  patente?: string;
+  cin?: string;
 }
 
 const clients = ref<Client[]>([])
@@ -35,13 +40,14 @@ const form = ref({
     ice: '',
     rc: '',
     if: '',
-    patente: ''
+    patente: '',
+    cin: ''
 })
 
 const openCreateModal = () => {
     isEditing.value = false
     editingId.value = null
-    form.value = { type: 'company', company_name: '', contact_name: '', email: '', phone: '', telephone_fix: '', fax: '', address: '', ice: '', rc: '', if: '', patente: '' }
+    form.value = { type: 'company', company_name: '', contact_name: '', email: '', phone: '', telephone_fix: '', fax: '', address: '', ice: '', rc: '', if: '', patente: '', cin: '' }
     isModalOpen.value = true
 }
 
@@ -60,7 +66,8 @@ const openEditModal = (client: any) => {
         ice: client.ice || '',
         rc: client.rc || '',
         if: client.if || '',
-        patente: client.patente || ''
+        patente: client.patente || '',
+        cin: client.cin || ''
     }
     isModalOpen.value = true
 }
@@ -91,7 +98,7 @@ const saveClient = async () => {
         }
         isModalOpen.value = false
         // Reset form
-        form.value = { type: 'company', company_name: '', contact_name: '', email: '', phone: '', telephone_fix: '', fax: '', address: '', ice: '', rc: '', if: '', patente: '' }
+        form.value = { type: 'company', company_name: '', contact_name: '', email: '', phone: '', telephone_fix: '', fax: '', address: '', ice: '', rc: '', if: '', patente: '', cin: '' }
     } catch (e: any) {
         alert(e.response?.data?.message || "Erreur lors de l'enregistrement du client (Vérifiez les champs).")
     } finally {
@@ -201,25 +208,30 @@ onMounted(() => {
                </div>
                <div>
                   <label class="block text-sm font-medium text-gray-700">{{ form.type === 'company' ? 'Personne de contact' : 'Nom du Particulier *' }}</label>
-                  <input v-model="form.contact_name" type="text" :required="form.type === 'individual'" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-3 py-2 border">
+                  <input v-model="form.contact_name" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-3 py-2 border">
                </div>
 
-               <div v-if="form.type === 'company'" class="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded border">
+               <div v-if="form.type === 'individual'">
+                  <label class="block text-sm font-medium text-gray-700">CIN (Carte d'Identité Nationale) *</label>
+                  <input v-model="form.cin" type="text" :required="form.type === 'individual'" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-3 py-2 border">
+               </div>
+
+                <div v-if="form.type === 'company'" class="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded border">
                    <div>
                        <label class="block text-xs font-medium text-gray-700">ICE *</label>
                        <input v-model="form.ice" type="text" :required="form.type === 'company'" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-2 py-1.5 border">
                    </div>
                    <div>
-                       <label class="block text-xs font-medium text-gray-700">Registre du Commerce (RC) *</label>
-                       <input v-model="form.rc" type="text" :required="form.type === 'company'" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-2 py-1.5 border">
+                       <label class="block text-xs font-medium text-gray-700">RC (Optionnel)</label>
+                       <input v-model="form.rc" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-2 py-1.5 border">
                    </div>
                    <div>
-                       <label class="block text-xs font-medium text-gray-700">Identifiant Fiscal (IF) *</label>
-                       <input v-model="form.if" type="text" :required="form.type === 'company'" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-2 py-1.5 border">
+                       <label class="block text-xs font-medium text-gray-700">IF (Optionnel)</label>
+                       <input v-model="form.if" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-2 py-1.5 border">
                    </div>
                    <div>
-                       <label class="block text-xs font-medium text-gray-700">Patente *</label>
-                       <input v-model="form.patente" type="text" :required="form.type === 'company'" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-2 py-1.5 border">
+                       <label class="block text-xs font-medium text-gray-700">Patente (Optionnel)</label>
+                       <input v-model="form.patente" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-2 py-1.5 border">
                    </div>
                </div>
                <div class="grid grid-cols-2 gap-4">
@@ -228,8 +240,8 @@ onMounted(() => {
                       <input v-model="form.email" type="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-3 py-2 border">
                    </div>
                    <div>
-                      <label class="block text-sm font-medium text-gray-700">Téléphone (Mobile)</label>
-                      <input v-model="form.phone" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-3 py-2 border">
+                      <label class="block text-sm font-medium text-gray-700">Téléphone {{ form.type === 'individual' ? '*' : '(Mobile)' }}</label>
+                      <input v-model="form.phone" type="text" :required="form.type === 'individual'" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-3 py-2 border">
                    </div>
                    <div>
                       <label class="block text-sm font-medium text-gray-700">Téléphone Fixe</label>
@@ -241,8 +253,8 @@ onMounted(() => {
                    </div>
                </div>
                <div>
-                  <label class="block text-sm font-medium text-gray-700">Adresse Complète</label>
-                  <textarea v-model="form.address" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-3 py-2 border"></textarea>
+                  <label class="block text-sm font-medium text-gray-700">Adresse Complète {{ form.type === 'individual' ? '*' : '' }}</label>
+                  <textarea v-model="form.address" rows="2" :required="form.type === 'individual'" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm px-3 py-2 border"></textarea>
                </div>
                <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
                  <button type="submit" :disabled="isSubmitting" class="inline-flex w-full justify-center rounded-md border border-transparent bg-brand-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-brand-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 sm:col-start-2 sm:text-sm">

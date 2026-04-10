@@ -359,9 +359,9 @@ class QuoteController extends Controller
             'client_email' => 'required|email|max:255',
             'client_phone' => 'required|string|max:50',
             'company_name' => 'nullable|string|max:255',
-            'ice'          => 'nullable|string|max:100',
-            'address'      => 'nullable|string|max:500',
-            'city'         => 'nullable|string|max:100',
+            'cin'          => 'required_if:client_type,individual|nullable|string|max:50',
+            'address'      => 'required|string|max:500',
+            'city'         => 'required|string|max:100',
             'lines'        => 'required|array|min:1',
             'lines.*.variant_id' => 'required|integer|exists:product_variants,id',
             'lines.*.quantity'   => 'required|integer|min:1',
@@ -377,6 +377,7 @@ class QuoteController extends Controller
                     'contact_name' => $request->client_name,
                     'company_name' => $request->company_name ?? '',
                     'phone'        => $request->client_phone,
+                    'cin'          => $request->cin ?? '',
                     'ice'          => $request->ice ?? '',
                     'address'      => $request->address ?? '',
                     'city'         => $request->city ?? '',
@@ -389,6 +390,7 @@ class QuoteController extends Controller
                 'client_id' => $client->id,
                 'status'    => 'pending_approval',
                 'version'   => 1,
+                'source'    => 'web',
             ]);
 
             // 3. Créer les lignes du devis avec le prix public de la variante
