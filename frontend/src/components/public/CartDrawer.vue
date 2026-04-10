@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useCartStore } from '@/stores/cart'
 import api from '@/plugins/axios'
+import axios from 'axios'
 import { useConfig } from '@/composables/useConfig'
 
 const { getImageUrl: getStorageUrl } = useConfig()
@@ -72,8 +73,8 @@ const handleSubmit = async () => {
       }))
     }
     
-    // Maya: Nouveau endpoint — devis auto-créé, attend validation agent.
-    const response = await api.post('/public/quote-request', payload, { withCredentials: false })
+    // Maya: Utilisation de axios direct (sans /api) pour contourner les blocages Hostinger sur le dossier /api
+    const response = await axios.post('/public/quote-request', payload)
     quoteNumber.value = response.data.quote_number || ''
     requestSent.value = true
     cartStore.clearCart()
