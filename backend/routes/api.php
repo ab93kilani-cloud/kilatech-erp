@@ -15,7 +15,7 @@ use App\Http\Controllers\AuthController;
 // with double-prefix support for Hostinger compatibility.
 
 // Maya: Public quote request from storefront (no auth required)
-Route::post('/public/quote-request', [\App\Http\Controllers\Api\QuoteController::class, 'publicQuoteStore']);
+// Maya: Public quote request moved to web.php for Hostinger compatibility.
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
