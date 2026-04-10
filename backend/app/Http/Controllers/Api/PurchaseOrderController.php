@@ -32,7 +32,7 @@ class PurchaseOrderController extends Controller
         DB::beginTransaction();
         try {
             $poDate = $request->po_date ? \Carbon\Carbon::parse($request->po_date) : \Carbon\Carbon::now();
-            $prefix = 'PO-' . $poDate->format('ym');
+            $prefix = 'PO-' . $poDate->format('Y');
             
             $lastPO = PurchaseOrder::withTrashed()
                 ->where('po_number', 'like', $prefix . '-%')
