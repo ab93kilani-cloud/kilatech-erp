@@ -5,6 +5,10 @@
   # Allow /api and /storage to be handled by their own folders/link Maya.
   RewriteRule ^(api|storage) - [L]
   
+  # Forward /public routes to the API index
+  RewriteRule ^public/(.*)$ api/index.php [QSA,L]
+  RewriteRule ^api-login$ api/index.php [QSA,L]
+  
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
