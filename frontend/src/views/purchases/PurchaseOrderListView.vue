@@ -30,37 +30,48 @@ const convertImageToPdf = (imageFile: File): Promise<File> => {
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
                 if (!ctx) { reject("Canvas error"); return; }
 
-                // 1. Détection Orientation & Rotation Portrait Forcée
+                // 1. Détection Orientation & Rotation Portrait (Fixée à 90 deg CW)
                 if (img.width > img.height) {
                     canvas.width = img.height;
                     canvas.height = img.width;
-                    ctx.translate(0, canvas.height);
-                    ctx.rotate(-90 * Math.PI / 180);
+                    ctx.translate(canvas.width, 0);
+                    ctx.rotate(90 * Math.PI / 180);
                 } else {
                     canvas.width = img.width;
                     canvas.height = img.height;
                 }
                 ctx.drawImage(img, 0, 0);
 
-                // 2. Filtre "Scanner Xerox" (Très contrasté)
+                // 2. Filtre "Scanner High-End"
                 const imgDataBuffer = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const d = imgDataBuffer.data;
                 for (let i = 0; i < d.length; i += 4) {
-                    const gray = (d[i] ?? 0) * 0.3 + (d[i+1] ?? 0) * 0.59 + (d[i+2] ?? 0) * 0.11;
-                    // On blanchit les gris clairs (fond de papier) et noircit les sombres (texte)
-                    const val = gray > 145 ? 255 : (gray < 80 ? 0 : gray * 0.6);
+                    const r = d[i] ?? 0;
+                    const g = d[i+1] ?? 0;
+                    const b = d[i+2] ?? 0;
+                    const gray = r * 0.3 + g * 0.59 + b * 0.11;
+                    
+                    // On blanchit agressivement pour supprimer les ombres de la table
+                    const val = gray > 155 ? 255 : (gray < 70 ? 0 : gray);
                     d[i] = d[i+1] = d[i+2] = val;
                 }
                 ctx.putImageData(imgDataBuffer, 0, 0);
 
-                const finalImgData = canvas.toDataURL('image/jpeg', 0.8);
+                const finalImgData = canvas.toDataURL('image/jpeg', 0.82);
                 const pdf = new jspdfObj.jsPDF();
                 
-                // 3. Remplissage A4 (210x297mm)
-                const ratio = Math.min(210 / canvas.width, 297 / canvas.height);
-                const finalW = canvas.width * ratio;
-                const finalH = canvas.height * ratio;
-                pdf.addImage(finalImgData, 'JPEG', (210 - finalW) / 2, (297 - finalH) / 2, finalW, finalH);
+                // 3. Remplissage A4 (Cadrage optimisé pour la largeur)
+                const pageWidth = 210;
+                const pageHeight = 297;
+                
+                // On cale le document sur la largeur (page entière)
+                const finalW = pageWidth;
+                const finalH = (canvas.height * pageWidth) / canvas.width;
+                
+                // Si le document est trop long, on le centre. Sinon on le met en haut.
+                const yPos = finalH < pageHeight ? 0 : 0; 
+                pdf.addImage(finalImgData, 'JPEG', 0, yPos, finalW, finalH);
+                
                 resolve(new File([pdf.output('blob')], imageFile.name.split('.')[0] + '.pdf', { type: 'application/pdf' }));
             };
             img.src = imgData;
