@@ -231,8 +231,8 @@ const fetchQuote = async () => {
         const data = response.data
         form.value = {
             client_id: data.client_id,
-            valid_until: data.valid_until ? data.valid_until.split('T')[0].split(' ')[0] : '',
-            quote_date: data.quote_date ? data.quote_date.split('T')[0].split(' ')[0] : '',
+            valid_until: data.valid_until ? (String(data.valid_until).split('T')[0] || '').split(' ')[0] || '' : '',
+            quote_date: data.quote_date ? (String(data.quote_date).split('T')[0] || '').split(' ')[0] || '' : '',
             discount_amount: data.discount_amount,
             payment_method: data.payment_method || '',
             payment_term: data.payment_term || ''
@@ -251,19 +251,22 @@ const fetchQuote = async () => {
     }
 }
 
-onMounted(async () => {
-    await fetchDependencies()
-    
-    if (route.params.id) {
-        isEditing.value = true
-        quoteId.value = route.params.id as string
-        fetchQuote()
-    } else {
-        const d = new Date()
-        form.value.quote_date = d.toISOString().split('T')[0] || ''
-        d.setDate(d.getDate() + 15)
-        form.value.valid_until = d.toISOString().split('T')[0] || ''
+onMounted(() => {
+    const init = async () => {
+        await fetchDependencies()
+        
+        if (route.params.id) {
+            isEditing.value = true
+            quoteId.value = route.params.id as string
+            await fetchQuote()
+        } else {
+            const d = new Date()
+            form.value.quote_date = d.toISOString().split('T')[0] || ''
+            d.setDate(d.getDate() + 15)
+            form.value.valid_until = d.toISOString().split('T')[0] || ''
+        }
     }
+    init()
 })
 </script>
 
