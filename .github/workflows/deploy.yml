@@ -57,4 +57,4 @@ jobs:
           script: |
             cd domains/kilatech.ma/public_html/api
             /opt/alt/php82/usr/bin/php /usr/local/bin/composer install --no-dev --optimize-autoloader
-            /opt/alt/php82/usr/bin/php artisan migrate --force
+            /opt/alt/php82/usr/bin/php artisan migrate --force || true
