@@ -24,13 +24,56 @@ const convertImageToPdf = (imageFile: File): Promise<File> => {
             const img = new Image();
             img.onload = () => {
                 const { jsPDF } = (window as any).jspdf;
-                // A4 dimensions: 210 x 297 mm
-                const pdf = new jsPDF();
-                const imgWidth = 210;
-                const imgHeight = (img.height * imgWidth) / img.width;
                 
-                // Si l'image est plus haute que la page A4, on ajuste
-                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+                // Maya: Utilisation d'un Canvas pour traiter l'image (Scanner Look)
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+
+                // 1. Détecter l'orientation et forcer le mode Portrait (A4)
+                let isLandscape = img.width > img.height;
+                if (isLandscape) {
+                    canvas.width = img.height;
+                    canvas.height = img.width;
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.rotate(-90 * Math.PI / 180);
+                    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                } else {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                }
+
+                // 2. Appliquer un filtre "Scanner" (Niveaux de gris + Contraste élevé)
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    // Calcul de la luminance (Niveaux de gris)
+                    const gray = data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11;
+                    
+                    // Augmentation brutale du contraste pour effet Scanner
+                    // Si c'est plutôt clair, on blanchit. Si c'est plutôt sombre (texte), on noircit.
+                    const threshold = 120; 
+                    const contrastValue = gray < threshold ? gray * 0.6 : Math.min(255, gray * 1.3);
+                    
+                    data[i] = data[i+1] = data[i+2] = contrastValue;
+                }
+                ctx.putImageData(imageData, 0, 0);
+
+                const processedImgData = canvas.toDataURL('image/jpeg', 0.85);
+                const pdf = new jsPDF();
+                const pageWidth = 210;
+                const pageHeight = 297;
+                
+                // 3. Calcul du ratio pour occuper la page proprement sans déformer
+                const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
+                const finalW = canvas.width * ratio;
+                const finalH = canvas.height * ratio;
+                const x = (pageWidth - finalW) / 2;
+                const y = (pageHeight - finalH) / 2;
+
+                pdf.addImage(processedImgData, 'JPEG', x, y, finalW, finalH);
+                
                 const blob = pdf.output('blob');
                 const fileName = imageFile.name.split('.')[0] + '.pdf';
                 resolve(new File([blob], fileName, { type: 'application/pdf' }));
