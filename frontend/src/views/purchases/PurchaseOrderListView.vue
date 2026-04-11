@@ -15,100 +15,100 @@ interface PurchaseOrder {
 const pos = ref<PurchaseOrder[]>([])
 
 const isConverting = ref(false)
+const isPreviewModalOpen = ref(false)
+const previewImage = ref<string | null>(null)
+const previewRotation = ref(0)
+const activeReceiptId = ref<number | null>(null)
+const originalFile = ref<File | null>(null)
 
-const convertImageToPdf = (imageFile: File): Promise<File> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const imgData = e.target?.result as string;
-            const img = new Image();
-            img.onload = () => {
-                const jspdfObj = (window as any).jspdf;
-                if (!jspdfObj) { reject("jsPDF not loaded"); return; }
-                
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                if (!ctx) { reject("Canvas error"); return; }
-
-                // 1. Détection Orientation & Rotation Portrait (Fixée à 90 deg CW)
-                if (img.width > img.height) {
-                    canvas.width = img.height;
-                    canvas.height = img.width;
-                    ctx.translate(canvas.width, 0);
-                    ctx.rotate(90 * Math.PI / 180);
-                } else {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                }
-                ctx.drawImage(img, 0, 0);
-
-                // 2. Filtre "Scanner High-End"
-                const imgDataBuffer = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const d = imgDataBuffer.data;
-                for (let i = 0; i < d.length; i += 4) {
-                    const r = d[i] ?? 0;
-                    const g = d[i+1] ?? 0;
-                    const b = d[i+2] ?? 0;
-                    const gray = r * 0.3 + g * 0.59 + b * 0.11;
-                    
-                    // On blanchit agressivement pour supprimer les ombres de la table
-                    const val = gray > 155 ? 255 : (gray < 70 ? 0 : gray);
-                    d[i] = d[i+1] = d[i+2] = val;
-                }
-                ctx.putImageData(imgDataBuffer, 0, 0);
-
-                const finalImgData = canvas.toDataURL('image/jpeg', 0.82);
-                const pdf = new jspdfObj.jsPDF();
-                
-                // 3. Remplissage A4 (Cadrage optimisé pour la largeur)
-                const pageWidth = 210;
-                const pageHeight = 297;
-                
-                // On cale le document sur la largeur (page entière)
-                const finalW = pageWidth;
-                const finalH = (canvas.height * pageWidth) / canvas.width;
-                
-                // Si le document est trop long, on le centre. Sinon on le met en haut.
-                const yPos = finalH < pageHeight ? 0 : 0; 
-                pdf.addImage(finalImgData, 'JPEG', 0, yPos, finalW, finalH);
-                
-                resolve(new File([pdf.output('blob')], imageFile.name.split('.')[0] + '.pdf', { type: 'application/pdf' }));
-            };
-            img.src = imgData;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(imageFile);
-    });
+const rotatePreview = () => {
+    previewRotation.value = (previewRotation.value + 90) % 360
 }
 
 const handleArchiveInvoice = async (e: any, receiptId: number) => {
-    let file = e.target.files[0]
+    const file = e.target.files[0]
     if (!file || !receiptId) return
     
-    const formData = new FormData()
-
-    // Maya: Si c'est une photo/image, on la convertit en PDF avant l'envoi
+    // Si c'est une image, on ouvre la prévisualisation pour réglage manuel
     if (file.type.startsWith('image/')) {
-        isConverting.value = true
-        try {
-            file = await convertImageToPdf(file)
-        } catch (err) {
-            console.error('PDF conversion failed', err)
-        } finally {
-            isConverting.value = false
+        originalFile.value = file
+        activeReceiptId.value = receiptId
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+            previewImage.value = ev.target?.result as string
+            previewRotation.value = 0
+            isPreviewModalOpen.value = true
         }
+        reader.readAsDataURL(file)
+    } else {
+        await uploadInvoice(file, receiptId)
     }
-    
+}
+
+const uploadInvoice = async (file: File, receiptId: number) => {
+    const formData = new FormData()
     formData.append('invoice_file', file)
-    
     try {
         await api.post(`/receipts/${receiptId}/upload-invoice`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         })
-        alert("Facture enregistrée avec succès (Format PDF) !")
+        alert("Facture enregistrée avec succès !")
         fetchPOs()
     } catch (err) {
         alert("Erreur lors de l'envoi de la facture.")
+    }
+}
+
+const confirmManualScan = async () => {
+    if (!previewImage.value || !activeReceiptId.value || !originalFile.value) return
+    
+    isConverting.value = true
+    try {
+        const jspdfObj = (window as any).jspdf
+        const img = new Image()
+        img.src = previewImage.value
+        await new Promise(r => img.onload = r)
+
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+        
+        // Appliquer la rotation manuelle choisie par l'utilisateur
+        if (previewRotation.value === 90 || previewRotation.value === 270) {
+            canvas.width = img.height; canvas.height = img.width;
+        } else {
+            canvas.width = img.width; canvas.height = img.height;
+        }
+
+        ctx.translate(canvas.width / 2, canvas.height / 2)
+        ctx.rotate(previewRotation.value * Math.PI / 180)
+        ctx.drawImage(img, -img.width / 2, -img.height / 2)
+
+        // Filtre Pro Scanner
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const d = imgData.data
+        for (let i = 0; i < d.length; i += 4) {
+            const gray = (d[i] ?? 0) * 0.3 + (d[i+1] ?? 0) * 0.59 + (d[i+2] ?? 0) * 0.11
+            const val = gray > 165 ? 255 : (gray < 80 ? 0 : gray)
+            d[i] = d[i+1] = d[i+2] = val
+        }
+        ctx.putImageData(imgData, 0, 0)
+
+        const pdf = new jspdfObj.jsPDF()
+        const finalImg = canvas.toDataURL('image/jpeg', 0.8)
+        const ratio = Math.min(210 / canvas.width, 297 / canvas.height)
+        const finalW = canvas.width * ratio
+        const finalH = canvas.height * ratio
+        pdf.addImage(finalImg, 'JPEG', (210 - finalW)/2, 0, finalW, finalH)
+        
+        const blob = pdf.output('blob')
+        const finalFile = new File([blob], originalFile.value.name.split('.')[0] + '.pdf', { type: 'application/pdf' })
+        
+        await uploadInvoice(finalFile, activeReceiptId.value)
+        isPreviewModalOpen.value = false
+    } catch (e) {
+        alert("Erreur de traitement.")
+    } finally {
+        isConverting.value = false
     }
 }
 
@@ -408,6 +408,45 @@ onMounted(() => {
               </div>
             </form>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Prévisualisation & Rotation Scan -->
+    <div v-if="isPreviewModalOpen" class="fixed inset-0 z-[60] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="isPreviewModalOpen = false"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        
+        <div class="relative inline-block align-middle bg-white rounded-2xl px-4 pt-5 pb-4 text-left shadow-2xl transform transition-all sm:my-8 sm:max-w-xl w-full sm:p-6 border border-gray-100">
+          <div class="mb-4 flex items-center justify-between">
+            <h3 class="text-lg font-black text-gray-900 uppercase">Numériser la Facture</h3>
+            <button @click="isPreviewModalOpen = false" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+
+          <div class="bg-gray-100 rounded-xl overflow-hidden relative flex items-center justify-center min-h-[400px]">
+            <img v-if="previewImage" :src="previewImage" 
+                 class="max-h-[70vh] object-contain transition-transform duration-300 shadow-lg bg-white" 
+                 :style="{ transform: `rotate(${previewRotation}deg)` }" />
+            
+            <div v-if="isConverting" class="absolute inset-0 bg-white/80 flex flex-col items-center justify-center">
+              <div class="w-10 h-10 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
+              <p class="mt-4 text-sm font-bold text-brand-600">Génération du PDF Pro...</p>
+            </div>
+          </div>
+
+          <div class="mt-6 flex flex-col sm:flex-row gap-3">
+            <button @click="rotatePreview" class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all active:scale-95">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Pivoter 90°
+            </button>
+            <button @click="confirmManualScan" :disabled="isConverting" class="flex-1 px-8 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-xl shadow-brand-100 hover:bg-brand-700 transition-all hover:-translate-y-1 active:translate-y-0 disabled:opacity-50">
+              Confirmer & Envoyer
+            </button>
+          </div>
+          <p class="mt-4 text-[10px] text-gray-400 text-center font-medium italic">Le système appliquera automatiquement un filtre "Scanner Professionnel" après votre validation.</p>
         </div>
       </div>
     </div>
