@@ -36,18 +36,23 @@ jobs:
           target: "domains/kilatech.ma/public_html"
           strip_components: 2
 
-      - name: 🚀 Copy Backend to Hostinger (api)
+      - name: 📦 Archive Backend (Excluding vendor/storage)
+        run: |
+          cd backend
+          # On crée une archive zip du backend sans le dossier vendor pour un transfert ultra-rapide
+          zip -r ../backend.zip . -x "vendor/*" "storage/logs/*" ".git/*" "node_modules/*"
+
+      - name: 🚀 Upload Backend Archive
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOSTINGER_IP }}
           username: ${{ secrets.HOSTINGER_USER }}
           password: ${{ secrets.HOSTINGER_PASSWORD }}
           port: 65002
-          source: "backend/*"
+          source: "backend.zip"
           target: "domains/kilatech.ma/public_html/api"
-          strip_components: 1
 
-      - name: ⚙️ Install Composer & Migrate Database on Hostinger
+      - name: ⚙️ Extract & Setup on Hostinger
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOSTINGER_IP }}
@@ -56,5 +61,12 @@ jobs:
           port: 65002
           script: |
             cd domains/kilatech.ma/public_html/api
+            # Extraction propre
+            unzip -o ../backend.zip -d .
+            rm ../backend.zip
+            
+            # Installation des dépendances et migration
             /opt/alt/php82/usr/bin/php /usr/local/bin/composer install --no-dev --optimize-autoloader
             /opt/alt/php82/usr/bin/php artisan migrate --force || true
+            /opt/alt/php82/usr/bin/php artisan cache:clear
+            /opt/alt/php82/usr/bin/php artisan config:clear
