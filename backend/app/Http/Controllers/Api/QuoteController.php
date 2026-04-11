@@ -447,11 +447,15 @@ class QuoteController extends Controller
      * Maya: L'agent confirme et envoie le devis au client par email avec PDF.
      * Route protégée : auth:sanctum
      */
-    public function confirmAndSend(Quote $originalQuote)
+    public function confirmAndSend(Quote $quote)
     {
         // 1. Protection : On ne valide qu'une demande en attente
-        if ($originalQuote->source !== 'web' || $originalQuote->status !== 'pending_approval') {
-            return response()->json(['message' => 'Cette opération n\'est possible que pour les nouvelles demandes web.'], 400);
+        if ($quote->source !== 'web' || !in_array($quote->status, ['pending_approval', 'validated'])) {
+            return response()->json(['message' => 'Cette opération n\'est possible que pour les demandes web en attente.'], 400);
+        }
+
+        if (!$quote->client) {
+            return response()->json(['message' => 'Client introuvable pour cette demande.'], 404);
         }
 
         try {
@@ -459,16 +463,16 @@ class QuoteController extends Controller
 
             // 2. Création de la COPIE pour l'ERP (Le vrai devis commercial)
             $erpQuote = Quote::create([
-                'client_id' => $originalQuote->client_id,
+                'client_id' => $quote->client_id,
                 // Le quote_number est généré automatiquement par le modèle Quote::boot()
                 'date' => now(),
                 'status' => 'draft', // On le crée comme brouillon pour qu'il soit modifiable
                 'source' => 'erp', // Il devient un vrai devis ERP
-                'notes' => "Issu de la demande Web #" . $originalQuote->id,
+                'notes' => "Issu de la demande Web #" . $quote->id,
             ]);
 
             // 3. Copie des lignes de produits
-            foreach ($originalQuote->lines as $line) {
+            foreach ($quote->lines as $line) {
                 $erpQuote->lines()->create([
                     'product_variant_id' => $line->product_variant_id,
                     'quantity' => $line->quantity,
@@ -479,7 +483,7 @@ class QuoteController extends Controller
             }
 
             // 4. Archivage de la demande originale dans la Vitrinerie
-            $originalQuote->update([
+            $quote->update([
                 'status' => 'validated',
                 // On garde source='web' pour qu'il reste dans l'historique Vitrinerie
             ]);
