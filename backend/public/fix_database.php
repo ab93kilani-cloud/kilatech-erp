@@ -26,15 +26,21 @@ try {
         echo "ℹ️ Column 'source' already exists in 'quotes'\n";
     }
 
-    if (!Schema::hasColumn('clients', 'source')) {
-        Schema::table('clients', function (Blueprint $table) {
+    Schema::table('clients', function (Blueprint $table) {
+        if (!Schema::hasColumn('clients', 'source')) {
             $table->string('source')->default('erp')->after('id');
-            $table->string('cin')->nullable()->after('source');
-        });
-        echo "✅ Columns 'source' and 'cin' added to 'clients'\n";
-    } else {
-        echo "ℹ️ Columns already exist in 'clients'\n";
-    }
+            echo "✅ Column 'source' added to 'clients'\n";
+        } else {
+            echo "ℹ️ Column 'source' already exists in 'clients'\n";
+        }
+        
+        if (!Schema::hasColumn('clients', 'cin')) {
+            $table->string('cin')->nullable()->after('id');
+            echo "✅ Column 'cin' added to 'clients'\n";
+        } else {
+            echo "ℹ️ Column 'cin' already exists in 'clients'\n";
+        }
+    });
 
     if (!Schema::hasTable('contact_messages')) {
         Schema::create('contact_messages', function (Blueprint $table) {
