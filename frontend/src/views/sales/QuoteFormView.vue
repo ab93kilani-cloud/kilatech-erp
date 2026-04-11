@@ -231,8 +231,8 @@ const fetchQuote = async () => {
         const data = response.data
         form.value = {
             client_id: data.client_id,
-            valid_until: data.valid_until,
-            quote_date: data.quote_date || '',
+            valid_until: data.valid_until ? data.valid_until.split('T')[0].split(' ')[0] : '',
+            quote_date: data.quote_date ? data.quote_date.split('T')[0].split(' ')[0] : '',
             discount_amount: data.discount_amount,
             payment_method: data.payment_method || '',
             payment_term: data.payment_term || ''
@@ -243,7 +243,7 @@ const fetchQuote = async () => {
             quantity: l.quantity,
             unit_price: Number(l.unit_price),
             discount_percent: Number(l.discount_percent),
-            tax_rate: 20,
+            tax_rate: l.tax_rate ?? 20,
             client_product_ref: l.client_product_ref || ''
         }))
     } catch (e) {
@@ -251,7 +251,9 @@ const fetchQuote = async () => {
     }
 }
 
-onMounted(() => {
+onMounted(async () => {
+    await fetchDependencies()
+    
     if (route.params.id) {
         isEditing.value = true
         quoteId.value = route.params.id as string
@@ -262,8 +264,6 @@ onMounted(() => {
         d.setDate(d.getDate() + 15)
         form.value.valid_until = d.toISOString().split('T')[0] || ''
     }
-    
-    fetchDependencies()
 })
 </script>
 
