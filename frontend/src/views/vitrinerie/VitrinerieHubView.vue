@@ -26,7 +26,10 @@
 
     <!-- Tab Content: Devi Web -->
     <div v-if="activeTab === 'quotes'" class="space-y-4">
-      <div v-if="isLoading" class="py-12 text-center text-gray-400">Chargement des demandes...</div>
+      <div v-if="fetchError" class="py-12 text-center text-red-500 bg-red-50 rounded-xl border border-red-100">
+        {{ fetchError }}
+      </div>
+      <div v-else-if="isLoading" class="py-12 text-center text-gray-400">Chargement des demandes...</div>
       <div v-else-if="webQuotes.length === 0" class="py-20 bg-white rounded-xl border-2 border-dashed border-gray-100 text-center">
          <p class="text-gray-400">Aucune demande de devis en attente.</p>
       </div>
@@ -140,6 +143,7 @@ const webQuotes = ref<any[]>([])
 const webClients = ref<any[]>([])
 const messages = ref<any[]>([])
 const isLoading = ref(true)
+const fetchError = ref<string | null>(null)
 
 const tabs = computed(() => [
   { id: 'quotes', name: 'Demandes de Devis', count: webQuotes.value.length },
@@ -149,6 +153,7 @@ const tabs = computed(() => [
 
 const fetchData = async () => {
     isLoading.value = true
+    fetchError.value = null
     try {
         const [qRes, cRes, mRes] = await Promise.all([
             api.get('/vitrinerie/quotes'),
@@ -158,8 +163,9 @@ const fetchData = async () => {
         webQuotes.value = qRes.data
         webClients.value = cRes.data
         messages.value = mRes.data
-    } catch (e) {
-        console.error('Failed to fetch Vitrinerie data')
+    } catch (e: any) {
+        console.error('Failed to fetch Vitrinerie data', e)
+        fetchError.value = "Impossible de charger les données. Vérifiez que votre base de données est à jour (migration 'source' manquante ?)."
     } finally {
         isLoading.value = false
     }

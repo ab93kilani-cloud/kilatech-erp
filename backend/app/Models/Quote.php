@@ -44,6 +44,28 @@ class Quote extends Model
         'locked_at' => 'datetime',
     ];
 
+    protected $appends = ['total_ttc'];
+
+    public function getTotalTtcAttribute()
+    {
+        $totalHT = $this->lines->sum(function($line) {
+            $ht = $line->unit_price * $line->quantity;
+            $discountVal = $ht * (($line->discount_percent ?? 0) / 100);
+            return $ht - $discountVal;
+        });
+
+        // Simplified TVA: assumes most are 20% or use the line's rate
+        $totalTTC = $this->lines->sum(function($line) {
+            $ht = $line->unit_price * $line->quantity;
+            $discountVal = $ht * (($line->discount_percent ?? 0) / 100);
+            $netHT = $ht - $discountVal;
+            $tvaRate = $line->tax_rate ?? 20;
+            return $netHT * (1 + ($tvaRate / 100));
+        });
+
+        return round($totalTTC - ($this->discount_amount ?? 0), 2);
+    }
+
     public function client()
     {
         return $this->belongsTo(Client::class);
