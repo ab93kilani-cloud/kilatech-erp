@@ -14,18 +14,58 @@ interface PurchaseOrder {
 
 const pos = ref<PurchaseOrder[]>([])
 
+const isConverting = ref(false)
+
+const convertImageToPdf = (imageFile: File): Promise<File> => {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const imgData = e.target?.result as string;
+            const img = new Image();
+            img.onload = () => {
+                const { jsPDF } = (window as any).jspdf;
+                // A4 dimensions: 210 x 297 mm
+                const pdf = new jsPDF();
+                const imgWidth = 210;
+                const imgHeight = (img.height * imgWidth) / img.width;
+                
+                // Si l'image est plus haute que la page A4, on ajuste
+                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+                const blob = pdf.output('blob');
+                const fileName = imageFile.name.split('.')[0] + '.pdf';
+                resolve(new File([blob], fileName, { type: 'application/pdf' }));
+            };
+            img.src = imgData;
+        };
+        reader.readAsDataURL(imageFile);
+    });
+}
+
 const handleArchiveInvoice = async (e: any, receiptId: number) => {
-    const file = e.target.files[0]
+    let file = e.target.files[0]
     if (!file || !receiptId) return
     
     const formData = new FormData()
+
+    // Maya: Si c'est une photo/image, on la convertit en PDF avant l'envoi
+    if (file.type.startsWith('image/')) {
+        isConverting.value = true
+        try {
+            file = await convertImageToPdf(file)
+        } catch (err) {
+            console.error('PDF conversion failed', err)
+        } finally {
+            isConverting.value = false
+        }
+    }
+    
     formData.append('invoice_file', file)
     
     try {
         await api.post(`/receipts/${receiptId}/upload-invoice`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         })
-        alert("Facture enregistrée avec succès !")
+        alert("Facture enregistrée avec succès (Format PDF) !")
         fetchPOs()
     } catch (err) {
         alert("Erreur lors de l'envoi de la facture.")
@@ -231,8 +271,10 @@ onMounted(() => {
                         <span v-if="po.receipts[0]?.invoice_status === 'received'" class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded text-[10px]">FACTURE OK</span>
                         <span v-else class="text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded text-[10px]">FACTURE À RÉGLER</span>
                         
-                        <input type="file" :id="'inv-upload-'+po.id" class="hidden" accept="application/pdf" @change="(e) => handleArchiveInvoice(e, po.receipts![0]?.id)">
-                        <label v-if="!po.receipts[0]?.invoice_path" :for="'inv-upload-'+po.id" class="cursor-pointer text-[10px] bg-brand-600 text-white px-2 py-0.5 rounded hover:bg-brand-700 font-bold uppercase transition-transform active:scale-95">Uploader PDF</label>
+                        <input type="file" :id="'inv-upload-'+po.id" class="hidden" accept="application/pdf,image/*" @change="(e) => handleArchiveInvoice(e, po.receipts![0]?.id)">
+                        <label v-if="!po.receipts[0]?.invoice_path" :for="'inv-upload-'+po.id" class="cursor-pointer text-[10px] bg-brand-600 text-white px-2 py-0.5 rounded hover:bg-brand-700 font-bold uppercase transition-transform active:scale-95 shadow-lg">
+                           {{ isConverting ? '📦 SCAN EN COURS...' : 'Uploader PDF / Photo' }}
+                        </label>
                       </div>
                   </td>
                   
