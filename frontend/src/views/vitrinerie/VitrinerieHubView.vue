@@ -120,10 +120,15 @@
       </div>
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div v-for="client in webClients" :key="client.id" class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative group overflow-hidden">
-          <div class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-             <button @click="promoteClient(client)" title="Intégrer aux clients officiels" class="p-2 bg-brand-50 text-brand-600 rounded-full hover:bg-brand-600 hover:text-white transition-all">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+             <button @click="promoteClient(client)" title="Intégrer aux clients officiels" class="p-2 bg-brand-50 text-brand-600 rounded-full hover:bg-brand-600 hover:text-white transition-all shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                </svg>
+             </button>
+             <button @click="deleteClient(client)" title="Supprimer ce prospect" class="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
              </button>
           </div>
@@ -237,6 +242,27 @@ const promoteClient = async (client: any) => {
             fetchData()
         } catch (e) {
             Swal.fire('Erreur', 'Impossible d\'intégrer le client.', 'error')
+        }
+    }
+}
+
+const deleteClient = async (client: any) => {
+    const result = await Swal.fire({
+        title: 'Supprimer le prospect ?',
+        text: "Cette action est irréversible et supprimera toutes les informations liées à ce prospect.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Oui, supprimer'
+    })
+    
+    if (result.isConfirmed) {
+        try {
+            await api.delete(`/clients/${client.id}`)
+            Swal.fire('Supprimé !', 'Le prospect a été retiré.', 'success')
+            fetchData()
+        } catch (e) {
+            Swal.fire('Erreur', 'Impossible de supprimer le prospect. Il est peut-être lié à un devis existant.', 'error')
         }
     }
 }
