@@ -11,7 +11,7 @@ use App\Http\Controllers\Api\ContactController;
 |--------------------------------------------------------------------------
 |
 */
-// Deployment trigger: Applying full status flexibility for Quote management.
+// Deployment trigger: Isolation of web requests from ERP quotes.
 
 // Public Routes (Products, Articles, Orders, Login) have been moved to web.php Maya.
 // with double-prefix support for Hostinger compatibility.
