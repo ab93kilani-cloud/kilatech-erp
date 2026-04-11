@@ -17,76 +17,55 @@ const pos = ref<PurchaseOrder[]>([])
 const isConverting = ref(false)
 
 const convertImageToPdf = (imageFile: File): Promise<File> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             const imgData = e.target?.result as string;
             const img = new Image();
             img.onload = () => {
-                // Maya: Utilisation d'un Canvas pour traiter l'image (Scanner Look)
+                const jspdfObj = (window as any).jspdf;
+                if (!jspdfObj) { reject("jsPDF not loaded"); return; }
+                
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                if (!ctx) return;
+                if (!ctx) { reject("Canvas error"); return; }
 
-                // 1. Détecter l'orientation et forcer le mode Portrait (A4)
-                let isLandscape = img.width > img.height;
-                if (isLandscape) {
+                // 1. Détection Orientation & Rotation Portrait Forcée
+                if (img.width > img.height) {
                     canvas.width = img.height;
                     canvas.height = img.width;
-                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.translate(0, canvas.height);
                     ctx.rotate(-90 * Math.PI / 180);
-                    ctx.drawImage(img, -img.width / 2, -img.height / 2);
-                    ctx.rotate(90 * Math.PI / 180); // Reset for next steps
-                    ctx.translate(-canvas.width / 2, -canvas.height / 2);
                 } else {
                     canvas.width = img.width;
                     canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
                 }
+                ctx.drawImage(img, 0, 0);
 
-                // 2. Appliquer un filtre "Scanner" (Niveaux de gris + Contraste élevé)
+                // 2. Filtre "Scanner Xerox" (Très contrasté)
                 const imgDataBuffer = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imgDataBuffer.data;
-                for (let i = 0; i < data.length; i += 4) {
-                    // Maya: Ajout de garanties pour le compilateur
-                    const r = data[i] ?? 0;
-                    const g = data[i + 1] ?? 0;
-                    const b = data[i + 2] ?? 0;
-
-                    const gray = r * 0.3 + g * 0.59 + b * 0.11;
-                    
-                    const threshold = 120; 
-                    const contrastValue = gray < threshold ? gray * 0.6 : Math.min(255, gray * 1.3);
-                    
-                    data[i] = data[i+1] = data[i+2] = contrastValue;
+                const d = imgDataBuffer.data;
+                for (let i = 0; i < d.length; i += 4) {
+                    const gray = (d[i] ?? 0) * 0.3 + (d[i+1] ?? 0) * 0.59 + (d[i+2] ?? 0) * 0.11;
+                    // On blanchit les gris clairs (fond de papier) et noircit les sombres (texte)
+                    const val = gray > 145 ? 255 : (gray < 80 ? 0 : gray * 0.6);
+                    d[i] = d[i+1] = d[i+2] = val;
                 }
                 ctx.putImageData(imgDataBuffer, 0, 0);
 
-                const processedImgData = canvas.toDataURL('image/jpeg', 0.85);
-                const jspdfObj = (window as any).jspdf;
-                if (!jspdfObj) {
-                    alert("Erreur: Bibliothèque de scan non chargée.");
-                    return;
-                }
+                const finalImgData = canvas.toDataURL('image/jpeg', 0.8);
                 const pdf = new jspdfObj.jsPDF();
-                const pageWidth = 210;
-                const pageHeight = 297;
                 
-                // 3. Calcul du ratio pour occuper la page proprement sans déformer
-                const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
+                // 3. Remplissage A4 (210x297mm)
+                const ratio = Math.min(210 / canvas.width, 297 / canvas.height);
                 const finalW = canvas.width * ratio;
                 const finalH = canvas.height * ratio;
-                const x = (pageWidth - finalW) / 2;
-                const y = (pageHeight - finalH) / 2;
-
-                pdf.addImage(processedImgData, 'JPEG', x, y, finalW, finalH);
-                
-                const blob = pdf.output('blob');
-                const fileName = imageFile.name.split('.')[0] + '.pdf';
-                resolve(new File([blob], fileName, { type: 'application/pdf' }));
+                pdf.addImage(finalImgData, 'JPEG', (210 - finalW) / 2, (297 - finalH) / 2, finalW, finalH);
+                resolve(new File([pdf.output('blob')], imageFile.name.split('.')[0] + '.pdf', { type: 'application/pdf' }));
             };
             img.src = imgData;
         };
+        reader.onerror = reject;
         reader.readAsDataURL(imageFile);
     });
 }
