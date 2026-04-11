@@ -11,7 +11,7 @@ use App\Http\Controllers\Api\ContactController;
 |--------------------------------------------------------------------------
 |
 */
-// Deployment trigger: Retrying after transient SSH failure.
+// Deployment trigger: Applying full status flexibility for Quote management.
 
 // Public Routes (Products, Articles, Orders, Login) have been moved to web.php Maya.
 // with double-prefix support for Hostinger compatibility.

@@ -195,8 +195,9 @@ class QuoteController extends Controller
      */
     public function confirm(Quote $quote)
     {
-        if (!in_array($quote->status, ['draft', 'sent'])) {
-            return response()->json(['message' => 'Seul un devis brouillon ou envoyé peut être confirmé.'], 400);
+        // On permet de confirmer tout devis non encore transformé en BL (donc non supprimé/annulé)
+        if (!in_array($quote->status, ['draft', 'sent', 'validated', 'À confirmer', 'pending_approval'])) {
+            return response()->json(['message' => 'Ce devis ne peut plus être confirmé.'], 400);
         }
 
         DB::beginTransaction();
@@ -267,8 +268,9 @@ class QuoteController extends Controller
      */
     public function update(Request $request, Quote $quote)
     {
-        if (!in_array($quote->status, ['draft', 'À confirmer', 'pending_approval', 'sent'])) {
-            return response()->json(['message' => 'Ce devis ne peut pas être modifié dans son état actuel.'], 400);
+        // On autorise la modification de presque tous les états pour donner de la flexibilité à l'utilisateur
+        if (!in_array($quote->status, ['draft', 'À confirmer', 'pending_approval', 'sent', 'validated', 'confirmed'])) {
+            return response()->json(['message' => 'Ce devis est verrouillé et ne peut pas être modifié.'], 400);
         }
 
         $request->validate([
@@ -330,8 +332,11 @@ class QuoteController extends Controller
      */
     public function destroy(Quote $quote)
     {
-        if (!in_array($quote->status, ['draft', 'À confirmer', 'sent'])) {
-            return response()->json(['message' => 'Seul un devis brouillon, en attente ou envoyé peut être supprimé.'], 400);
+        // Autoriser la suppression de tout devis (Soft Delete géré par le modèle)
+        // Sauf s'il est déjà converti en BL ? (On laisse l'utilisateur décider de ses archives)
+        $allowed = ['draft', 'À confirmer', 'sent', 'validated', 'confirmed', 'pending_approval'];
+        if (!in_array($quote->status, $allowed)) {
+            return response()->json(['message' => 'Suppression impossible pour ce statut : ' . $quote->status], 400);
         }
 
         DB::beginTransaction();
