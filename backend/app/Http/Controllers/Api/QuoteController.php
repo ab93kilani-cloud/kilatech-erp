@@ -449,28 +449,39 @@ class QuoteController extends Controller
         }
 
         try {
-            // 1. Générer le PDF
+            // 1. Mettre à jour immédiatement pour que le devis apparaisse dans l'ERP
+            $quote->update([
+                'status' => 'sent',
+                'source' => 'erp' // Important pour quitter l'espace Vitrinerie vers la liste principale
+            ]);
+
+            // 2. Générer le PDF
             $pdf = $this->getQuotePdf($quote->load(['client', 'lines.variant.product']));
             $pdfContent = $pdf->output();
 
-            // 2. Envoyer au client
-            \Illuminate\Support\Facades\Mail::to($quote->client->email)
-                ->send(new \App\Mail\QuoteSentToClient($quote, $pdfContent));
-
-            // 3. Mettre à jour le statut du devis
-            $quote->update(['status' => 'sent']);
+            // 3. Tentative d'envoi d'email
+            $emailSent = false;
+            try {
+                \Illuminate\Support\Facades\Mail::to($quote->client->email)
+                    ->send(new \App\Mail\QuoteSentToClient($quote, $pdfContent));
+                $emailSent = true;
+            } catch (\Exception $mailError) {
+                // On log l'erreur mail mais on ne bloque pas le reste
+                \Illuminate\Support\Facades\Log::error("Échec envoi mail devis " . $quote->quote_number . ": " . $mailError->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Le devis ' . $quote->quote_number . ' a été envoyé à ' . $quote->client->email,
+                'email_sent' => $emailSent,
+                'message' => $emailSent 
+                    ? '✅ Devis ' . $quote->quote_number . ' validé et envoyé à ' . $quote->client->email 
+                    : '⚠️ Devis ' . $quote->quote_number . ' validé et ajouté à la liste, mais l\'envoi de l\'email a échoué.',
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Erreur lors de l\'envoi du devis.',
+                'message' => 'Erreur lors de la validation du devis.',
                 'error'   => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
             ], 500);
         }
     }
