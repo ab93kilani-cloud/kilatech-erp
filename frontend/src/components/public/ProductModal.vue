@@ -107,14 +107,17 @@ const handleAddToCart = () => {
                 </div>
 
                 <!-- Info Conditionnement -->
-                <div v-if="product.sales_multiplier > 1" class="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-1">
-                  <div class="flex justify-between items-center text-brand-600">
-                    <span class="text-[10px] font-black uppercase tracking-widest">Conditionnement Obligatoire</span>
-                    <span class="text-xs font-bold">{{ product.packaging_unit }} de {{ product.sales_multiplier }} {{ product.unit_name }}s</span>
+                <div v-if="product.sales_multiplier > 1" class="mt-4 pt-4 border-t border-brand-100 bg-brand-50/30 p-4 rounded-xl flex flex-col gap-2">
+                  <div class="flex justify-between items-center text-brand-700">
+                    <span class="text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" /></svg>
+                      Vente par {{ product.packaging_unit }} uniquement
+                    </span>
                   </div>
-                  <div class="flex justify-between items-center text-gray-400">
-                    <span class="text-[10px] uppercase font-bold">Total ({{ product.packaging_unit }})</span>
-                    <span class="text-sm font-black">{{ (displayPrice * product.sales_multiplier).toFixed(2) }} MAD</span>
+                  <p class="text-[11px] text-gray-600 font-medium">Ce produit ne peut pas être vendu à l'unité. Unité minimale : <strong>1 {{ product.packaging_unit }} ({{ product.sales_multiplier }} {{ product.unit_name }}s)</strong>.</p>
+                  <div class="flex justify-between items-center text-brand-900 border-t border-brand-100 pt-2 mt-1">
+                    <span class="text-[10px] uppercase font-black">Prix de la {{ product.packaging_unit }}</span>
+                    <span class="text-base font-black">{{ (displayPrice * product.sales_multiplier).toFixed(2) }} MAD</span>
                   </div>
                 </div>
 
@@ -131,10 +134,13 @@ const handleAddToCart = () => {
               <!-- Actions -->
               <div class="mt-auto pt-6 flex flex-col gap-4">
                  <div class="flex items-center justify-between gap-4">
-                    <div class="flex items-center border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                      <button @click="quantity > 1 && quantity--" class="px-4 py-2 hover:bg-gray-100 transition-colors">-</button>
-                      <input type="number" v-model="quantity" class="w-12 text-center font-bold outline-none border-x border-gray-200" />
-                      <button @click="quantity++" class="px-4 py-2 hover:bg-gray-100 transition-colors">+</button>
+                    <div class="flex items-center border-2 border-brand-100 rounded-xl overflow-hidden shadow-sm bg-white">
+                      <button @click="quantity > 1 && quantity--" class="px-4 py-3 hover:bg-brand-50 text-brand-600 font-bold transition-colors">-</button>
+                      <div class="px-4 py-3 flex flex-col items-center min-w-[80px] border-x border-brand-100">
+                         <span class="text-lg font-black leading-tight">{{ quantity }}</span>
+                         <span class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">{{ product.sales_multiplier > 1 ? product.packaging_unit : product.unit_name }}</span>
+                      </div>
+                      <button @click="quantity++" class="px-4 py-3 hover:bg-brand-50 text-brand-600 font-bold transition-colors">+</button>
                     </div>
                     <button @click="handleAddToCart" class="flex-1 px-8 py-4 bg-brand-600 text-white rounded-2xl font-bold shadow-xl shadow-brand-200 hover:bg-brand-700 hover:-translate-y-1 transition-all active:translate-y-0">
                       Ajouter au devis
