@@ -442,45 +442,72 @@ class QuoteController extends Controller
      * Maya: L'agent confirme et envoie le devis au client par email avec PDF.
      * Route protégée : auth:sanctum
      */
-    public function confirmAndSend(Quote $quote)
+    public function confirmAndSend(Quote $originalQuote)
     {
-        if (!in_array($quote->status, ['pending_approval', 'draft'])) {
-            return response()->json(['message' => 'Ce devis ne peut pas être envoyé dans son état actuel.'], 400);
+        // 1. Protection : On ne valide qu'une demande en attente
+        if ($originalQuote->source !== 'web' || $originalQuote->status !== 'pending_approval') {
+            return response()->json(['message' => 'Cette opération n\'est possible que pour les nouvelles demandes web.'], 400);
         }
 
         try {
-            // 1. Mettre à jour immédiatement pour que le devis apparaisse dans l'ERP
-            $quote->update([
+            DB::beginTransaction();
+
+            // 2. Création de la COPIE pour l'ERP (Le vrai devis commercial)
+            $erpQuote = Quote::create([
+                'client_id' => $originalQuote->client_id,
+                // Le quote_number est généré automatiquement par le modèle Quote::boot()
+                'date' => now(),
                 'status' => 'sent',
-                'source' => 'erp' // Important pour quitter l'espace Vitrinerie vers la liste principale
+                'source' => 'erp', // Il devient un vrai devis ERP
+                'notes' => "Issu de la demande Web #" . $originalQuote->id,
             ]);
 
-            // 2. Générer le PDF
-            $pdf = $this->getQuotePdf($quote->load(['client', 'lines.variant.product']));
+            // 3. Copie des lignes de produits
+            foreach ($originalQuote->lines as $line) {
+                $erpQuote->lines()->create([
+                    'product_variant_id' => $line->product_variant_id,
+                    'quantity' => $line->quantity,
+                    'unit_price' => $line->unit_price,
+                    'total_price' => $line->total_price,
+                    'discount' => $line->discount ?? 0,
+                ]);
+            }
+
+            // 4. Archivage de la demande originale dans la Vitrinerie
+            $originalQuote->update([
+                'status' => 'validated',
+                // On garde source='web' pour qu'il reste dans l'historique Vitrinerie
+            ]);
+
+            // 5. Générer le PDF pour l'envoi
+            $pdf = $this->getQuotePdf($erpQuote->load(['client', 'lines.variant.product']));
             $pdfContent = $pdf->output();
 
-            // 3. Tentative d'envoi d'email
+            // 6. Tentative d'envoi d'email au client
             $emailSent = false;
             try {
-                \Illuminate\Support\Facades\Mail::to($quote->client->email)
-                    ->send(new \App\Mail\QuoteSentToClient($quote, $pdfContent));
+                \Illuminate\Support\Facades\Mail::to($erpQuote->client->email)
+                    ->send(new \App\Mail\QuoteSentToClient($erpQuote, $pdfContent));
                 $emailSent = true;
             } catch (\Exception $mailError) {
-                // On log l'erreur mail mais on ne bloque pas le reste
-                \Illuminate\Support\Facades\Log::error("Échec envoi mail devis " . $quote->quote_number . ": " . $mailError->getMessage());
+                \Illuminate\Support\Facades\Log::error("Échec envoi mail devis " . $erpQuote->quote_number . ": " . $mailError->getMessage());
             }
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
+                'new_quote_id' => $erpQuote->id,
                 'email_sent' => $emailSent,
                 'message' => $emailSent 
-                    ? '✅ Devis ' . $quote->quote_number . ' validé et envoyé à ' . $quote->client->email 
-                    : '⚠️ Devis ' . $quote->quote_number . ' validé et ajouté à la liste, mais l\'envoi de l\'email a échoué.',
+                    ? '✅ Demande transformée en Devis ' . $erpQuote->quote_number . ' et envoyée.' 
+                    : '⚠️ Devis ' . $erpQuote->quote_number . ' créé, mais l\'envoi email a échoué.',
             ]);
 
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
-                'message' => 'Erreur lors de la validation du devis.',
+                'message' => 'Erreur lors de la transformation du devis.',
                 'error'   => $e->getMessage(),
             ], 500);
         }

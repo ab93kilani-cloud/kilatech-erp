@@ -24,13 +24,13 @@
       </nav>
     </div>
 
-    <!-- Tab Content: Devi Web -->
+    <!-- Tab Content: Devi Web (Active) -->
     <div v-if="activeTab === 'quotes'" class="space-y-4">
       <div v-if="fetchError" class="py-12 text-center text-red-500 bg-red-50 rounded-xl border border-red-100">
         {{ fetchError }}
       </div>
       <div v-else-if="isLoading" class="py-12 text-center text-gray-400">Chargement des demandes...</div>
-      <div v-else-if="webQuotes.length === 0" class="py-20 bg-white rounded-xl border-2 border-dashed border-gray-100 text-center">
+      <div v-else-if="activeQuotes.length === 0" class="py-20 bg-white rounded-xl border-2 border-dashed border-gray-100 text-center">
          <p class="text-gray-400">Aucune demande de devis en attente.</p>
       </div>
       <div v-else class="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden">
@@ -45,7 +45,7 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="quote in webQuotes" :key="quote.id" class="hover:bg-gray-50 transition-colors">
+            <tr v-for="quote in activeQuotes" :key="quote.id" class="hover:bg-gray-50 transition-colors">
               <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
                 {{ new Date(quote.created_at).toLocaleDateString() }}
               </td>
@@ -62,6 +62,49 @@
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <router-link :to="{ name: 'quotes.edit', params: { id: quote.id } }" class="text-brand-600 hover:text-brand-900 mr-4">Réviser / Modifier</router-link>
                 <button @click="confirmAndSend(quote)" class="text-white bg-brand-600 px-3 py-1 rounded-md text-xs hover:bg-brand-700">Valider & Envoyer</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab Content: Archives Web -->
+    <div v-if="activeTab === 'archives'" class="space-y-4">
+      <div v-if="isLoading" class="py-12 text-center text-gray-400">Chargement des archives...</div>
+      <div v-else-if="archivedQuotes.length === 0" class="py-20 bg-white rounded-xl border-2 border-dashed border-gray-100 text-center">
+         <p class="text-gray-400">Aucun devis archivé pour le moment.</p>
+      </div>
+      <div v-else class="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Prospect</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Produits</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Total TTC</th>
+              <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="quote in archivedQuotes" :key="quote.id" class="bg-gray-50/50">
+              <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-400">
+                {{ new Date(quote.created_at).toLocaleDateString() }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm font-bold text-gray-400">{{ quote.client?.contact_name }}</div>
+                <div class="text-xs text-gray-400">{{ quote.client?.email }}</div>
+              </td>
+              <td class="px-6 py-4 text-xs text-gray-400 capitalize">
+                {{ quote.lines?.length }} article(s)
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-400">
+                {{ quote.total_ttc?.toLocaleString() }} MAD
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Transformé en Devis ERP
+                </span>
               </td>
             </tr>
           </tbody>
@@ -135,21 +178,17 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '@/plugins/axios'
 import Swal from 'sweetalert2'
 
+const router = useRouter()
 const activeTab = ref('quotes')
 const webQuotes = ref<any[]>([])
 const webClients = ref<any[]>([])
 const messages = ref<any[]>([])
 const isLoading = ref(true)
 const fetchError = ref<string | null>(null)
-
-const tabs = computed(() => [
-  { id: 'quotes', name: 'Demandes de Devis', count: webQuotes.value.length },
-  { id: 'clients', name: 'Nouveaux Prospects', count: webClients.value.length },
-  { id: 'messages', name: 'Messages Contact', count: messages.value.filter(m => m.status === 'unread').length }
-])
 
 const fetchData = async () => {
     isLoading.value = true
@@ -170,6 +209,16 @@ const fetchData = async () => {
         isLoading.value = false
     }
 }
+
+const activeQuotes = computed(() => webQuotes.value.filter(q => q.status === 'pending_approval'))
+const archivedQuotes = computed(() => webQuotes.value.filter(q => q.status === 'validated'))
+
+const tabs = computed(() => [
+  { id: 'quotes', name: 'Demandes de Devis', count: activeQuotes.value.length },
+  { id: 'archives', name: 'Archives Web', count: archivedQuotes.value.length },
+  { id: 'clients', name: 'Nouveaux Prospects', count: webClients.value.length },
+  { id: 'messages', name: 'Messages Contact', count: messages.value.filter(m => m.status === 'unread').length }
+])
 
 const promoteClient = async (client: any) => {
     const result = await Swal.fire({
@@ -194,26 +243,33 @@ const promoteClient = async (client: any) => {
 
 const confirmAndSend = async (quote: any) => {
     const result = await Swal.fire({
-        title: 'Valider et Envoyer ?',
-        text: "Le client recevra son devis officiel par email.",
+        title: 'Valider et Transformer ?',
+        text: "Cette demande sera archivée et un nouveau devis officiel sera créé dans votre liste ERP.",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#26a69a',
-        confirmButtonText: 'Oui, Valider & Envoyer'
+        confirmButtonText: 'Oui, Valider & Créer'
     })
     
     if (result.isConfirmed) {
         try {
-            await api.post(`/quotes/${quote.id}/confirm-and-send`)
-            // After sending, we might want to keep it as 'web' or change to 'erp'
-            // User requested "On va creer une copie dans la liste de lapplication"
-            // Actually changing source to 'erp' makes it appear in the main list.
-            await api.patch(`/quotes/${quote.id}`, { source: 'erp' })
+            const res = await api.post(`/quotes/${quote.id}/confirm-and-send`)
             
-            Swal.fire('Envoyé !', 'Le devis a été validé et envoyé.', 'success')
+            Swal.fire({
+                title: res.data.email_sent ? 'Validé !' : 'Validé (Email échoué)',
+                text: res.data.message,
+                icon: res.data.email_sent ? 'success' : 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Voir le Devis ERP',
+                cancelButtonText: 'Rester ici'
+            }).then((navResult) => {
+                if (navResult.isConfirmed) {
+                    router.push({ name: 'quotes.edit', params: { id: res.data.new_quote_id } })
+                }
+            })
             fetchData()
         } catch (e) {
-            Swal.fire('Erreur', 'Impossible d\'envoyer le devis.', 'error')
+            Swal.fire('Erreur', 'Impossible de transformer la demande.', 'error')
         }
     }
 }
