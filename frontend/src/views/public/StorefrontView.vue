@@ -133,23 +133,23 @@ onMounted(() => {
         <div class="absolute inset-0 bg-black/50 bg-gradient-to-r from-black/60 to-transparent"></div>
       </div>
 
-      <div class="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full text-white">
+      <div class="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full text-white mt-20 sm:mt-0">
         <div class="max-w-2xl animate-fade-in-up">
-          <h1 class="text-5xl md:text-7xl font-bold leading-tight mb-6">
+          <h1 class="text-4xl sm:text-5xl md:text-7xl font-bold leading-tight mb-4 sm:mb-6">
             Bienvenue chez <br/>
             <span class="text-brand-400">KILATECH,</span>
           </h1>
-          <p class="text-lg md:text-xl text-gray-100 font-light mb-10 leading-relaxed max-w-xl">
-            votre partenaire de confiance pour prendre soins de vos patients. 
+          <p class="text-base sm:text-lg md:text-xl text-gray-100 font-light mb-8 sm:mb-10 leading-relaxed max-w-xl">
+            Votre partenaire de confiance pour prendre soin de vos patients. 
             Nous nous engageons à fournir des produits de haute qualité, 
             adaptés aux besoins des professionnels de la santé.
           </p>
           
-          <div class="flex flex-wrap items-center gap-6">
-           <router-link :to="{ name: 'catalogues' }" class="px-10 py-3.5 border-2 border-white rounded-full font-semibold hover:bg-white hover:text-brand-900 transition-all duration-300">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+           <router-link :to="{ name: 'catalogues' }" class="w-full sm:w-auto text-center px-8 sm:px-10 py-3 sm:py-3.5 border-2 border-white rounded-full font-semibold hover:bg-white hover:text-brand-900 transition-all duration-300">
              Consulter notre catalogue
            </router-link>
-            <router-link :to="{ name: 'about' }" class="group flex items-center gap-2 font-medium hover:text-brand-300 transition-colors">
+            <router-link :to="{ name: 'about' }" class="group flex items-center gap-2 font-medium hover:text-brand-300 transition-colors py-2">
               En savoir plus
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -165,11 +165,11 @@ onMounted(() => {
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
         <!-- Header & Search -->
-        <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6 border-b border-gray-200 pb-10">
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-6 border-b border-gray-200 pb-8 sm:pb-10">
           <div class="flex-1">
-            <span class="text-brand-600 font-bold tracking-widest text-xs uppercase">Catalogue Kilatech</span>
-            <h2 class="text-4xl font-bold text-gray-900 mt-2">Équipements Médicaux</h2>
-            <p class="text-gray-500 mt-4 max-w-lg text-sm leading-relaxed">
+            <span class="text-brand-600 font-bold tracking-widest text-[10px] sm:text-xs uppercase">Catalogue Kilatech</span>
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mt-2">Équipements Médicaux</h2>
+            <p class="text-gray-500 mt-3 sm:mt-4 max-w-lg text-xs sm:text-sm leading-relaxed">
               Explorez notre sélection rigoureuse des technologies médicales les plus innovantes pour votre établissement.
             </p>
           </div>
@@ -209,7 +209,7 @@ onMounted(() => {
           <div class="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
         </div>
         
-        <div v-else-if="filteredProducts.length > 0" class="grid grid-cols-1 gap-y-12 gap-x-8 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
+        <div v-else-if="filteredProducts.length > 0" class="grid grid-cols-2 gap-y-8 gap-x-4 sm:gap-x-8 lg:grid-cols-4 animate-fade-in">
           <div v-for="product in filteredProducts" :key="product.id" @click="openProductDetails(product)" class="group block cursor-pointer">
             <div class="relative aspect-[4/5] overflow-hidden rounded-2xl bg-gray-200 shadow-sm border border-gray-100">
               <img :src="getImageUrl(product.image_path)" 
@@ -222,20 +222,20 @@ onMounted(() => {
               </div>
             </div>
             
-            <div class="mt-6">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-100 uppercase tracking-tighter">{{ product.category }}</span>
+            <div class="mt-4 sm:mt-6">
+              <div class="flex items-center justify-between mb-1 sm:mb-2">
+                <span class="text-[8px] sm:text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-100 uppercase tracking-tighter">{{ product.category }}</span>
               </div>
-              <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand-600 transition-colors line-clamp-1">
+              <h3 class="text-sm sm:text-lg font-bold text-gray-900 group-hover:text-brand-600 transition-colors line-clamp-1">
                 {{ product.name }}
               </h3>
-              <p class="mt-2 text-xl font-black text-brand-900 leading-tight">
+              <p class="mt-1 sm:mt-2 text-base sm:text-xl font-black text-brand-900 leading-tight">
                 {{ formatTTCPrice(product) ? formatTTCPrice(product) + ' MAD' : 'Sur devis' }}
-                <span v-if="formatTTCPrice(product)" class="text-[10px] font-bold text-gray-400">/ {{ product.unit_name || 'unité' }}</span>
+                <span v-if="formatTTCPrice(product)" class="text-[8px] sm:text-[10px] font-bold text-gray-400">/ {{ product.unit_name || 'unité' }}</span>
               </p>
               <div v-if="product.sales_multiplier > 1" class="mt-1 flex flex-col">
-                  <span class="text-[10px] text-brand-600 font-bold uppercase tracking-tighter">Vendu par {{ product.packaging_unit }} de {{ product.sales_multiplier }}</span>
-                  <span class="text-[9px] text-gray-400 font-medium">Soit {{ (parseFloat(String(formatTTCPrice(product) || 0)) * product.sales_multiplier).toFixed(2) }} MAD TTC</span>
+                  <span class="text-[8px] sm:text-[10px] text-brand-600 font-bold uppercase tracking-tighter">Vendu par {{ product.packaging_unit }} de {{ product.sales_multiplier }}</span>
+                  <span class="text-[7px] sm:text-[9px] text-gray-400 font-medium">Soit {{ (parseFloat(String(formatTTCPrice(product) || 0)) * product.sales_multiplier).toFixed(2) }} MAD TTC</span>
               </div>
             </div>
           </div>

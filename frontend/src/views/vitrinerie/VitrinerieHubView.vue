@@ -118,32 +118,32 @@
       <div v-else-if="webClients.length === 0" class="py-20 bg-white rounded-xl border-2 border-dashed border-gray-100 text-center">
          <p class="text-gray-400">Aucun nouveau prospect enregistré via le web.</p>
       </div>
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div v-for="client in webClients" :key="client.id" class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative group overflow-hidden">
-          <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-             <button @click="promoteClient(client)" title="Intégrer aux clients officiels" class="p-2 bg-brand-50 text-brand-600 rounded-full hover:bg-brand-600 hover:text-white transition-all shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+        <div v-for="client in webClients" :key="client.id" class="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm relative group overflow-hidden transition-all hover:shadow-md">
+          <div class="absolute top-3 right-3 flex gap-2 sm:opacity-0 group-hover:opacity-100 transition-opacity z-10">
+             <button @click="promoteClient(client)" title="Intégrer aux clients officiels" class="p-2 sm:p-2.5 bg-brand-50 text-brand-600 rounded-full hover:bg-brand-600 hover:text-white transition-all shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
                 </svg>
              </button>
-             <button @click="deleteClient(client)" title="Supprimer ce prospect" class="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             <button @click="deleteClient(client)" title="Supprimer ce prospect" class="p-2 sm:p-2.5 bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
              </button>
           </div>
-          <div class="flex items-center gap-4 mb-4">
-             <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-xl">🌍</div>
-             <div>
-                <h3 class="font-bold text-gray-900 capitalize">{{ client.contact_name }}</h3>
-                <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full uppercase tracking-tighter">{{ client.type }}</span>
+          <div class="flex items-center gap-3 sm:gap-4 mb-4 pr-16 sm:pr-0">
+             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-full flex items-center justify-center text-lg sm:text-xl shrink-0">🌍</div>
+             <div class="min-w-0">
+                <h3 class="font-bold text-gray-900 capitalize truncate text-sm sm:text-base">{{ client.contact_name }}</h3>
+                <span class="text-[9px] sm:text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full uppercase tracking-tighter font-black">{{ client.type }}</span>
              </div>
           </div>
-          <div class="space-y-2 text-xs text-gray-500">
-             <p class="flex items-center gap-2"><strong>CIN:</strong> {{ client.cin || 'N/A' }}</p>
-             <p class="flex items-center gap-2"><strong>Email:</strong> {{ client.email || 'N/A' }}</p>
-             <p class="flex items-center gap-2"><strong>Tel:</strong> {{ client.phone || 'N/A' }}</p>
-             <p class="flex items-center gap-2"><strong>Ville:</strong> {{ client.city || 'N/A' }}</p>
+          <div class="space-y-2 text-[11px] sm:text-xs text-gray-500">
+             <p class="flex items-center justify-between border-b border-gray-50 pb-1"><strong>CIN:</strong> <span class="text-gray-900 font-bold">{{ client.cin || 'N/A' }}</span></p>
+             <p class="flex items-center justify-between border-b border-gray-50 pb-1"><strong>Email:</strong> <span class="text-gray-900 font-bold truncate ml-2">{{ client.email || 'N/A' }}</span></p>
+             <p class="flex items-center justify-between border-b border-gray-50 pb-1"><strong>Tel:</strong> <span class="text-gray-900 font-bold">{{ client.phone || 'N/A' }}</span></p>
+             <p class="flex items-center justify-between"><strong>Ville:</strong> <span class="text-gray-900 font-bold">{{ client.city || 'N/A' }}</span></p>
           </div>
         </div>
       </div>

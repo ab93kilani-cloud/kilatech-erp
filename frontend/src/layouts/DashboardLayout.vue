@@ -11,6 +11,7 @@ const router = useRouter()
 const user = computed(() => authStore.user)
 const notifications = ref<any[]>([])
 const showNotifications = ref(false)
+const showMobileMenu = ref(false)
 
 const fetchNotifications = async () => {
     try {
@@ -110,6 +111,47 @@ const navigation = computed(() => {
 <template>
   <div class="min-h-screen bg-gray-100 flex">
     
+    <!-- Sidebar Mobile (Drawer) -->
+    <div v-if="showMobileMenu" class="fixed inset-0 z-40 flex md:hidden" role="dialog" aria-modal="true">
+      <div @click="showMobileMenu = false" class="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+      
+      <div class="relative flex-1 flex flex-col max-w-xs w-full bg-white transition-all transform duration-300 ease-in-out">
+        <div class="absolute top-0 right-0 -mr-12 pt-2">
+          <button @click="showMobileMenu = false" class="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
+            <span class="sr-only">Fermer le menu</span>
+            <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
+          <div class="flex-shrink-0 flex items-center px-4 mb-5 border-b pb-4">
+             <img :src="logoUrl" alt="Logo" class="h-10 w-auto object-contain" />
+             <span class="ml-3 text-lg font-black text-brand-700">KILATECH ERP</span>
+          </div>
+          <nav class="mt-2 px-2 space-y-1">
+            <router-link v-for="item in navigation" :key="item.name" :to="item.to" 
+               @click="showMobileMenu = false"
+               active-class="bg-brand-50 text-brand-700"
+               class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-3 text-base font-bold rounded-xl">
+              {{ item.name }}
+            </router-link>
+          </nav>
+        </div>
+        <div class="flex-shrink-0 flex border-t border-gray-200 p-4">
+          <button @click="logout" class="flex-shrink-0 w-full group block text-left">
+            <div class="flex items-center">
+              <div class="ml-3">
+                <p class="text-sm font-bold text-gray-700">{{ user?.name }}</p>
+                <p class="text-xs font-medium text-gray-500 group-hover:text-red-500">Se déconnecter</p>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+    
     <!-- Sidebar / Menu de navigation -->
     <div class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-gray-200">
       <div class="flex-1 flex flex-col min-h-0">
@@ -131,10 +173,18 @@ const navigation = computed(() => {
     <!-- Main content area -->
     <div class="md:pl-64 flex flex-col flex-1">
       <!-- Top Navbar -->
-      <div class="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow">
+      <div class="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow-sm border-b border-gray-100">
+        <button @click="showMobileMenu = true" type="button" class="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-500 md:hidden">
+          <span class="sr-only">Ouvrir le menu</span>
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
         <div class="flex-1 px-4 flex justify-between">
           <div class="flex-1 flex items-center">
-            <h1 class="text-2xl font-semibold text-gray-900">Espace Sécurisé</h1>
+            <h1 class="text-lg md:text-2xl font-black text-gray-900 truncate">
+               <span class="hidden sm:inline">KILATECH</span> ERP
+            </h1>
           </div>
           <div class="ml-4 flex items-center md:ml-6 gap-4">
             
