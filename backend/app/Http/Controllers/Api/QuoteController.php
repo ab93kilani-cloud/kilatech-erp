@@ -195,8 +195,8 @@ class QuoteController extends Controller
      */
     public function confirm(Quote $quote)
     {
-        if ($quote->status !== 'draft') {
-            return response()->json(['message' => 'Seul un devis brouillon peut être confirmé.'], 400);
+        if (!in_array($quote->status, ['draft', 'sent'])) {
+            return response()->json(['message' => 'Seul un devis brouillon ou envoyé peut être confirmé.'], 400);
         }
 
         DB::beginTransaction();
@@ -267,7 +267,7 @@ class QuoteController extends Controller
      */
     public function update(Request $request, Quote $quote)
     {
-        if (!in_array($quote->status, ['draft', 'À confirmer', 'pending_approval'])) {
+        if (!in_array($quote->status, ['draft', 'À confirmer', 'pending_approval', 'sent'])) {
             return response()->json(['message' => 'Ce devis ne peut pas être modifié dans son état actuel.'], 400);
         }
 
@@ -330,8 +330,8 @@ class QuoteController extends Controller
      */
     public function destroy(Quote $quote)
     {
-        if (!in_array($quote->status, ['draft', 'À confirmer'])) {
-            return response()->json(['message' => 'Seul un devis brouillon ou en attente peut être supprimé.'], 400);
+        if (!in_array($quote->status, ['draft', 'À confirmer', 'sent'])) {
+            return response()->json(['message' => 'Seul un devis brouillon, en attente ou envoyé peut être supprimé.'], 400);
         }
 
         DB::beginTransaction();
@@ -457,7 +457,7 @@ class QuoteController extends Controller
                 'client_id' => $originalQuote->client_id,
                 // Le quote_number est généré automatiquement par le modèle Quote::boot()
                 'date' => now(),
-                'status' => 'sent',
+                'status' => 'draft', // On le crée comme brouillon pour qu'il soit modifiable
                 'source' => 'erp', // Il devient un vrai devis ERP
                 'notes' => "Issu de la demande Web #" . $originalQuote->id,
             ]);

@@ -76,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('quotes/{quote}/lock', [\App\Http\Controllers\Api\QuoteController::class, 'lock']);
         Route::post('quotes/{quote}/unlock', [\App\Http\Controllers\Api\QuoteController::class, 'unlock']);
         Route::post('quotes/{quote}/confirm', [\App\Http\Controllers\Api\QuoteController::class, 'confirm']);
+        Route::post('quotes/{quote}/confirm-and-send', [\App\Http\Controllers\Api\QuoteController::class, 'confirmAndSend']);
         Route::get('quotes/{quote}/pdf', [\App\Http\Controllers\Api\QuoteController::class, 'generatePDF']);
         Route::apiResource('quotes', \App\Http\Controllers\Api\QuoteController::class);
         
