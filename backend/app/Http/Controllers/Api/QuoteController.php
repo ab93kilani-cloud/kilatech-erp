@@ -18,7 +18,7 @@ class QuoteController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Quote::with(['client', 'lockedBy']);
+        $query = Quote::with(['client', 'lockedBy'])->where('source', 'erp');
         if ($request->has('archived')) {
             $query->onlyTrashed();
         }
