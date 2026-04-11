@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-$app->boot();
+$response = $kernel->handle(
+    $request = Illuminate\Http\Request::capture()
+);
 
 echo "=== FIXING DATABASE COLUMNS MAYA ===\n\n";
 
