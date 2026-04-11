@@ -371,8 +371,8 @@ onMounted(() => {
                         <span v-else class="text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded text-[10px]">FACTURE À RÉGLER</span>
                         
                         <input type="file" :id="'inv-upload-'+po.id" class="hidden" accept="application/pdf,image/*" @change="(e) => handleArchiveInvoice(e, po.receipts![0]?.id)">
-                        <label v-if="!po.receipts[0]?.invoice_path" :for="'inv-upload-'+po.id" class="cursor-pointer text-[10px] bg-brand-600 text-white px-2 py-0.5 rounded hover:bg-brand-700 font-bold uppercase transition-transform active:scale-95 shadow-lg">
-                           {{ isConverting ? '📦 SCAN EN COURS...' : 'Uploader PDF / Photo' }}
+                        <label :for="'inv-upload-'+po.id" class="cursor-pointer text-[10px] bg-brand-600 text-white px-2 py-0.5 rounded hover:bg-brand-700 font-bold uppercase transition-transform active:scale-95 shadow-lg">
+                           {{ isConverting ? '📦 SCAN EN COURS...' : (po.receipts[0]?.invoice_path ? '🔄 Remplacer' : 'Uploader Doc') }}
                         </label>
                       </div>
                   </td>
