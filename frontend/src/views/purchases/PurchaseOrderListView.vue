@@ -471,84 +471,69 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Modal Scanner Ultra-Complet -->
-    <div v-if="isPreviewModalOpen" class="fixed inset-0 z-[60] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-900 bg-opacity-90 transition-opacity" @click="isPreviewModalOpen = false"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+    <!-- Modal Scanner Ultra-Complet Mobile-First -->
+    <div v-if="isPreviewModalOpen" class="fixed inset-0 z-[60] bg-black sm:bg-gray-900 sm:bg-opacity-90 flex flex-col overflow-hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      
+      <!-- Header Mobile Slim -->
+      <div class="bg-black/40 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-white/10 text-white z-10">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-black tracking-[0.2em] uppercase">Scanner Pro</span>
+          <span class="bg-brand-600 text-[10px] px-2 py-0.5 rounded-full">{{ scannedPages.length + (previewImage ? 1 : 0) }} PG</span>
+        </div>
+        <button @click="isPreviewModalOpen = false" class="p-2 -mr-2 text-white/60 hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Main Scanning Zone -->
+      <div class="flex-1 relative flex items-center justify-center p-0 overflow-hidden">
+        <div v-if="previewImage" class="w-full h-full">
+          <img id="cropper-target" :src="previewImage" class="max-w-full hidden" />
+        </div>
+        <div v-else class="text-white text-center p-10 animate-pulse">
+          <p class="text-sm font-bold uppercase tracking-widest text-gray-400">Prêt pour la photo suivante...</p>
+        </div>
+
+        <!-- Overlay de conversion -->
+        <div v-if="isConverting" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20">
+          <div class="w-12 h-12 border-4 border-white/10 border-t-brand-500 rounded-full animate-spin"></div>
+          <p class="mt-4 text-xs font-black text-white uppercase tracking-widest">Génération du PDF...</p>
+        </div>
+      </div>
+
+      <!-- Toolbar Mobile (Bottom Reach) -->
+      <div class="bg-gray-900 border-t border-white/10 p-4 pb-8 sm:pb-4 space-y-6 z-10">
+        <!-- Filtres Horizontaux -->
+        <div class="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar">
+          <button @click="activeFilter = 'scan'" :class="[activeFilter === 'scan' ? 'bg-brand-600' : 'bg-gray-800 text-gray-400', 'px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-lg']">Scan</button>
+          <button @click="activeFilter = 'bw'" :class="[activeFilter === 'bw' ? 'bg-white text-black' : 'bg-gray-800 text-gray-400', 'px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-lg']">B&W</button>
+          <button @click="activeFilter = 'original'" :class="[activeFilter === 'original' ? 'bg-orange-600' : 'bg-gray-800 text-gray-400', 'px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-lg']">Photo</button>
+        </div>
+
+        <!-- Boutons d'Actions Principaux -->
+        <div class="flex items-center gap-3">
+          <!-- Abandonner / Tout annuler -->
+          <button @click="isPreviewModalOpen = false" class="p-4 bg-gray-800 text-white rounded-2xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          </button>
+
+          <!-- Ajouter une page -->
+          <button @click="addPageAndContinue" class="flex-1 bg-white text-black py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            + Page
+          </button>
+
+          <!-- Terminer & Envoyer -->
+          <button @click="finishAndUpload" :disabled="isConverting" class="flex-[1.5] bg-emerald-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-900/20 active:scale-95 transition-transform disabled:opacity-50">
+            Terminer ({{ scannedPages.length + (previewImage ? 1 : 0) }})
+          </button>
+        </div>
         
-        <div class="relative inline-block align-middle bg-white rounded-2xl text-left shadow-2xl transform transition-all sm:my-8 sm:max-w-4xl w-full border border-gray-100 overflow-hidden">
-          
-          <!-- Header -->
-          <div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-b">
-            <div class="flex items-center gap-3">
-              <span class="bg-brand-600 text-white p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg></span>
-              <h3 class="text-lg font-black text-gray-900">NUMÉRISATION PROFESSIONNELLE</h3>
-            </div>
-            <div class="flex items-center gap-4">
-              <span class="text-xs font-bold text-gray-500 bg-gray-200 px-3 py-1 rounded-full uppercase">{{ scannedPages.length }} PAGE(S)</span>
-              <button @click="isPreviewModalOpen = false" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
-            </div>
-          </div>
-
-          <!-- Body -->
-          <div class="flex flex-col md:flex-row h-[600px]">
-            <!-- Zone Cropper -->
-            <div class="flex-1 bg-black relative flex items-center justify-center p-4">
-               <div v-if="previewImage" class="w-full h-full max-h-[500px]">
-                  <img id="cropper-target" :src="previewImage" class="max-w-full hidden" />
-               </div>
-               <div v-else class="text-white text-center">
-                  <p class="text-gray-500 mb-4">Prêt pour la page suivante</p>
-                  <button @click="addPageAndContinue" class="bg-brand-600 px-6 py-2 rounded-lg font-bold">Prendre la photo</button>
-               </div>
-            </div>
-
-            <!-- Toolbar Sider -->
-            <div class="w-full md:w-64 bg-white border-l p-6 space-y-8 overflow-y-auto">
-              <!-- Filtres -->
-              <div>
-                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Filtres de rendu</label>
-                <div class="grid grid-cols-1 gap-2">
-                  <button @click="activeFilter = 'scan'" :class="[activeFilter === 'scan' ? 'ring-2 ring-brand-600 bg-brand-50 text-brand-700' : 'bg-gray-50 text-gray-600', 'px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2']">
-                     <span class="w-2 h-2 rounded-full bg-blue-500"></span> Scanner Pro
-                  </button>
-                  <button @click="activeFilter = 'bw'" :class="[activeFilter === 'bw' ? 'ring-2 ring-brand-600 bg-brand-50 text-brand-700' : 'bg-gray-50 text-gray-600', 'px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2']">
-                     <span class="w-2 h-2 rounded-full bg-black"></span> Eco N&B
-                  </button>
-                  <button @click="activeFilter = 'original'" :class="[activeFilter === 'original' ? 'ring-2 ring-brand-600 bg-brand-50 text-brand-700' : 'bg-gray-50 text-gray-600', 'px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2']">
-                     <span class="w-2 h-2 rounded-full bg-orange-500"></span> Original
-                  </button>
-                </div>
-              </div>
-
-              <!-- Page Action -->
-              <div>
-                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Actions de page</label>
-                <button @click="addPageAndContinue" class="w-full px-4 py-3 bg-gray-900 text-white rounded-xl font-bold text-sm mb-3 hover:bg-black transition-all">
-                  + Continuer (Page suiv.)
-                </button>
-                <p class="text-[10px] text-gray-400 italic">Recadre l'image actuelle et demande la suivante.</p>
-              </div>
-
-              <!-- Preview du document final -->
-              <div v-if="scannedPages.length > 0">
-                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Pages déjà scannées</label>
-                 <div class="flex gap-2 overflow-x-auto py-2">
-                    <img v-for="(img, idx) in scannedPages" :key="idx" :src="img" class="h-16 w-12 object-cover border rounded shadow-sm" />
-                 </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Footer Actions -->
-          <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row gap-3 border-t">
-            <button @click="isPreviewModalOpen = false" class="px-6 py-2 text-gray-600 font-bold">Annuler tout</button>
-            <div class="flex-1"></div>
-            <button @click="finishAndUpload" :disabled="isConverting" class="px-10 py-3 bg-emerald-600 text-white rounded-xl font-black shadow-xl shadow-emerald-100 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
-               <span v-if="isConverting" class="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-               TERMINER & ENVOYER LE PDF ({{ scannedPages.length + (previewImage ? 1 : 0) }} pages)
-            </button>
+        <!-- Preview miniature des pages scannées -->
+        <div v-if="scannedPages.length > 0" class="flex gap-2 overflow-x-auto pt-2 justify-center">
+          <div v-for="(img, idx) in scannedPages" :key="idx" class="relative">
+            <img :src="img" class="h-12 w-9 object-cover rounded border border-white/20" />
+            <span class="absolute -top-1 -right-1 bg-brand-600 text-[8px] text-white w-3 h-3 flex items-center justify-center rounded-full font-bold shadow">{{ idx + 1 }}</span>
           </div>
         </div>
       </div>
