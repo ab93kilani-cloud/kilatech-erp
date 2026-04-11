@@ -23,11 +23,9 @@ const convertImageToPdf = (imageFile: File): Promise<File> => {
             const imgData = e.target?.result as string;
             const img = new Image();
             img.onload = () => {
-                const { jsPDF } = (window as any).jspdf;
-                
                 // Maya: Utilisation d'un Canvas pour traiter l'image (Scanner Look)
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
                 if (!ctx) return;
 
                 // 1. Détecter l'orientation et forcer le mode Portrait (A4)
@@ -38,6 +36,8 @@ const convertImageToPdf = (imageFile: File): Promise<File> => {
                     ctx.translate(canvas.width / 2, canvas.height / 2);
                     ctx.rotate(-90 * Math.PI / 180);
                     ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                    ctx.rotate(90 * Math.PI / 180); // Reset for next steps
+                    ctx.translate(-canvas.width / 2, -canvas.height / 2);
                 } else {
                     canvas.width = img.width;
                     canvas.height = img.height;
@@ -45,23 +45,30 @@ const convertImageToPdf = (imageFile: File): Promise<File> => {
                 }
 
                 // 2. Appliquer un filtre "Scanner" (Niveaux de gris + Contraste élevé)
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imageData.data;
+                const imgDataBuffer = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imgDataBuffer.data;
                 for (let i = 0; i < data.length; i += 4) {
-                    // Calcul de la luminance (Niveaux de gris)
-                    const gray = data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11;
+                    // Maya: Ajout de garanties pour le compilateur
+                    const r = data[i] ?? 0;
+                    const g = data[i + 1] ?? 0;
+                    const b = data[i + 2] ?? 0;
+
+                    const gray = r * 0.3 + g * 0.59 + b * 0.11;
                     
-                    // Augmentation brutale du contraste pour effet Scanner
-                    // Si c'est plutôt clair, on blanchit. Si c'est plutôt sombre (texte), on noircit.
                     const threshold = 120; 
                     const contrastValue = gray < threshold ? gray * 0.6 : Math.min(255, gray * 1.3);
                     
                     data[i] = data[i+1] = data[i+2] = contrastValue;
                 }
-                ctx.putImageData(imageData, 0, 0);
+                ctx.putImageData(imgDataBuffer, 0, 0);
 
                 const processedImgData = canvas.toDataURL('image/jpeg', 0.85);
-                const pdf = new jsPDF();
+                const jspdfObj = (window as any).jspdf;
+                if (!jspdfObj) {
+                    alert("Erreur: Bibliothèque de scan non chargée.");
+                    return;
+                }
+                const pdf = new jspdfObj.jsPDF();
                 const pageWidth = 210;
                 const pageHeight = 297;
                 
