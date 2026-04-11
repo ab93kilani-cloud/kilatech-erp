@@ -151,46 +151,6 @@ class QuoteController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
-    {
-        $quote = Quote::findOrFail($id);
-        
-        $validated = $request->validate([
-            'client_id' => 'nullable|exists:clients,id',
-            'valid_until' => 'nullable|date',
-            'quote_date' => 'nullable|date',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'status' => 'nullable|string',
-            'source' => 'nullable|string|in:erp,web',
-            'lines' => 'nullable|array',
-        ]);
-
-        DB::beginTransaction();
-        try {
-            $quote->update($request->only(['client_id', 'valid_until', 'quote_date', 'discount_amount', 'status', 'source']));
-
-            if ($request->has('lines')) {
-                $quote->lines()->delete();
-                foreach ($request->lines as $line) {
-                    QuoteLine::create([
-                        'quote_id' => $quote->id,
-                        'variant_id' => $line['variant_id'],
-                        'unit_price' => $line['unit_price'],
-                        'quantity' => $line['quantity'],
-                        'discount_percent' => $line['discount_percent'] ?? 0,
-                        'tax_rate' => $line['tax_rate'] ?? 20.00,
-                    ]);
-                }
-            }
-
-            DB::commit();
-            return response()->json($quote->load('lines.variant'));
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['message' => 'Erreur modification du devis'], 500);
-        }
-    }
-
     public function show($id)
     {
         $quote = Quote::withTrashed()->with(['client', 'lockedBy', 'lines.variant'])->findOrFail($id);
@@ -228,16 +188,6 @@ class QuoteController extends Controller
         }
         
         return response()->json(['message' => 'Vous ne pouvez pas déverrouiller ce devis.'], 403);
-    }
-
-    /**
-     * Confirmer et Envoyer le devis par email
-     */
-    public function confirmAndSend(Quote $quote)
-    {
-        // For now, just change status
-        $quote->update(['status' => 'sent']);
-        return response()->json(['message' => 'Devis validé et marqué comme envoyé.']);
     }
 
     /**
@@ -317,8 +267,8 @@ class QuoteController extends Controller
      */
     public function update(Request $request, Quote $quote)
     {
-        if (!in_array($quote->status, ['draft', 'À confirmer'])) {
-            return response()->json(['message' => 'Seul un devis brouillon ou en attente peut être modifié.'], 400);
+        if (!in_array($quote->status, ['draft', 'À confirmer', 'pending_approval'])) {
+            return response()->json(['message' => 'Ce devis ne peut pas être modifié dans son état actuel.'], 400);
         }
 
         $request->validate([
@@ -328,11 +278,13 @@ class QuoteController extends Controller
             'discount_amount' => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string',
             'payment_term' => 'nullable|string',
+            'source' => 'nullable|string|in:erp,web',
             'lines' => 'required|array|min:1',
             'lines.*.variant_id' => 'required|exists:product_variants,id',
             'lines.*.unit_price' => 'required|numeric|min:0',
             'lines.*.quantity' => 'required|integer|min:1',
             'lines.*.discount_percent' => 'nullable|numeric|min:0|max:100',
+            'lines.*.tax_rate' => 'nullable|numeric',
         ]);
 
         DB::beginTransaction();
@@ -344,6 +296,7 @@ class QuoteController extends Controller
                 'discount_amount' => $request->discount_amount ?? 0,
                 'payment_method' => $request->payment_method,
                 'payment_term' => $request->payment_term,
+                'source' => $request->source ?? $quote->source,
                 'version' => $quote->version + 1
             ]);
 
@@ -357,7 +310,7 @@ class QuoteController extends Controller
                     'unit_price' => $line['unit_price'],
                     'quantity' => $line['quantity'],
                     'discount_percent' => $line['discount_percent'] ?? 0,
-                    'tax_rate' => $line['tax_rate'] ?? $quote->lines->where('variant_id', $line['variant_id'])->first()->tax_rate ?? 20.00,
+                    'tax_rate' => $line['tax_rate'] ?? 20.00,
                 ]);
             }
 

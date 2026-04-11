@@ -1,0 +1,15 @@
+dist_production/
+deploy_*.zip
+.gemini/
+.agent/
+.agents/
+_agent/
+_agents/
+node_modules/
+vendor/
+.env
+storage/*.key
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
