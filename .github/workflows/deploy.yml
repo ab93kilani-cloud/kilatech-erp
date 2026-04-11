@@ -62,8 +62,8 @@ jobs:
           script: |
             cd domains/kilatech.ma/public_html/api
             # Extraction propre
-            unzip -o ../backend.zip -d .
-            rm ../backend.zip
+            unzip -o backend.zip -d .
+            rm backend.zip
             
             # Installation des dépendances et migration
             /opt/alt/php82/usr/bin/php /usr/local/bin/composer install --no-dev --optimize-autoloader
