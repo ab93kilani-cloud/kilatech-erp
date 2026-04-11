@@ -465,7 +465,7 @@ class QuoteController extends Controller
             $erpQuote = Quote::create([
                 'client_id' => $quote->client_id,
                 // Le quote_number est généré automatiquement par le modèle Quote::boot()
-                'date' => now(),
+                'quote_date' => now()->toDateString(),
                 'status' => 'draft', // On le crée comme brouillon pour qu'il soit modifiable
                 'source' => 'erp', // Il devient un vrai devis ERP
                 'notes' => "Issu de la demande Web #" . $quote->id,
@@ -474,11 +474,11 @@ class QuoteController extends Controller
             // 3. Copie des lignes de produits
             foreach ($quote->lines as $line) {
                 $erpQuote->lines()->create([
-                    'product_variant_id' => $line->product_variant_id,
+                    'variant_id' => $line->variant_id,
                     'quantity' => $line->quantity,
                     'unit_price' => $line->unit_price,
-                    'total_price' => $line->total_price,
-                    'discount' => $line->discount ?? 0,
+                    'discount_percent' => $line->discount_percent ?? 0,
+                    'tax_rate' => $line->tax_rate ?? 20.00,
                 ]);
             }
 
