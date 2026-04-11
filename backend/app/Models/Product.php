@@ -15,7 +15,7 @@ class Product extends Model
         'description', 'meta_title', 'meta_description', 'meta_keywords',
         'social_linkedin_post', 'social_facebook_post', 'social_instagram_post', 'local_geo_context',
         'is_medical', 'cost_price', 
-        'price_ht', 'tva_rate', 'public_price', 
+        'price_ht', 'tva_rate', 'public_price', 'unit_name', 'packaging_unit', 'sales_multiplier',
         'margin_percent', 'image_path', 'images', 'is_showcase'
     ];
 

@@ -35,6 +35,9 @@ const product = ref({
     local_geo_context: '',
     is_medical: false,
     unit: 'U',
+    unit_name: 'pièce',
+    packaging_unit: 'pièce',
+    sales_multiplier: 1,
     is_showcase: false,
 })
 
@@ -126,6 +129,9 @@ const fetchProductData = async () => {
             is_medical: p.is_medical === 1 || p.is_medical === true,
             is_showcase: p.is_showcase === 1 || p.is_showcase === true,
             unit: p.unit || 'U',
+            unit_name: p.unit_name || 'pièce',
+            packaging_unit: p.packaging_unit || 'pièce',
+            sales_multiplier: p.sales_multiplier || 1,
         }
 
         // Charger les multiples fournisseurs
@@ -207,6 +213,9 @@ const saveProduct = async () => {
         formData.append('description', product.value.description || '');
         formData.append('slug', product.value.slug || '');
         formData.append('unit', product.value.unit || 'U');
+        formData.append('unit_name', product.value.unit_name || 'pièce');
+        formData.append('packaging_unit', product.value.packaging_unit || 'pièce');
+        formData.append('sales_multiplier', String(product.value.sales_multiplier || 1));
         formData.append('is_medical', product.value.is_medical ? '1' : '0');
         formData.append('is_showcase', product.value.is_showcase ? '1' : '0');
         
@@ -319,12 +328,34 @@ const saveProduct = async () => {
             </div>
 
             <div class="sm:col-span-1">
-                <label class="block text-xs font-black text-gray-400 uppercase mb-2">Unité</label>
+                <label class="block text-xs font-black text-gray-400 uppercase mb-2">Unité (Vente)</label>
                 <select v-model="product.unit" class="block w-full rounded-xl border-gray-200 py-2.5 text-sm font-bold">
                     <option value="U">U</option>
-                    <option value="Boite">Boite</option>
+                    <option value="Boite">Boîte</option>
                     <option value="Lot">Lot</option>
+                    <option value="Carton">Carton</option>
                 </select>
+            </div>
+
+            <div class="sm:col-span-1">
+                <label class="block text-xs font-black text-brand-600 uppercase mb-2">Vendu par</label>
+                <input v-model="product.packaging_unit" type="text" placeholder="Boîte, Sachet..." class="block w-full rounded-xl border-gray-200 py-2.5 px-3 text-sm font-bold shadow-sm">
+            </div>
+
+            <div class="sm:col-span-2">
+                <label class="block text-xs font-black text-brand-600 uppercase mb-2">Contient (Qté)</label>
+                <div class="relative">
+                    <input v-model="product.sales_multiplier" type="number" min="1" class="block w-full rounded-xl border-brand-200 py-2.5 px-4 text-sm font-black focus:ring-brand-500 shadow-sm pr-16">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span class="text-[10px] text-gray-400 font-bold uppercase">{{ product.unit_name }}s</span>
+                    </div>
+                </div>
+                <p class="mt-1 text-[9px] text-gray-400 leading-tight">Ex: 100 pour une boîte de 100.</p>
+            </div>
+
+            <div class="sm:col-span-1">
+                <label class="block text-xs font-black text-gray-400 uppercase mb-2">Nom Unité</label>
+                <input v-model="product.unit_name" type="text" placeholder="pièce" class="block w-full rounded-xl border-gray-200 py-2.5 px-3 text-sm font-bold shadow-sm">
             </div>
 
             <div class="sm:col-span-2">

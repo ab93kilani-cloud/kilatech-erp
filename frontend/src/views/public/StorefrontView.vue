@@ -27,6 +27,9 @@ interface Product {
   is_medical: boolean;
   image_path: string | null;
   is_showcase: boolean;
+  unit_name: string;
+  packaging_unit: string;
+  sales_multiplier: number;
   variants: Variant[];
 }
 
@@ -226,9 +229,14 @@ onMounted(() => {
               <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand-600 transition-colors line-clamp-1">
                 {{ product.name }}
               </h3>
-              <p class="mt-2 text-xl font-black text-brand-900">
-                {{ formatTTCPrice(product) ? formatTTCPrice(product) + ' MAD (TTC)' : 'Sur devis' }}
+              <p class="mt-2 text-xl font-black text-brand-900 leading-tight">
+                {{ formatTTCPrice(product) ? formatTTCPrice(product) + ' MAD' : 'Sur devis' }}
+                <span v-if="formatTTCPrice(product)" class="text-[10px] font-bold text-gray-400">/ {{ product.unit_name || 'unité' }}</span>
               </p>
+              <div v-if="product.sales_multiplier > 1" class="mt-1 flex flex-col">
+                  <span class="text-[10px] text-brand-600 font-bold uppercase tracking-tighter">Vendu par {{ product.packaging_unit }} de {{ product.sales_multiplier }}</span>
+                  <span class="text-[9px] text-gray-400 font-medium">Soit {{ (parseFloat(String(formatTTCPrice(product) || 0)) * product.sales_multiplier).toFixed(2) }} MAD TTC</span>
+              </div>
             </div>
           </div>
         </div>

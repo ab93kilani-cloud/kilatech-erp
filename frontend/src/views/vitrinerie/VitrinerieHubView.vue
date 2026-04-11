@@ -267,6 +267,7 @@ const deleteClient = async (client: any) => {
     }
 }
 
+
 const confirmAndSend = async (quote: any) => {
     const result = await Swal.fire({
         title: 'Valider et Transformer ?',
