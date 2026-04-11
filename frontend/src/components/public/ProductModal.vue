@@ -30,7 +30,9 @@ const displayPrice = computed(() => {
 
 const handleAddToCart = () => {
   if (!selectedVariant.value) return
-  cartStore.addItem(props.product, selectedVariant.value, quantity.value)
+  // Si le produit a un multiplicateur (ex: boîte de 100), on multiplie la quantité
+  const finalQuantity = quantity.value * (props.product.sales_multiplier || 1)
+  cartStore.addItem(props.product, selectedVariant.value, finalQuantity)
   emit('close')
 }
 </script>
@@ -94,11 +96,26 @@ const handleAddToCart = () => {
 
               <!-- Pricing & Variants -->
               <div class="mb-8 p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center justify-between">
                   <span class="text-sm font-bold text-gray-400">Prix unitaire (TTC)</span>
-                  <span class="text-2xl font-black text-brand-900">
-                    {{ displayPrice > 0 ? displayPrice.toFixed(2) + ' MAD' : 'Sur devis' }}
-                  </span>
+                  <div class="text-right">
+                    <span class="text-2xl font-black text-brand-900 leading-none">
+                      {{ displayPrice > 0 ? displayPrice.toFixed(2) + ' MAD' : 'Sur devis' }}
+                    </span>
+                    <p v-if="displayPrice > 0" class="text-[10px] font-bold text-gray-400 mt-1 uppercase">/ {{ product.unit_name || 'pièce' }}</p>
+                  </div>
+                </div>
+
+                <!-- Info Conditionnement -->
+                <div v-if="product.sales_multiplier > 1" class="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-1">
+                  <div class="flex justify-between items-center text-brand-600">
+                    <span class="text-[10px] font-black uppercase tracking-widest">Conditionnement Obligatoire</span>
+                    <span class="text-xs font-bold">{{ product.packaging_unit }} de {{ product.sales_multiplier }} {{ product.unit_name }}s</span>
+                  </div>
+                  <div class="flex justify-between items-center text-gray-400">
+                    <span class="text-[10px] uppercase font-bold">Total ({{ product.packaging_unit }})</span>
+                    <span class="text-sm font-black">{{ (displayPrice * product.sales_multiplier).toFixed(2) }} MAD</span>
+                  </div>
                 </div>
 
                 <div v-if="product.variants?.length > 1" class="space-y-3">
