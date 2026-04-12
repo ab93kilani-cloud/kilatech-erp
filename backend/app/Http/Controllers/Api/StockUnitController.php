@@ -52,6 +52,10 @@ class StockUnitController extends Controller
      */
     public function validateQA(Request $request)
     {
+        // Force null if empty string to satisfy nullable|date rule
+        $expirationDate = $request->input('expiration_date');
+        if (empty($expirationDate)) { $expirationDate = null; }
+
         $request->validate([
             'receipt_line_id' => 'required|exists:receipt_lines,id',
             'lot_number' => 'required|string',
@@ -94,7 +98,7 @@ class StockUnitController extends Controller
             $lot = Lot::firstOrCreate(
                 ['lot_number' => $request->lot_number, 'variant_id' => $variantId],
                 [
-                    'expiration_date' => $request->expiration_date,
+                    'expiration_date' => $expirationDate,
                     'actual_purchase_price' => $receiptLine->actual_purchase_price,
                 ]
             );
