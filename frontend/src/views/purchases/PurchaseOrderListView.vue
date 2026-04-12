@@ -297,9 +297,7 @@ const submitReceive = async () => {
             lines: receiveForm.value.lines.filter(l => l.received_quantity > 0).map(l => ({
                 po_line_id: l.po_line_id,
                 received_quantity: l.received_quantity,
-                actual_purchase_price: null,
-                lot_number: l.lot_number || null,
-                expiry_date: l.expiry_date || null
+                actual_purchase_price: null
             }))
         })
         isReceiveModalOpen.value = false
@@ -446,26 +444,18 @@ onMounted(() => {
                   <table v-else class="min-w-full divide-y divide-gray-200">
                       <thead class="bg-gray-50">
                           <tr>
-                              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Produit (SKU)</th>
-                              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 w-32">Lot N°</th>
-                              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 w-32">Péremption</th>
-                              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 w-24">Qte Reçue</th>
+                              <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Produit (SKU)</th>
+                              <th class="px-3 py-3 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest w-36">Quantité Reçue</th>
                           </tr>
                       </thead>
-                      <tbody class="divide-y divide-gray-200">
+                      <tbody class="divide-y divide-gray-100">
                           <tr v-for="line in receiveForm.lines" :key="line.po_line_id">
-                              <td class="px-3 py-2 text-sm text-gray-900">
-                                  <div class="font-bold">{{ line.product_name }}</div>
-                                  <div class="text-[10px] text-gray-500">Commande: {{ line.ordered_quantity }} unités</div>
+                              <td class="px-3 py-4 text-sm text-gray-900 font-bold uppercase">
+                                  {{ line.product_name }}
+                                  <div class="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-0.5">Commande: {{ line.ordered_quantity }} unités</div>
                               </td>
-                              <td class="px-3 py-2">
-                                  <input type="text" v-model="line.lot_number" placeholder="LOT..." class="w-full text-xs rounded border-gray-300 px-2 py-1 shadow-sm focus:ring-brand-500 focus:border-brand-500 border uppercase">
-                              </td>
-                              <td class="px-3 py-2">
-                                  <input type="date" v-model="line.expiry_date" class="w-full text-xs rounded border-gray-300 px-2 py-1 shadow-sm focus:ring-brand-500 focus:border-brand-500 border">
-                              </td>
-                              <td class="px-3 py-2 text-right">
-                                  <input type="number" v-model.number="line.received_quantity" min="0" :max="line.ordered_quantity" class="w-full text-right font-bold text-brand-700 rounded border-brand-300 px-2 py-1 text-sm shadow-sm ring-1 ring-inset ring-brand-300 focus:ring-brand-600 focus:ring-2">
+                              <td class="px-3 py-4 text-right">
+                                  <input type="number" v-model.number="line.received_quantity" min="0" :max="line.ordered_quantity" class="w-full text-right font-black text-brand-700 rounded-xl border-gray-200 px-4 py-2 text-lg shadow-sm focus:ring-brand-600 focus:border-brand-600">
                               </td>
                           </tr>
                       </tbody>
