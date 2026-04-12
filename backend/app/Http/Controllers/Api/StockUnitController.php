@@ -14,10 +14,8 @@ class StockUnitController extends Controller
 {
     public function index(Request $request)
     {
-        // On groupe par lot et statut pour éviter de renvoyer 10000 lignes pour 10000 aiguilles.
-        $query = DB::table('stock_units')
-            ->select('lot_id', 'status', DB::raw('count(id) as quantity'), DB::raw('MAX(id) as sample_id'))
-            ->whereNull('deleted_at');
+        // On utilise Eloquent directement pour gérer les soft deletes et les relations proprement
+        $query = StockUnit::query();
         
         if ($request->has('show_sold')) {
             $query->where('status', '=', 'vendue');
@@ -25,23 +23,19 @@ class StockUnitController extends Controller
             $query->where('status', '!=', 'vendue');
         }
 
-        $summary = $query->groupBy('lot_id', 'status')->get();
-        $sampleIds = $summary->pluck('sample_id');
+        // Grouper manuellement après récupération pour garder la flexibilité
+        $allUnits = $query->with('lot.variant.product')->get();
         
-        // Charger les détails des lots
-        $sampleUnits = StockUnit::with([
-            'lot.variant.product',
-        ])->whereIn('id', $sampleIds)->get()->keyBy('id');
+        $groups = $allUnits->groupBy(function($u) {
+            return $u->lot_id . '_' . $u->status;
+        });
 
-        $result = $summary->map(function($item) use ($sampleUnits) {
-            if (!isset($sampleUnits[$item->sample_id])) return null;
-            $unit = $sampleUnits[$item->sample_id]->toArray();
-            $unit['quantity'] = $item->quantity;
-            
-            // On essaie de récupérer le fournisseur via le lot (si possible)
-            // Sinon on laisse vide pour l'instant pour éviter le crash.
+        $result = $groups->map(function($group) {
+            $first = $group->first();
+            $unit = $first->toArray();
+            $unit['quantity'] = $group->count();
             return $unit;
-        })->filter()->values();
+        })->values();
 
         return response()->json($result);
     }
