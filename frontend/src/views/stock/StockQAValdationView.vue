@@ -378,7 +378,7 @@ onMounted(() => {
                     </div>
 
                     <!-- INFOS CLES -->
-                    <div class="flex items-center gap-6 pt-6 mb-4">
+                    <div class="flex flex-wrap items-center gap-6 pt-6 mb-4">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="radio" value="dlc" v-model="line.dateType" class="text-brand-600 focus:ring-brand-500">
                             <span class="text-[10px] font-bold text-gray-700 uppercase tracking-widest">Consommable (DLC)</span>
@@ -386,6 +386,10 @@ onMounted(() => {
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="radio" value="warranty" v-model="line.dateType" class="text-brand-600 focus:ring-brand-500">
                             <span class="text-[10px] font-bold text-gray-700 uppercase tracking-widest">Matériel (Garantie)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" value="none" v-model="line.dateType" class="text-brand-600 focus:ring-brand-500">
+                            <span class="text-[10px] font-bold text-gray-700 uppercase tracking-widest text-indigo-600">Sans Péremption</span>
                         </label>
                     </div>
                     
@@ -397,9 +401,11 @@ onMounted(() => {
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold leading-6 text-gray-700 uppercase tracking-wide">{{ line.dateType === 'dlc' ? "Date Limite (DLC) *" : "Fin de Garantie *" }}</label>
+                            <label class="block text-xs font-bold leading-6 text-gray-700 uppercase tracking-wide">
+                                {{ line.dateType === 'none' ? "Date (Ignorée)" : (line.dateType === 'dlc' ? "Date Limite (DLC) *" : "Fin de Garantie *") }}
+                            </label>
                             <div class="mt-1">
-                                <input v-model="line.expiration_date" required type="date" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm font-semibold px-3 bg-gray-50">
+                                <input v-model="line.expiration_date" :required="line.dateType !== 'none'" :disabled="line.dateType === 'none'" type="date" :class="[line.dateType === 'none' ? 'bg-gray-200 opacity-50 cursor-not-allowed' : 'bg-gray-50', 'block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm font-semibold px-3']">
                             </div>
                         </div>
                     </div>

@@ -55,7 +55,7 @@ class StockUnitController extends Controller
         $request->validate([
             'receipt_line_id' => 'required|exists:receipt_lines,id',
             'lot_number' => 'required|string',
-            'expiration_date' => 'required|date',
+            'expiration_date' => 'nullable|date',
             'serial_numbers' => 'nullable|array',
             'invoice_file' => 'nullable|file|mimes:pdf',
         ]);
