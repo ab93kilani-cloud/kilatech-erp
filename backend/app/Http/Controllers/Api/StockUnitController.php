@@ -50,19 +50,29 @@ class StockUnitController extends Controller
     /**
      * Valide une ligne de réception et génère les unités de stock.
      */
-    public function validateQA(Request $request)
-    {
-        // Force null if empty string to satisfy nullable|date rule
-        $expirationDate = $request->input('expiration_date');
-        if (empty($expirationDate)) { $expirationDate = null; }
+        // Maya: Force null if string is empty BEFORE validation
+        if ($request->filled('expiration_date') && empty($request->expiration_date)) {
+            $request->merge(['expiration_date' => null]);
+        } else if (!$request->has('expiration_date') || $request->expiration_date === '') {
+            $request->merge(['expiration_date' => null]);
+        }
 
-        $request->validate([
-            'receipt_line_id' => 'required|exists:receipt_lines,id',
-            'lot_number' => 'required|string',
-            'expiration_date' => 'nullable|date',
-            'serial_numbers' => 'nullable|array',
-            'invoice_file' => 'nullable|file|mimes:pdf',
-        ]);
+        try {
+            $request->validate([
+                'receipt_line_id' => 'required|exists:receipt_lines,id',
+                'lot_number' => 'required|string',
+                'expiration_date' => 'nullable|date',
+                'serial_numbers' => 'nullable|array',
+                'invoice_file' => 'nullable|file|mimes:pdf',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Erreur de validation',
+                'errors' => $e->errors()
+            ], 422);
+        }
+
+        $expirationDate = $request->expiration_date;
 
         $receiptLine = ReceiptLine::with('receipt')->findOrFail($request->receipt_line_id);
 

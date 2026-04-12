@@ -263,7 +263,13 @@ const validateQA = async () => {
         
         fetchPendingQA() // Recharge la liste
     } catch (e: any) {
-        errorMsg.value = e.response?.data?.message || 'Erreur lors du contrôle qualité sur une des lignes.'
+        if (e.response?.data?.errors) {
+            const errors = e.response.data.errors
+            const firstError = Object.values(errors)[0] as string[]
+            errorMsg.value = `${e.response.data.message}: ${firstError[0]}`
+        } else {
+            errorMsg.value = e.response?.data?.message || 'Erreur lors du contrôle qualité sur une des lignes.'
+        }
     } finally {
         isSubmitting.value = false
     }
