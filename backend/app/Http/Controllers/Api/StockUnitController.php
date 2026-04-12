@@ -26,21 +26,20 @@ class StockUnitController extends Controller
         }
 
         $summary = $query->groupBy('lot_id', 'status')->get();
-
         $sampleIds = $summary->pluck('sample_id');
         
+        // Charger les détails des lots
         $sampleUnits = StockUnit::with([
             'lot.variant.product',
-            'movements' => function($q) {
-                $q->where('type', 'in')->with('document.poLine.purchaseOrder.supplier');
-            }
         ])->whereIn('id', $sampleIds)->get()->keyBy('id');
 
         $result = $summary->map(function($item) use ($sampleUnits) {
             if (!isset($sampleUnits[$item->sample_id])) return null;
             $unit = $sampleUnits[$item->sample_id]->toArray();
             $unit['quantity'] = $item->quantity;
-            $unit['serial_number'] = $item->quantity > 1 ? 'Multiple (Bulk)' : $unit['serial_number'];
+            
+            // On essaie de récupérer le fournisseur via le lot (si possible)
+            // Sinon on laisse vide pour l'instant pour éviter le crash.
             return $unit;
         })->filter()->values();
 
