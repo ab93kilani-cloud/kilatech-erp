@@ -6,9 +6,7 @@ import api from '@/plugins/axios'
 const pendingReceipts = ref<any[]>([])
 const selectedReceiptId = ref<number | null>(null)
 
-const invoiceFile = ref<File | null>(null)
 const linesQA = ref<any[]>([])
-
 const invoiceFile = ref<File | null>(null)
 const isConverting = ref(false)
 const isPreviewModalOpen = ref(false)
