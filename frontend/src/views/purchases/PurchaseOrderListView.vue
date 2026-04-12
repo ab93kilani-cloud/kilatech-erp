@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import api from '@/plugins/axios'
 
 interface PurchaseOrder {
@@ -39,8 +39,6 @@ const handleArchiveInvoice = async (e: any, receiptId: number) => {
         await uploadInvoice(file, receiptId)
     }
 }
-
-import { nextTick } from 'vue'
 
 const initCropper = () => {
     if (cropper) cropper.destroy()
@@ -212,7 +210,7 @@ const fetchPOs = async () => {
     }
 }
 
-import { watch } from 'vue'
+
 watch(activeTab, () => {
     fetchPOs()
 })

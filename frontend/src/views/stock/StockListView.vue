@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import api from '@/plugins/axios'
 
 interface StockUnit {
@@ -47,7 +47,7 @@ const fetchStock = async () => {
     }
 }
 
-import { computed } from 'vue'
+
 const filteredUnits = computed(() => {
     if (!searchQuery.value) return units.value;
     const q = searchQuery.value.toLowerCase();

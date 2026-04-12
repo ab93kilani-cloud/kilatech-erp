@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import api from '@/plugins/axios'
 
 // Liste des bons de réceptions contenant au moins une ligne en attente (Logistique Fournisseur)
@@ -15,8 +15,6 @@ const scannedPages = ref<string[]>([])
 const activeFilter = ref('scan')
 
 let cropper: any = null
-
-import { nextTick } from 'vue'
 
 const handleInvoiceChange = (e: any) => {
     const file = e.target.files[0]
