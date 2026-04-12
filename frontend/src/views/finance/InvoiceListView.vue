@@ -570,7 +570,7 @@ onMounted(() => {
 
                 <div>
                     <label class="block text-sm font-medium leading-6 text-gray-900">Montant Encaissé (MAD)</label>
-                    <input type="number" step="0.01" min="0.01" :max="selectedInvoice.balance_due" v-model="paymentForm.amount" required class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
+                    <input type="number" step="any" min="0" :max="selectedInvoice.balance_due" v-model="paymentForm.amount" required class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
                 </div>
 
                 <div>

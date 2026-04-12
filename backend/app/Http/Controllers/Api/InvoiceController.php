@@ -198,10 +198,11 @@ class InvoiceController extends Controller
                 $ht = ($line->quantity * $line->unit_price) * (1 - ($line->discount_percent / 100));
                 $newTotal += $ht * (1 + ($line->tax_rate / 100));
             }
+            $newTotal = round($newTotal, 2);
             $totalPaid = $invoice->payments()->sum('amount');
-            $newBalance = max(0, $newTotal - $totalPaid);
+            $newBalance = max(0, round($newTotal - $totalPaid, 2));
             $newStatus = 'sent';
-            if ($newBalance <= 0) $newStatus = 'paid';
+            if ($newBalance <= 0.001) $newStatus = 'paid';
             elseif ($totalPaid > 0) $newStatus = 'partially_paid';
 
             $invoice->update([

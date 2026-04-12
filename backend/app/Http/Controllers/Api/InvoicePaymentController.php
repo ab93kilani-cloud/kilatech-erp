@@ -23,7 +23,7 @@ class InvoicePaymentController extends Controller
     {
         $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
-            'amount' => 'required|numeric|min:0.01',
+            'amount' => 'required|numeric|min:0',
             'payment_date' => 'required|date',
             'payment_method' => 'required|string',
             'notes' => 'nullable|string',
@@ -43,8 +43,8 @@ class InvoicePaymentController extends Controller
         try {
             $payment = InvoicePayment::create($request->all());
 
-            $newBalance = $invoice->balance_due - $request->amount;
-            $status = $newBalance <= 0 ? 'paid' : 'partially_paid';
+            $newBalance = round($invoice->balance_due - $request->amount, 2);
+            $status = $newBalance <= 0.001 ? 'paid' : 'partially_paid';
 
             $invoice->update([
                 'balance_due' => $newBalance,
