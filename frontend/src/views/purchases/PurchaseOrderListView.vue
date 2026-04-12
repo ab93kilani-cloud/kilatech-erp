@@ -487,7 +487,7 @@ onMounted(() => {
     </div>
 
     <!-- Modal Scanner Ultra-Complet Mobile-First -->
-    <div v-if="isPreviewModalOpen" class="fixed inset-0 z-[60] bg-black sm:bg-gray-900 sm:bg-opacity-90 flex flex-col overflow-hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div v-if="isPreviewModalOpen" class="fixed inset-0 z-[60] bg-black sm:bg-gray-900 sm:bg-opacity-90 flex flex-col overflow-hidden h-[100dvh]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       
       <!-- Header Mobile Slim -->
       <div class="bg-black/40 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-white/10 text-white z-10">
@@ -563,22 +563,43 @@ onMounted(() => {
 </template>
 
 <style>
-/* Maya: Styles pour rendre les points de Cropper GÉANTS sur Mobile */
+/* Maya: Styles GÉANTS pour le recadrage sur mobile */
 .cropper-point {
-  width: 24px !important;
-  height: 24px !important;
-  background-color: #f97316 !important; /* Orange vif pour visibilité */
+  width: 32px !important;
+  height: 32px !important;
+  background-color: #f97316 !important; /* Orange vif */
   border-radius: 50% !important;
-  opacity: 0.9 !important;
-  box-shadow: 0 0 15px rgba(249, 115, 22, 0.5) !important;
+  opacity: 1 !important;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), 0 0 0 4px white !important;
+  margin-top: -16px !important;
+  margin-left: -16px !important;
 }
+
+/* Les points spécifiques du milieu des lignes (on les cache pour simplifier) */
+.cropper-point.point-e, .cropper-point.point-n, .cropper-point.point-w, .cropper-point.point-s {
+  display: none !important;
+}
+
+/* Points des coins encore plus gros */
+.cropper-point.point-ne, .cropper-point.point-nw, .cropper-point.point-se, .cropper-point.point-sw {
+  width: 44px !important;
+  height: 44px !important;
+  margin-top: -22px !important;
+  margin-left: -22px !important;
+  border: 4px solid white !important;
+}
+
 .cropper-line {
-  background-color: #fb923c !important;
-  height: 2px !important;
+  background-color: #f97316 !important;
+  height: 3px !important;
+  opacity: 0.8 !important;
 }
+
 .cropper-view-box {
-  outline: 2px solid #fb923c !important;
+  outline: 3px solid #f97316 !important;
+  outline-color: #f97316 !important;
 }
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
