@@ -40,9 +40,8 @@ class StockUnitController extends Controller
         return response()->json($result);
     }
 
-    /**
-     * Valide une ligne de réception et génère les unités de stock.
-     */
+    public function validateQA(Request $request)
+    {
         // Maya: Force null if string is empty BEFORE validation
         if ($request->filled('expiration_date') && empty($request->expiration_date)) {
             $request->merge(['expiration_date' => null]);
