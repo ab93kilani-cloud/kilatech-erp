@@ -64,21 +64,36 @@ const initCropper = () => {
 
 const activeFilter = ref('scan') // 'original', 'scan', 'bw'
 
+const rotateInCropper = () => {
+    if (cropper) cropper.rotate(90)
+}
+
 const applyFilterToCanvas = (ctx: CanvasRenderingContext2D, width: number, height: number, filter: string) => {
     if (filter === 'original') return
     
     const imgData = ctx.getImageData(0, 0, width, height)
     const d = imgData.data
+    
+    // Maya: Auto-Luminosité pour constance (Moyenne de la luminance)
+    let totalLum = 0;
     for (let i = 0; i < d.length; i += 4) {
-        const r = d[i] ?? 0, g = d[i+1] ?? 0, b = d[i+2] ?? 0
+        totalLum += ((d[i]??0) * 0.3 + (d[i+1]??0) * 0.59 + (d[i+2]??0) * 0.11);
+    }
+    const avgLum = totalLum / (d.length / 4);
+    const boost = avgLum < 120 ? 1.2 : 1.0; // Boost si trop sombre
+
+    for (let i = 0; i < d.length; i += 4) {
+        const r = (d[i] ?? 0) * boost
+        const g = (d[i+1] ?? 0) * boost
+        const b = (d[i+2] ?? 0) * boost
         const gray = r * 0.3 + g * 0.59 + b * 0.11
         
         if (filter === 'scan') {
-            // Filtre Scanner Pro (Blanchit le papier)
-            const val = gray > 150 ? 255 : (gray < 70 ? 0 : gray * 0.9)
+            // Filtre Scanner Pro Amélioré (Seuil dynamique)
+            const threshold = avgLum > 180 ? 160 : 140; 
+            const val = gray > threshold ? 255 : (gray < 60 ? 0 : gray * 0.8)
             d[i] = d[i+1] = d[i+2] = val
         } else if (filter === 'bw') {
-            // Filtre Noir et Blanc pur (Eco)
             const val = gray > 128 ? 255 : 0
             d[i] = d[i+1] = d[i+2] = val
         }
@@ -502,41 +517,69 @@ onMounted(() => {
       </div>
 
       <!-- Toolbar Mobile (Bottom Reach) -->
-      <div class="bg-gray-900 border-t border-white/10 p-4 pb-8 sm:pb-4 space-y-6 z-10">
-        <!-- Filtres Horizontaux -->
-        <div class="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar">
-          <button @click="activeFilter = 'scan'" :class="[activeFilter === 'scan' ? 'bg-brand-600' : 'bg-gray-800 text-gray-400', 'px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-lg']">Scan</button>
-          <button @click="activeFilter = 'bw'" :class="[activeFilter === 'bw' ? 'bg-white text-black' : 'bg-gray-800 text-gray-400', 'px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-lg']">B&W</button>
-          <button @click="activeFilter = 'original'" :class="[activeFilter === 'original' ? 'bg-orange-600' : 'bg-gray-800 text-gray-400', 'px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-lg']">Photo</button>
+      <div class="bg-gray-950 border-t border-white/10 p-4 pb-10 sm:pb-6 space-y-6 z-10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+        
+        <!-- Filtres Horizontaux GÉANTS -->
+        <div class="flex items-center justify-center gap-3">
+          <button @click="activeFilter = 'scan'" :class="[activeFilter === 'scan' ? 'bg-brand-600 ring-4 ring-brand-400/30 text-white' : 'bg-gray-800 text-gray-400', 'flex-1 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl']">SCAN PRO</button>
+          <button @click="activeFilter = 'bw'" :class="[activeFilter === 'bw' ? 'bg-white text-black ring-4 ring-white/20' : 'bg-gray-800 text-gray-400', 'flex-1 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl']">N&B ECO</button>
+          <button @click="activeFilter = 'original'" :class="[activeFilter === 'original' ? 'bg-indigo-600 ring-4 ring-indigo-400/30 text-white' : 'bg-gray-800 text-gray-400', 'flex-1 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl']">PHOTO</button>
         </div>
 
-        <!-- Boutons d'Actions Principaux -->
+        <!-- Boutons d'Actions Principaux XL -->
         <div class="flex items-center gap-3">
-          <!-- Abandonner / Tout annuler -->
-          <button @click="isPreviewModalOpen = false" class="p-4 bg-gray-800 text-white rounded-2xl">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          <!-- Abandonner -->
+          <button @click="isPreviewModalOpen = false" class="p-5 bg-red-900/40 text-red-500 rounded-3xl border border-red-900/50 active:scale-90 transition-transform">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+
+          <!-- Pivoter -->
+          <button @click="rotateInCropper" class="p-5 bg-gray-800 text-brand-400 rounded-3xl border border-gray-700 active:scale-90 transition-transform shadow-lg">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
           </button>
 
           <!-- Ajouter une page -->
-          <button @click="addPageAndContinue" class="flex-1 bg-white text-black py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            + Page
+          <button @click="addPageAndContinue" class="flex-1 bg-white text-black h-20 rounded-3xl font-black text-sm uppercase tracking-widest shadow-2xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-4 border-gray-100">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>+ Page</span>
           </button>
 
           <!-- Terminer & Envoyer -->
-          <button @click="finishAndUpload" :disabled="isConverting" class="flex-[1.5] bg-emerald-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-900/20 active:scale-95 transition-transform disabled:opacity-50">
-            Terminer ({{ scannedPages.length + (previewImage ? 1 : 0) }})
+          <button @click="finishAndUpload" :disabled="isConverting" class="flex-[1.5] bg-emerald-600 text-white h-20 rounded-3xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-emerald-500/20 active:scale-95 transition-transform disabled:opacity-50 border-4 border-emerald-500/50">
+            {{ isConverting ? '...' : (scannedPages.length + (previewImage ? 1 : 0)) + ' PG VALIDÉ' }}
           </button>
         </div>
         
-        <!-- Preview miniature des pages scannées -->
-        <div v-if="scannedPages.length > 0" class="flex gap-2 overflow-x-auto pt-2 justify-center">
-          <div v-for="(img, idx) in scannedPages" :key="idx" class="relative">
-            <img :src="img" class="h-12 w-9 object-cover rounded border border-white/20" />
-            <span class="absolute -top-1 -right-1 bg-brand-600 text-[8px] text-white w-3 h-3 flex items-center justify-center rounded-full font-bold shadow">{{ idx + 1 }}</span>
+        <!-- Preview miniature -->
+        <div v-if="scannedPages.length > 0" class="flex gap-4 overflow-x-auto py-2 px-4 no-scrollbar">
+          <div v-for="(img, idx) in scannedPages" :key="idx" class="relative flex-shrink-0">
+            <img :src="img" class="h-16 w-12 object-cover rounded-lg border-2 border-brand-500/50 shadow-lg" />
+            <span class="absolute -top-2 -right-2 bg-brand-600 text-[10px] text-white w-5 h-5 flex items-center justify-center rounded-full font-black shadow-lg">{{ idx + 1 }}</span>
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<style>
+/* Maya: Styles pour rendre les points de Cropper GÉANTS sur Mobile */
+.cropper-point {
+  width: 24px !important;
+  height: 24px !important;
+  background-color: #f97316 !important; /* Orange vif pour visibilité */
+  border-radius: 50% !important;
+  opacity: 0.9 !important;
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.5) !important;
+}
+.cropper-line {
+  background-color: #fb923c !important;
+  height: 2px !important;
+}
+.cropper-view-box {
+  outline: 2px solid #fb923c !important;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+</style>
