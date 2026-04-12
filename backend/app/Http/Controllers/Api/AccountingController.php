@@ -31,9 +31,17 @@ class AccountingController extends Controller
             ->with('order.client')
             ->get();
 
-        $purchaseInvoices = \App\Models\Receipt::whereYear('receipt_date', $year)
-            ->whereIn(\DB::raw('MONTH(receipt_date)'), $months)
-            ->whereNotNull('invoice_path')
+        $purchaseInvoices = \App\Models\Receipt::whereNotNull('invoice_path')
+            ->where(function ($query) use ($year, $months) {
+                $query->where(function ($q) use ($year, $months) {
+                    $q->whereYear('receipt_date', $year)
+                      ->whereIn(\DB::raw('MONTH(receipt_date)'), $months);
+                })->orWhere(function ($q) use ($year, $months) {
+                    $q->whereNull('receipt_date')
+                      ->whereYear('created_at', $year)
+                      ->whereIn(\DB::raw('MONTH(created_at)'), $months);
+                });
+            })
             ->with(['purchaseOrder.supplier'])
             ->get();
 

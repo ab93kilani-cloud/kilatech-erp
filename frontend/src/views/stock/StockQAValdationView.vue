@@ -9,8 +9,119 @@ const selectedReceiptId = ref<number | null>(null)
 const invoiceFile = ref<File | null>(null)
 const linesQA = ref<any[]>([])
 
+const invoiceFile = ref<File | null>(null)
+const isConverting = ref(false)
+const isPreviewModalOpen = ref(false)
+const previewImage = ref<string | null>(null)
+const scannedPages = ref<string[]>([]) 
+const activeFilter = ref('scan')
+
+let cropper: any = null
+
+import { nextTick } from 'vue'
+
 const handleInvoiceChange = (e: any) => {
-    invoiceFile.value = e.target.files[0]
+    const file = e.target.files[0]
+    if (!file) return
+    
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+            previewImage.value = ev.target?.result as string
+            isPreviewModalOpen.value = true
+            nextTick(() => initCropper())
+        }
+        reader.readAsDataURL(file)
+    } else {
+        invoiceFile.value = file
+    }
+}
+
+const initCropper = () => {
+    if (cropper) cropper.destroy()
+    const image = document.getElementById('cropper-target') as HTMLImageElement
+    if (!image) return
+    
+    const CropperClass = (window as any).Cropper
+    cropper = new CropperClass(image, {
+        viewMode: 1, dragMode: 'move', autoCropArea: 0.9, restore: false,
+        guides: true, center: true, highlight: false,
+        cropBoxMovable: true, cropBoxResizable: true, toggleDragModeOnDblclick: false,
+    })
+}
+
+const rotateInCropper = () => { if (cropper) cropper.rotate(90) }
+
+const applyFilterToCanvas = (ctx: CanvasRenderingContext2D, width: number, height: number, filter: string) => {
+    if (filter === 'original') return
+    const imgData = ctx.getImageData(0, 0, width, height)
+    const d = imgData.data
+    let totalLum = 0;
+    for (let i = 0; i < d.length; i += 4) {
+        totalLum += ((d[i]??0) * 0.3 + (d[i+1]??0) * 0.59 + (d[i+2]??0) * 0.11);
+    }
+    const avgLum = totalLum / (d.length / 4);
+    const boost = avgLum < 120 ? 1.2 : 1.0;
+
+    for (let i = 0; i < d.length; i += 4) {
+        const r = (d[i] ?? 0) * boost, g = (d[i+1] ?? 0) * boost, b = (d[i+2] ?? 0) * boost
+        const gray = r * 0.3 + g * 0.59 + b * 0.11
+        if (filter === 'scan') {
+            const threshold = avgLum > 180 ? 160 : 140; 
+            const val = gray > threshold ? 255 : (gray < 60 ? 0 : gray * 0.8)
+            d[i] = d[i+1] = d[i+2] = val
+        } else if (filter === 'bw') {
+            const val = gray > 128 ? 255 : 0
+            d[i] = d[i+1] = d[i+2] = val
+        }
+    }
+    ctx.putImageData(imgData, 0, 0)
+}
+
+const addPageAndContinue = () => {
+    if (!cropper) return
+    const canvas = cropper.getCroppedCanvas({ maxWidth: 2000, maxHeight: 2000 })
+    const ctx = canvas.getContext('2d')!
+    applyFilterToCanvas(ctx, canvas.width, canvas.height, activeFilter.value)
+    scannedPages.value.push(canvas.toDataURL('image/jpeg', 0.85))
+    previewImage.value = null
+    cropper.destroy(); cropper = null
+    document.getElementById('receipt-inv-upload')?.click()
+}
+
+const finishScan = async () => {
+    isConverting.value = true
+    try {
+        if (cropper && previewImage.value) {
+            const canvas = cropper.getCroppedCanvas({ maxWidth: 2000, maxHeight: 2000 })
+            const ctx = canvas.getContext('2d')!
+            applyFilterToCanvas(ctx, canvas.width, canvas.height, activeFilter.value)
+            scannedPages.value.push(canvas.toDataURL('image/jpeg', 0.85))
+        }
+        if (scannedPages.value.length === 0) { isPreviewModalOpen.value = false; return; }
+
+        const { jsPDF } = (window as any).jspdf
+        const pdf = new jsPDF()
+        for (let i = 0; i < scannedPages.value.length; i++) {
+            if (i > 0) pdf.addPage()
+            const imgData = scannedPages.value[i]!
+            const img = new Image(); img.src = imgData;
+            await new Promise(r => img.onload = r)
+            const pageWidth = 210, pageHeight = 297
+            const ratio = Math.min(pageWidth / img.width, pageHeight / img.height)
+            const finalW = img.width * ratio, finalH = img.height * ratio
+            pdf.addImage(imgData, 'JPEG', (pageWidth - finalW)/2, (pageHeight - finalH)/2, finalW, finalH)
+        }
+        const blob = pdf.output('blob')
+        invoiceFile.value = new File([blob], `scan_reception_${Date.now()}.pdf`, { type: 'application/pdf' })
+        isPreviewModalOpen.value = false
+        scannedPages.value = []
+        previewImage.value = null
+    } catch (e) {
+        alert("Erreur scan")
+    } finally {
+        isConverting.value = false
+    }
 }
 
 const isLoadingReceipts = ref(true)
@@ -215,15 +326,27 @@ onMounted(() => {
 
         <template v-if="selectedReceiptData">
             
-            <!-- Global Invoice Upload (once per receipt) -->
-            <div class="sm:col-span-full bg-brand-50 p-4 rounded-lg border border-brand-100 flex items-center justify-between mb-4">
-                <div>
-                    <label class="block text-sm font-bold leading-6 text-brand-900 uppercase">Facture Fournisseur (Physique PDF) *</label>
-                    <p class="text-xs text-brand-600 mb-2">Fournie par {{ supplierName }} (Valable pour toute la réception).</p>
-                </div>
+            <!-- Global Invoice Upload (Scanner Pro) -->
+            <div class="sm:col-span-full bg-brand-50 p-6 rounded-2xl border-2 border-brand-100 flex flex-col md:flex-row items-center justify-between mb-8 gap-6 shadow-sm">
                 <div class="flex items-center gap-4">
-                    <input type="file" @change="handleInvoiceChange" accept="application/pdf" class="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-white file:text-brand-700 hover:file:bg-brand-50" />
-                    <div v-if="selectedReceiptData.invoice_path" class="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded border border-green-200 font-bold tracking-widest uppercase shadow-sm">✓ Déjà uploadé</div>
+                    <span class="bg-brand-600 text-white p-3 rounded-xl shadow-lg shadow-brand-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                    </span>
+                    <div>
+                        <label class="block text-sm font-black leading-tight text-brand-900 uppercase tracking-tight">Scanner la Facture / BL *</label>
+                        <p class="text-[10px] text-brand-600 uppercase font-bold tracking-widest mt-1">Fournisseur : {{ supplierName }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <input type="file" id="receipt-inv-upload" @change="handleInvoiceChange" accept="application/pdf,image/*" class="hidden" />
+                    <label for="receipt-inv-upload" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-100 hover:bg-brand-700 cursor-pointer active:scale-95 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                        Fichier / Photo
+                    </label>
+                    <div v-if="invoiceFile" class="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-3 rounded-xl border border-emerald-100 font-bold text-[10px] uppercase shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Document OK
+                    </div>
                 </div>
             </div>
 
@@ -310,4 +433,74 @@ onMounted(() => {
       </div>
     </form>
   </div>
+
+  <!-- Modal Scanner Professionnel -->
+  <div v-if="isPreviewModalOpen" class="fixed inset-0 z-[60] bg-black sm:bg-gray-900 sm:bg-opacity-90 flex flex-col overflow-hidden h-[100dvh]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="bg-black/40 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-white/10 text-white z-10">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-black tracking-[0.2em] uppercase text-brand-400">Scanner Réception</span>
+        <span class="bg-brand-600 text-[10px] px-2 py-0.5 rounded-full">{{ scannedPages.length + (previewImage ? 1 : 0) }} PG</span>
+      </div>
+      <button @click="isPreviewModalOpen = false" class="p-2 -mr-2 text-white/60 hover:text-white transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+
+    <div class="flex-1 relative flex items-center justify-center p-0 overflow-hidden">
+      <div v-if="previewImage" class="w-full h-full">
+        <img id="cropper-target" :src="previewImage" class="max-w-full hidden" />
+      </div>
+      <div v-if="isConverting" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20">
+        <div class="w-12 h-12 border-4 border-white/10 border-t-brand-500 rounded-full animate-spin"></div>
+        <p class="mt-4 text-xs font-black text-white uppercase tracking-widest">Génération du PDF...</p>
+      </div>
+    </div>
+
+    <div class="bg-gray-950 border-t border-white/10 p-4 pb-12 sm:pb-6 space-y-4 z-10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+      <div class="grid grid-cols-3 gap-2">
+        <button @click="activeFilter = 'scan'" :class="[activeFilter === 'scan' ? 'bg-brand-600' : 'bg-gray-800 text-gray-400', 'py-4 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all']">SCAN PRO</button>
+        <button @click="activeFilter = 'bw'" :class="[activeFilter === 'bw' ? 'bg-white text-black' : 'bg-gray-800 text-gray-400', 'py-4 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all']">N&B ECO</button>
+        <button @click="activeFilter = 'original'" :class="[activeFilter === 'original' ? 'bg-indigo-600' : 'bg-gray-800 text-gray-400', 'py-4 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all']">PHOTO</button>
+      </div>
+
+      <div class="flex items-center justify-between gap-4">
+        <button @click="isPreviewModalOpen = false" class="flex-1 flex items-center justify-center gap-2 p-4 bg-red-900/40 text-red-500 rounded-2xl border border-red-900/50">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          <span class="text-[10px] font-black uppercase">Abandon</span>
+        </button>
+        <button @click="rotateInCropper" class="flex-1 flex items-center justify-center gap-2 p-4 bg-gray-800 text-brand-400 rounded-2xl border border-gray-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+          <span class="text-[10px] font-black uppercase">Pivoter</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button @click="addPageAndContinue" class="flex-1 bg-white text-black h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform border-2 border-gray-100">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span>+ Page</span>
+        </button>
+        <button @click="finishScan" :disabled="isConverting" class="flex-[1.5] bg-emerald-600 text-white h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl active:scale-95 transition-transform disabled:opacity-50">
+          VALIDER ({{ scannedPages.length + (previewImage ? 1 : 0) }} PG)
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
+
+<style>
+.cropper-point {
+  width: 32px !important; height: 32px !important;
+  background-color: #f97316 !important;
+  border-radius: 50% !important; opacity: 1 !important;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), 0 0 0 4px white !important;
+  margin-top: -16px !important; margin-left: -16px !important;
+}
+.cropper-point.point-e, .cropper-point.point-n, .cropper-point.point-w, .cropper-point.point-s { display: none !important; }
+.cropper-point.point-ne, .cropper-point.point-nw, .cropper-point.point-se, .cropper-point.point-sw {
+  width: 44px !important; height: 44px !important;
+  margin-top: -22px !important; margin-left: -22px !important;
+  border: 4px solid white !important;
+}
+.cropper-line { background-color: #f97316 !important; height: 3px !important; }
+.cropper-view-box { outline: 3px solid #f97316 !important; }
+</style>
