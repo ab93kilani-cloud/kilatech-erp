@@ -42,12 +42,11 @@ class StockUnitController extends Controller
 
     public function validateQA(Request $request)
     {
-        // Maya: Force null if string is empty BEFORE validation
-        if ($request->filled('expiration_date') && empty($request->expiration_date)) {
-            $request->merge(['expiration_date' => null]);
-        } else if (!$request->has('expiration_date') || $request->expiration_date === '') {
-            $request->merge(['expiration_date' => null]);
-        }
+        // Maya: Robust input cleansing for dates
+        $expirationDateInput = $request->input('expiration_date');
+        $expirationDate = (empty($expirationDateInput) || $expirationDateInput === 'null' || $expirationDateInput === 'undefined') 
+                          ? null 
+                          : $expirationDateInput;
 
         try {
             $request->validate([
@@ -59,22 +58,24 @@ class StockUnitController extends Controller
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'message' => 'Erreur de validation',
+                'message' => 'Erreur de validation des données transmises.',
                 'errors' => $e->errors()
             ], 422);
         }
 
-        $expirationDate = $request->expiration_date;
-
-        $receiptLine = ReceiptLine::with('receipt')->findOrFail($request->receipt_line_id);
+        $receiptLine = ReceiptLine::with(['receipt', 'poLine.variant.product'])->findOrFail($request->receipt_line_id);
 
         if ($receiptLine->status !== 'pending_qa') {
-            return response()->json(['message' => 'Cette ligne n\'est pas en attente de validation QA'], 400);
+            return response()->json(['message' => 'Cette ligne n\'a pas besoin de validation (déjà validée ou annulée)'], 400);
+        }
+
+        if (!$receiptLine->poLine) {
+            return response()->json(['message' => 'Erreur structurelle : Ligne de réception sans ligne de commande associée.'], 400);
         }
 
         DB::beginTransaction();
         try {
-            // Gestion de la facture PDF
+            // Gestion de la facture PDF si présente
             if ($request->hasFile('invoice_file')) {
                 $path = $request->file('invoice_file')->store('purchase_invoices', 'public');
                 $receiptLine->receipt->update([
@@ -82,38 +83,54 @@ class StockUnitController extends Controller
                     'invoice_status' => 'received'
                 ]);
             } else {
-                // Alerte si la facture est manquante
-                $receiptLine->receipt->update(['invoice_status' => 'pending']);
-                
-                \App\Models\Notification::create([
-                    'user_id' => $request->user()->id,
-                    'type' => 'invoice_missing',
-                    'title' => 'Facture manquante : ' . $receiptLine->receipt->receipt_number,
-                    'message' => 'Le stock pour ' . ($receiptLine->poLine?->variant?->product?->name ?? 'Produit') . ' a été validé sans facture fournisseur.',
-                    'reference_type' => 'Receipt',
-                    'reference_id' => $receiptLine->receipt->id,
-                ]);
+                // Maya: Only notify if the receipt doesn't have an invoice yet
+                if ($receiptLine->receipt->invoice_status !== 'received') {
+                    $receiptLine->receipt->update(['invoice_status' => 'pending']);
+                    
+                    // Avoid spamming notifications for multi-line receipts
+                    $alreadyNotified = \App\Models\Notification::where('type', 'invoice_missing')
+                        ->where('reference_id', $receiptLine->receipt->id)
+                        ->where('created_at', '>', now()->subMinutes(5)) // Simple debounce
+                        ->exists();
+
+                    if (!$alreadyNotified) {
+                        \App\Models\Notification::create([
+                            'user_id' => $request->user()->id,
+                            'type' => 'invoice_missing',
+                            'title' => 'Validation sans facture : ' . $receiptLine->receipt->receipt_number,
+                            'message' => 'Le stock pour ' . ($receiptLine->poLine?->variant?->product?->name ?? 'Produit') . ' a été validé sans import de facture.',
+                            'reference_type' => 'Receipt',
+                            'reference_id' => $receiptLine->receipt->id,
+                        ]);
+                    }
+                }
             }
+
             $variantId = $receiptLine->poLine->variant_id;
+            $purchasePrice = $receiptLine->actual_purchase_price ?? $receiptLine->poLine->unit_price ?? 0;
 
             // 1. Chercher ou créer le lot
-            $lot = Lot::firstOrCreate(
-                ['lot_number' => $request->lot_number, 'variant_id' => $variantId],
-                [
-                    'expiration_date' => $expirationDate,
-                    'actual_purchase_price' => $receiptLine->actual_purchase_price,
-                ]
-            );
+            // Maya: Using a robust approach to avoid DB constraint issues
+            $lot = Lot::where('lot_number', $request->lot_number)
+                      ->where('variant_id', $variantId)
+                      ->first();
+            
+            if (!$lot) {
+                $lot = Lot::create([
+                    'variant_id' => $variantId,
+                    'lot_number' => $request->lot_number,
+                    'expiration_date' => $expirationDate, // Si nullable en DB, OK. Sinon crash (mais migration créée)
+                    'actual_purchase_price' => $purchasePrice,
+                ]);
+            }
 
             $quantity = $receiptLine->received_quantity;
 
             // 2. Générer les unités de stock
-            $unitsToCreate = [];
             for ($i = 0; $i < $quantity; $i++) {
-                $serialNumber = null;
-                if (!empty($request->serial_numbers) && isset($request->serial_numbers[$i])) {
-                    $serialNumber = $request->serial_numbers[$i];
-                }
+                $serialNumber = (isset($request->serial_numbers[$i]) && !empty($request->serial_numbers[$i])) 
+                                ? $request->serial_numbers[$i] 
+                                : null;
 
                 $unit = StockUnit::create([
                     'lot_id' => $lot->id,
@@ -121,7 +138,7 @@ class StockUnitController extends Controller
                     'status' => 'disponible',
                 ]);
 
-                // 3. Créer le mouvement de stock (IN)
+                // 3. Créer le mouvement de stock (Entrée)
                 StockMovement::create([
                     'unit_id' => $unit->id,
                     'user_id' => $request->user()->id,
@@ -131,18 +148,24 @@ class StockUnitController extends Controller
                     'reference_doc_type' => ReceiptLine::class,
                     'reference_doc_id' => $receiptLine->id,
                 ]);
-
-                $unitsToCreate[] = $unit;
             }
 
-            // 4. Mettre à jour le statut
+            // 4. Mettre à jour le statut de la ligne de réception
             $receiptLine->update(['status' => 'approved']);
 
             DB::commit();
-            return response()->json(['message' => "$quantity unités générées avec succès liées au lot $lot->lot_number"], 201);
+            return response()->json([
+                'message' => "Succès : $quantity unités ajoutées au lot $lot->lot_number.",
+                'lot' => $lot
+            ], 201);
+            
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Erreur lors de la validation QA', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'Erreur technique lors de la validation QA.',
+                'error' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTrace() : null
+            ], 500);
         }
     }
 

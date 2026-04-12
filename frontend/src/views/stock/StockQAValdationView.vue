@@ -266,7 +266,9 @@ const validateQA = async () => {
             const firstError = Object.values(errors)[0] as string[]
             errorMsg.value = `${e.response.data.message}: ${firstError[0]}`
         } else {
-            errorMsg.value = e.response?.data?.message || 'Erreur lors du contrôle qualité sur une des lignes.'
+            const backendMsg = e.response?.data?.message
+            const detailMsg = e.response?.data?.error
+            errorMsg.value = detailMsg ? `${backendMsg} : ${detailMsg}` : (backendMsg || 'Erreur lors du contrôle qualité sur une des lignes.')
         }
     } finally {
         isSubmitting.value = false
