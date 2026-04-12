@@ -517,44 +517,44 @@ onMounted(() => {
       </div>
 
       <!-- Toolbar Mobile (Bottom Reach) -->
-      <div class="bg-gray-950 border-t border-white/10 p-4 pb-10 sm:pb-6 space-y-6 z-10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+      <div class="bg-gray-950 border-t border-white/10 p-4 pb-12 sm:pb-6 space-y-4 z-10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
         
-        <!-- Filtres Horizontaux GÉANTS -->
-        <div class="flex items-center justify-center gap-3">
-          <button @click="activeFilter = 'scan'" :class="[activeFilter === 'scan' ? 'bg-brand-600 ring-4 ring-brand-400/30 text-white' : 'bg-gray-800 text-gray-400', 'flex-1 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl']">SCAN PRO</button>
-          <button @click="activeFilter = 'bw'" :class="[activeFilter === 'bw' ? 'bg-white text-black ring-4 ring-white/20' : 'bg-gray-800 text-gray-400', 'flex-1 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl']">N&B ECO</button>
-          <button @click="activeFilter = 'original'" :class="[activeFilter === 'original' ? 'bg-indigo-600 ring-4 ring-indigo-400/30 text-white' : 'bg-gray-800 text-gray-400', 'flex-1 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl']">PHOTO</button>
+        <!-- ROW 1: Filtres GÉANTS (Grid pour éviter les coupures) -->
+        <div class="grid grid-cols-3 gap-2">
+          <button @click="activeFilter = 'scan'" :class="[activeFilter === 'scan' ? 'bg-brand-600 ring-4 ring-brand-400/30 text-white' : 'bg-gray-800 text-gray-400', 'py-4 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all shadow-xl']">SCAN PRO</button>
+          <button @click="activeFilter = 'bw'" :class="[activeFilter === 'bw' ? 'bg-white text-black ring-4 ring-white/20' : 'bg-gray-800 text-gray-400', 'py-4 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all shadow-xl']">N&B ECO</button>
+          <button @click="activeFilter = 'original'" :class="[activeFilter === 'original' ? 'bg-indigo-600 ring-4 ring-indigo-400/30 text-white' : 'bg-gray-800 text-gray-400', 'py-4 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all shadow-xl']">PHOTO</button>
         </div>
 
-        <!-- Boutons d'Actions Principaux XL -->
+        <!-- ROW 2: Actions Secondaires (Icons) -->
+        <div class="flex items-center justify-between gap-4">
+          <button @click="isPreviewModalOpen = false" class="flex-1 flex items-center justify-center gap-2 p-4 bg-red-900/40 text-red-500 rounded-2xl border border-red-900/50">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            <span class="text-[10px] font-black uppercase">Abandon</span>
+          </button>
+          <button @click="rotateInCropper" class="flex-1 flex items-center justify-center gap-2 p-4 bg-gray-800 text-brand-400 rounded-2xl border border-gray-700">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            <span class="text-[10px] font-black uppercase">Pivoter</span>
+          </button>
+        </div>
+
+        <!-- ROW 3: Actions Principales XL -->
         <div class="flex items-center gap-3">
-          <!-- Abandonner -->
-          <button @click="isPreviewModalOpen = false" class="p-5 bg-red-900/40 text-red-500 rounded-3xl border border-red-900/50 active:scale-90 transition-transform">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-
-          <!-- Pivoter -->
-          <button @click="rotateInCropper" class="p-5 bg-gray-800 text-brand-400 rounded-3xl border border-gray-700 active:scale-90 transition-transform shadow-lg">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-          </button>
-
-          <!-- Ajouter une page -->
-          <button @click="addPageAndContinue" class="flex-1 bg-white text-black h-20 rounded-3xl font-black text-sm uppercase tracking-widest shadow-2xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform border-4 border-gray-100">
+          <button @click="addPageAndContinue" class="flex-1 bg-white text-black h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform border-2 border-gray-100">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             <span>+ Page</span>
           </button>
 
-          <!-- Terminer & Envoyer -->
-          <button @click="finishAndUpload" :disabled="isConverting" class="flex-[1.5] bg-emerald-600 text-white h-20 rounded-3xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-emerald-500/20 active:scale-95 transition-transform disabled:opacity-50 border-4 border-emerald-500/50">
-            {{ isConverting ? '...' : (scannedPages.length + (previewImage ? 1 : 0)) + ' PG VALIDÉ' }}
+          <button @click="finishAndUpload" :disabled="isConverting" class="flex-[1.5] bg-emerald-600 text-white h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-emerald-500/20 active:scale-95 transition-transform disabled:opacity-50 border-2 border-emerald-500/50">
+            {{ isConverting ? 'ENVOI...' : 'VALIDER (' + (scannedPages.length + (previewImage ? 1 : 0)) + ' PG)' }}
           </button>
         </div>
         
         <!-- Preview miniature -->
-        <div v-if="scannedPages.length > 0" class="flex gap-4 overflow-x-auto py-2 px-4 no-scrollbar">
+        <div v-if="scannedPages.length > 0" class="flex gap-4 overflow-x-auto py-2 px-2 no-scrollbar justify-center">
           <div v-for="(img, idx) in scannedPages" :key="idx" class="relative flex-shrink-0">
-            <img :src="img" class="h-16 w-12 object-cover rounded-lg border-2 border-brand-500/50 shadow-lg" />
-            <span class="absolute -top-2 -right-2 bg-brand-600 text-[10px] text-white w-5 h-5 flex items-center justify-center rounded-full font-black shadow-lg">{{ idx + 1 }}</span>
+            <img :src="img" class="h-14 w-10 object-cover rounded-lg border-2 border-brand-500/50 shadow-lg" />
+            <span class="absolute -top-2 -right-2 bg-brand-600 text-[8px] text-white w-4 h-4 flex items-center justify-center rounded-full font-black">{{ idx + 1 }}</span>
           </div>
         </div>
       </div>
