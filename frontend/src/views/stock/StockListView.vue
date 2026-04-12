@@ -31,6 +31,7 @@ interface StockUnit {
   }>;
 }
 
+const searchQuery = ref('')
 const units = ref<StockUnit[]>([])
 const isLoading = ref(true)
 const error = ref('')
@@ -45,6 +46,18 @@ const fetchStock = async () => {
         isLoading.value = false
     }
 }
+
+import { computed } from 'vue'
+const filteredUnits = computed(() => {
+    if (!searchQuery.value) return units.value;
+    const q = searchQuery.value.toLowerCase();
+    return units.value.filter(u => {
+        const name = u.lot?.variant?.product?.name?.toLowerCase() || '';
+        const sku = u.lot?.variant?.sku?.toLowerCase() || '';
+        const lot = u.lot?.lot_number?.toLowerCase() || '';
+        return name.includes(q) || sku.includes(q) || lot.includes(q);
+    });
+})
 
 const isNearExpiration = (dateStr?: string) => {
     if (!dateStr) return false;
@@ -97,8 +110,21 @@ onMounted(() => {
       </svg>
     </div>
 
+    <!-- Actions & Search -->
+    <div class="mt-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="relative flex-1 max-w-md">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+            </div>
+            <input v-model="searchQuery" type="text" placeholder="Rechercher un article, SKU ou N° Lot..." class="block w-full pl-10 pr-3 py-2.5 border-none bg-white rounded-2xl text-sm shadow-sm ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-inset focus:ring-brand-500 transition-all font-medium">
+        </div>
+        <div class="text-xs text-gray-400 font-bold uppercase tracking-widest bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
+            {{ filteredUnits.length }} élément(s) affiché(s)
+        </div>
+    </div>
+
     <!-- Stock Table -->
-    <div v-else class="mt-8 flex flex-col">
+    <div v-else class="mt-4 flex flex-col">
       <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
           <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
@@ -117,7 +143,7 @@ onMounted(() => {
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
-                <tr v-for="unit in units" :key="unit.id">
+                <tr v-for="unit in filteredUnits" :key="unit.id">
                   
                   <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
                     <div class="font-medium text-gray-900">{{ unit.lot?.variant?.product?.name || 'Inconnu' }}</div>
