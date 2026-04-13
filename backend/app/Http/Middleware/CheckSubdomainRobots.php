@@ -19,8 +19,10 @@ class CheckSubdomainRobots
         $host = $request->getHost();
 
         // If it's the app subdomain, force noindex headers
-        if (str_starts_with($host, 'app.') || $request->is('admin/*') || $request->is('api/*')) {
-            $response->headers->set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+        if ($response instanceof \Symfony\Component\HttpFoundation\Response) {
+            if (str_starts_with($host, 'app.') || $request->is('admin/*') || $request->is('api/*')) {
+                $response->headers->set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+            }
         }
 
         return $response;

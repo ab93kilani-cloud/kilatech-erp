@@ -123,7 +123,7 @@ onMounted(fetchProduct)
           
           <div v-if="product.images && product.images.length > 0" class="grid grid-cols-4 gap-4">
              <div 
-               v-for="(img, i) in [product.image_path, ...product.images]" 
+               v-for="(img, i) in [product.image_path, ...(product.images || [])]" 
                :key="i"
                @click="mainImage = img"
                class="aspect-square bg-white rounded-xl overflow-hidden border-2 cursor-pointer transition-all p-2"
