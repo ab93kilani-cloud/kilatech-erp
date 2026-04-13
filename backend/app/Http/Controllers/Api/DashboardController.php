@@ -55,14 +55,29 @@ class DashboardController extends Controller
         $chartData = [];
         for ($i = 11; $i >= 0; $i--) {
             $monthDate = Carbon::now()->subMonths($i);
-            $monthSales = Invoice::withTrashed()
+            
+            // Facturé (Ventes)
+            $monthInvoiced = Invoice::withTrashed()
                 ->whereYear(DB::raw('IFNULL(invoice_date, created_at)'), $monthDate->year)
                 ->whereMonth(DB::raw('IFNULL(invoice_date, created_at)'), $monthDate->month)
                 ->sum('total_amount');
             
+            // Devis (Opportunités)
+            $monthQuotes = Quote::whereYear('created_at', $monthDate->year)
+                ->whereMonth('created_at', $monthDate->month)
+                ->sum('total_amount');
+            
+            // Encaissé (Trésorerie réelle)
+            $monthPaid = Invoice::withTrashed()
+                ->whereYear(DB::raw('IFNULL(invoice_date, created_at)'), $monthDate->year)
+                ->whereMonth(DB::raw('IFNULL(invoice_date, created_at)'), $monthDate->month)
+                ->sum(DB::raw('total_amount - balance_due'));
+            
             $chartData[] = [
-                'label' => $monthDate->translatedFormat('M Y'),
-                'value' => (float)$monthSales
+                'label'    => $monthDate->translatedFormat('M Y'),
+                'invoiced' => (float)$monthInvoiced,
+                'quotes'   => (float)$monthQuotes,
+                'paid'     => (float)$monthPaid
             ];
         }
 
