@@ -25,13 +25,24 @@ class DashboardController extends Controller
 
         // 1. --- CHIFFRE D'AFFAIRES ---
         // IMPORTANT: withTrashed() car les factures payées sont soft-deleted (archivées)
-        $salesToday  = Invoice::withTrashed()->whereRaw("DATE(IFNULL(invoice_date, created_at)) = ?", [$today->toDateString()])->sum('total_amount');
-        $salesMonth  = Invoice::withTrashed()->whereRaw("YEAR(IFNULL(invoice_date, created_at)) = ? AND MONTH(IFNULL(invoice_date, created_at)) = ?", [$today->year, $today->month])->sum('total_amount');
-        $salesYear   = Invoice::withTrashed()->whereRaw("YEAR(IFNULL(invoice_date, created_at)) = ?", [$today->year])->sum('total_amount');
+        $salesToday  = Invoice::withTrashed()
+            ->where(DB::raw('COALESCE(invoice_date, created_at)'), '>=', $today->copy()->startOfDay())
+            ->where(DB::raw('COALESCE(invoice_date, created_at)'), '<=', $today->copy()->endOfDay())
+            ->sum('total_amount');
+
+        $salesMonth  = Invoice::withTrashed()
+            ->where(DB::raw('COALESCE(invoice_date, created_at)'), '>=', $startOfMonth)
+            ->where(DB::raw('COALESCE(invoice_date, created_at)'), '<=', Carbon::now())
+            ->sum('total_amount');
+
+        $salesYear   = Invoice::withTrashed()
+            ->where(DB::raw('COALESCE(invoice_date, created_at)'), '>=', Carbon::now()->startOfYear())
+            ->where(DB::raw('COALESCE(invoice_date, created_at)'), '<=', Carbon::now()->endOfYear())
+            ->sum('total_amount');
 
         // 2. --- TRÉSORERIE ---
         $totalInvoiced = Invoice::withTrashed()->sum('total_amount');
-        $totalPaid     = Invoice::withTrashed()->sum(DB::raw('total_amount - balance_due'));
+        $totalPaid     = Invoice::withTrashed()->sum(DB::raw('COALESCE(total_amount, 0) - COALESCE(balance_due, 0)'));
         $totalUnpaid   = Invoice::withTrashed()->sum('balance_due');
 
         $recoveryWarning = $totalInvoiced > 0 && ($totalUnpaid > ($totalInvoiced * 0.25));
@@ -55,25 +66,25 @@ class DashboardController extends Controller
         $chartData = [];
         for ($i = 11; $i >= 0; $i--) {
             $monthDate = Carbon::now()->subMonths($i);
-            $year  = $monthDate->year;
-            $month = $monthDate->month;
+            $start = $monthDate->copy()->startOfMonth();
+            $end   = $monthDate->copy()->endOfMonth();
             
             // Facturé (Ventes)
             $monthInvoiced = Invoice::withTrashed()
-                ->whereRaw("YEAR(IFNULL(invoice_date, created_at)) = ?", [$year])
-                ->whereRaw("MONTH(IFNULL(invoice_date, created_at)) = ?", [$month])
+                ->where(DB::raw('COALESCE(invoice_date, created_at)'), '>=', $start)
+                ->where(DB::raw('COALESCE(invoice_date, created_at)'), '<=', $end)
                 ->sum('total_amount');
             
             // Devis (Opportunités)
-            $monthQuotes = Quote::whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
+            $monthQuotes = Quote::where('created_at', '>=', $start)
+                ->where('created_at', '<=', $end)
                 ->sum('total_amount');
             
             // Encaissé (Trésorerie réelle)
             $monthPaid = Invoice::withTrashed()
-                ->whereRaw("YEAR(IFNULL(invoice_date, created_at)) = ?", [$year])
-                ->whereRaw("MONTH(IFNULL(invoice_date, created_at)) = ?", [$month])
-                ->sum(DB::raw('IFNULL(total_amount, 0) - IFNULL(balance_due, 0)'));
+                ->where(DB::raw('COALESCE(invoice_date, created_at)'), '>=', $start)
+                ->where(DB::raw('COALESCE(invoice_date, created_at)'), '<=', $end)
+                ->sum(DB::raw('COALESCE(total_amount, 0) - COALESCE(balance_due, 0)'));
             
             $chartData[] = [
                 'label'    => $monthDate->translatedFormat('M Y'),
