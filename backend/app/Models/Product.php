@@ -16,7 +16,10 @@ class Product extends Model
         'social_linkedin_post', 'social_facebook_post', 'social_instagram_post', 'local_geo_context',
         'is_medical', 'cost_price', 
         'price_ht', 'tva_rate', 'public_price', 'unit_name', 'packaging_unit', 'sales_multiplier',
-        'margin_percent', 'image_path', 'images', 'is_showcase'
+        'margin_percent', 'image_path', 'images', 'is_showcase',
+        'seo_title', 'seo_description', 'seo_content', 'seo_h1',
+        'seo_hash', 'seo_status', 'seo_priority', 'seo_score', 
+        'seo_audit', 'gsc_position', 'gsc_ctr', 'gsc_impressions', 'last_seo_update'
     ];
 
     protected $casts = [
@@ -28,6 +31,9 @@ class Product extends Model
         'tva_rate' => 'decimal:2',
         'margin_percent' => 'decimal:2',
         'images' => 'array',
+        'seo_audit' => 'array',
+        'last_seo_update' => 'datetime',
+        'gsc_ctr' => 'decimal:2',
     ];
 
     public function supplier()

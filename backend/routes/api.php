@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\ContactController;
 
 // Maya: Public quote request from storefront (no auth required)
 // Maya: Public quote request moved to web.php for Hostinger compatibility.
+Route::get('seo/generate-token', [\App\Http\Controllers\Api\SeoController::class, 'generateToken']);
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -45,6 +46,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('marketing/config-status', [\App\Http\Controllers\Api\MissingSearchController::class, 'configStatus']);
         Route::post('marketing/repair-db', [\App\Http\Controllers\Api\MissingSearchController::class, 'repairDb']);
         Route::apiResource('missing-searches', \App\Http\Controllers\Api\MissingSearchController::class)->only(['index', 'destroy']);
+        
+        // SEO Automation (n8n Interface) - Secured for Bot & Marketing
+        Route::prefix('seo')->middleware(['role:Admin,Gérant,Responsable Marketing,n8n_bot', 'seo_log', 'throttle:30,1'])->group(function () {
+            Route::get('products', [\App\Http\Controllers\Api\SeoController::class, 'index']);
+            Route::get('stats', [\App\Http\Controllers\Api\SeoController::class, 'stats']);
+            Route::patch('products/{id}', [\App\Http\Controllers\Api\SeoController::class, 'update']);
+            Route::post('products/bulk', [\App\Http\Controllers\Api\SeoController::class, 'bulkUpdate']);
+        });
     });
 
     // Catalog & Suppliers
