@@ -18,7 +18,6 @@ use App\Http\Controllers\Api\ContactController;
 
 // Maya: Public quote request from storefront (no auth required)
 // Maya: Public quote request moved to web.php for Hostinger compatibility.
-Route::get('seo/generate-token', [\App\Http\Controllers\Api\SeoController::class, 'generateToken']);
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -139,3 +138,5 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('manager/documents/{id}', [\App\Http\Controllers\Api\ManagerController::class, 'deleteDocument']);
     });
 });
+
+Route::get('seo/generate-token', [\App\Http\Controllers\Api\SeoController::class, 'generateToken']);

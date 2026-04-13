@@ -7,7 +7,10 @@ use App\Models\Product;
 use App\Models\SeoVersion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use App\Models\Role;
+use App\Models\User;
 
 class SeoController extends Controller
 {
@@ -158,12 +161,12 @@ class SeoController extends Controller
             return response()->json(['error' => 'Invalid Secret Key'], 403);
         }
 
-        $role = \App\Models\Role::firstOrCreate(['name' => 'n8n_bot']);
-        $user = \App\Models\User::firstOrCreate(
+        $role = Role::firstOrCreate(['name' => 'n8n_bot']);
+        $user = User::firstOrCreate(
             ['email' => 'n8n@kilatech.ma'],
             [
                 'name' => 'n8n_bot',
-                'password_hash' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(32)),
+                'password_hash' => Hash::make(Str::random(32)),
                 'role_id' => $role->id,
                 'is_active' => true
             ]
