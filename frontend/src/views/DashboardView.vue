@@ -31,7 +31,52 @@ onMounted(fetchStats)
 // SVG Chart Helper
 const maxChartValue = computed(() => {
     if (!stats.value.chart.length) return 1
-    return Math.max(...stats.value.chart.map(d => d.value)) || 1
+    const maxValue = Math.max(...stats.value.chart.map(d => d.value))
+    return maxValue === 0 ? 1 : maxValue * 1.1 // Add 10% headroom
+})
+
+const chartPoints = computed(() => {
+    if (!stats.value.chart.length) return []
+    const width = 1000
+    const height = 200
+    const padding = 40
+    const innerWidth = width - (padding * 2)
+    const innerHeight = height - (padding * 2)
+    const step = innerWidth / (stats.value.chart.length - 1)
+    
+    return stats.value.chart.map((d, i) => ({
+        x: padding + (i * step),
+        y: (height - padding) - ((d.value / maxChartValue.value) * innerHeight),
+        value: d.value,
+        label: d.label
+    }))
+})
+
+const curvePath = computed(() => {
+    if (chartPoints.value.length < 2) return ""
+    const points = chartPoints.value
+    let d = `M ${points[0].x} ${points[0].y}`
+    
+    for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[i]
+        const p1 = points[i + 1]
+        const cp1x = p0.x + (p1.x - p0.x) / 2
+        const cp1y = p0.y
+        const cp2x = p0.x + (p1.x - p0.x) / 2
+        const cp2y = p1.y
+        d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`
+    }
+    return d
+})
+
+const areaPath = computed(() => {
+    if (chartPoints.value.length < 2) return ""
+    const points = chartPoints.value
+    const first = points[0]
+    const last = points[points.length - 1]
+    const baseline = 200 - 40 // Same as padding logic
+    
+    return `${curvePath.value} L ${last.x} ${baseline} L ${first.x} ${baseline} Z`
 })
 </script>
 
@@ -80,20 +125,68 @@ const maxChartValue = computed(() => {
         <!-- CHART PANEL -->
         <div class="lg:col-span-2 bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
              <div class="flex items-center justify-between mb-8">
-                <h3 class="font-black text-gray-800 uppercase text-sm tracking-widest">Tendance Mensuelle (12 mois)</h3>
-                <div class="flex gap-2">
-                    <div class="w-3 h-3 rounded-full bg-brand-500"></div>
+                <h3 class="font-black text-gray-800 uppercase text-sm tracking-widest">Analyse des Ventes (Trend)</h3>
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200"></div>
+                        <span class="text-[9px] font-black text-gray-400 uppercase">Ventes</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-emerald-100"></div>
+                        <span class="text-[9px] font-black text-gray-400 uppercase">Volume</span>
+                    </div>
                 </div>
             </div>
-            <div class="h-64 flex items-end justify-between gap-4">
-                <div v-for="item in stats.chart" :key="item.label" class="flex-1 flex flex-col items-center group relative">
-                    <div class="w-full bg-brand-50 rounded-t-lg transition-all duration-500 group-hover:bg-brand-200"
-                        :style="{ height: `${(item.value / maxChartValue) * 100}%` }">
-                        <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
-                            {{ item.value.toLocaleString() }} MAD
-                        </div>
+            <div class="h-64 w-full relative">
+                <!-- SVG Chart -->
+                <svg v-if="stats.chart.length" viewBox="0 0 1000 200" preserveAspectRatio="none" class="w-full h-full overflow-visible">
+                    <defs>
+                        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#10b981" stop-opacity="0.2" />
+                            <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+                        </linearGradient>
+                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="4" result="blur" />
+                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                    </defs>
+
+                    <!-- Area Fill -->
+                    <path :d="areaPath" fill="url(#chartGrad)" class="transition-all duration-1000 ease-in-out" />
+
+                    <!-- Bars (The "Volume" context) -->
+                    <rect v-for="(p, i) in chartPoints" :key="'bar-'+i"
+                        :x="p.x - 12" :y="p.y" width="24" :height="160 - p.y + 40"
+                        fill="#10b981" fill-opacity="0.06" rx="6"
+                        class="transition-all duration-500 hover:fill-opacity-20 cursor-pointer" />
+
+                    <!-- Main Trend Curve -->
+                    <path :d="curvePath" fill="none" stroke="#10b981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)" class="transition-all duration-1000 ease-in-out" />
+                    
+                    <!-- Interactive Hotspots & Data Points -->
+                    <g v-for="(p, i) in chartPoints" :key="'pt-'+i" class="group/pt">
+                        <circle :cx="p.x" :cy="p.y" r="6" fill="#10b981" class="opacity-0 group-hover/pt:opacity-100 transition-opacity" />
+                        <circle :cx="p.x" :cy="p.y" r="3" fill="white" stroke="#10b981" stroke-width="2" />
+                    </g>
+                </svg>
+
+                <!-- Labels -->
+                <div class="absolute bottom-[-10px] left-0 w-full flex justify-between px-[4%] pointer-events-none">
+                    <span v-for="item in chartPoints" :key="item.label" 
+                        class="text-[8px] font-black text-gray-400/80 uppercase tracking-tighter text-center w-10">
+                        {{ item.label.split(' ')[0] }}
+                    </span>
+                </div>
+
+                <!-- Interactive Tooltips -->
+                <div v-for="(p, i) in chartPoints" :key="'tip-'+i"
+                    class="absolute group cursor-pointer"
+                    :style="{ left: `${(p.x / 1000) * 100}%`, top: `${(p.y / 200) * 100}%`, width: '40px', height: '40px', transform: 'translate(-50%, -50%)' }">
+                    <div class="opacity-0 group-hover:opacity-100 bg-emerald-950 text-white text-[10px] font-black px-3 py-2 rounded-xl absolute -top-14 left-1/2 -translate-x-1/2 whitespace-nowrap shadow-2xl pointer-events-none transition-all z-[100] border border-white/10 backdrop-blur-sm">
+                        {{ p.value.toLocaleString() }} MAD
+                        <div class="text-[7px] text-emerald-400 uppercase tracking-widest mt-0.5">{{ p.label }}</div>
+                        <div class="absolute w-2 h-2 bg-emerald-950 rotate-45 -bottom-1 left-1/2 -translate-x-1/2 border-r border-b border-white/10"></div>
                     </div>
-                    <span class="text-[8px] font-bold text-gray-400 mt-2 rotate-45 md:rotate-0 origin-left">{{ item.label }}</span>
                 </div>
             </div>
         </div>
