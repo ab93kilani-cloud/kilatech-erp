@@ -139,17 +139,24 @@ class ProductController extends Controller
         }
     }
 
-    public function show($id)
+    public function show($idOrSlug)
     {
-        $product = Product::with(['variants.suppliers.supplier', 'supplier'])->find($id);
+        $product = Product::with(['variants.suppliers.supplier', 'supplier'])
+            ->where('id', $idOrSlug)
+            ->orWhere('slug', $idOrSlug)
+            ->first();
         
         if (!$product) {
-            // Handle soft-deleted or missing products
-            $product = Product::onlyTrashed()->with(['variants.suppliers.supplier', 'supplier'])->find($id);
+            // Handle soft-deleted
+            $product = Product::onlyTrashed()->with(['variants.suppliers.supplier', 'supplier'])
+                ->where('id', $idOrSlug)
+                ->orWhere('slug', $idOrSlug)
+                ->first();
+                
             if ($product) {
                 return response()->json(['message' => 'Produit archivé (corbeille)'], 404);
             }
-            return response()->json(['message' => 'Produit non trouvé ID: ' . $id], 404);
+            return response()->json(['message' => 'Produit non trouvé : ' . $idOrSlug], 404);
         }
 
         return response()->json($product);

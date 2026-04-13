@@ -13,6 +13,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/robots.txt', function () {
+    $host = request()->getHost();
+    if (str_starts_with($host, 'app.')) {
+        return response("User-agent: *\nDisallow: /", 200)->header('Content-Type', 'text/plain');
+    }
+    return response("User-agent: *\nAllow: /\nSitemap: https://kilatech.ma/sitemap.xml", 200)->header('Content-Type', 'text/plain');
+});
+
 Route::get('/', function () {
     return view('welcome');
 });

@@ -210,7 +210,7 @@ onMounted(() => {
         </div>
         
         <div v-else-if="filteredProducts.length > 0" class="grid grid-cols-2 gap-y-8 gap-x-4 sm:gap-x-8 lg:grid-cols-4 animate-fade-in">
-          <div v-for="product in filteredProducts" :key="product.id" @click="openProductDetails(product)" class="group block cursor-pointer">
+          <router-link v-for="product in filteredProducts" :key="product.id" :to="{ name: 'product-detail', params: { slug: product.slug || product.id } }" class="group block cursor-pointer">
             <div class="relative aspect-[4/5] overflow-hidden rounded-2xl bg-gray-200 shadow-sm border border-gray-100">
               <img :src="getImageUrl(product.image_path)" 
                    @error="handleImageError" 
@@ -238,7 +238,7 @@ onMounted(() => {
                   <span class="text-[7px] sm:text-[9px] text-gray-400 font-medium">Soit {{ (parseFloat(String(formatTTCPrice(product) || 0)) * product.sales_multiplier).toFixed(2) }} MAD TTC</span>
               </div>
             </div>
-          </div>
+          </router-link>
         </div>
         
         <!-- Empty State -->

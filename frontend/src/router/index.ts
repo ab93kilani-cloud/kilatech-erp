@@ -1,8 +1,14 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
+// Domain detection for architecture separation
+const isAppSubdomain = () => {
+    const host = window.location.hostname;
+    return host.startsWith('app.') || host.includes('localhost'); // localhost allowed for dev
+};
+
 const router = createRouter({
-    history: createWebHashHistory(import.meta.env.BASE_URL),
+    history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
         {
             path: '/login',
@@ -17,7 +23,14 @@ const router = createRouter({
                 {
                     path: '',
                     name: 'storefront',
-                    component: () => import('../views/public/StorefrontView.vue')
+                    component: () => import('../views/public/StorefrontView.vue'),
+                    meta: { title: 'Kilatech - Vente Matériel Médical au Maroc' }
+                },
+                {
+                    path: 'produit/:slug',
+                    name: 'product-detail',
+                    component: () => import('../views/public/ProductDetailView.vue'),
+                    props: true
                 },
                 {
                     path: 'about',
@@ -54,7 +67,7 @@ const router = createRouter({
         {
             path: '/admin',
             component: () => import('../layouts/DashboardLayout.vue'),
-            meta: { requiresAuth: true },
+            meta: { requiresAuth: true, requiresAppSubdomain: true },
             children: [
                 {
                     path: '',
@@ -68,6 +81,7 @@ const router = createRouter({
                     component: () => import('../views/vitrinerie/VitrinerieHubView.vue'),
                     meta: { roles: ['Admin', 'Gérant', 'Commercial'] }
                 },
+                // ... same routes as before ...
                 {
                     path: 'catalog/create',
                     name: 'catalog.create',
@@ -252,6 +266,12 @@ router.beforeEach(async (to) => {
     const isAuthenticated = authStore.isAuthenticated
     const userRole = authStore.role
 
+    // Security check: Block admin routes on the main public domain
+    if (to.meta.requiresAppSubdomain && !isAppSubdomain()) {
+        console.warn('Access denied: Admin routes are only available on app subdomain.');
+        return { name: 'storefront' }
+    }
+
     // Protected routes
     if (to.meta.requiresAuth && !isAuthenticated) {
         return { name: 'login' }
@@ -261,7 +281,6 @@ router.beforeEach(async (to) => {
     if (to.meta.requiresAuth && to.meta.roles) {
         const allowedRoles = to.meta.roles as string[]
         if (userRole && !allowedRoles.includes(userRole)) {
-            // Redirect to their specific home if they try to access unauthorized route
             return getHomeRouteByRole(userRole)
         }
     }
@@ -269,6 +288,28 @@ router.beforeEach(async (to) => {
     // Guest routes (like login)
     if (to.meta.requiresGuest && isAuthenticated) {
         return getHomeRouteByRole(userRole)
+    }
+})
+
+// SEO: Manage document.title and meta description
+router.afterEach((to) => {
+    // Basic title management
+    const baseTitle = 'Kilatech Medical';
+    const pageTitle = to.meta.title ? `${to.meta.title} | ${baseTitle}` : baseTitle;
+    document.title = pageTitle as string;
+
+    // Robots meta management: noindex on app subdomain or admin routes
+    let robotsTag = document.querySelector('meta[name="robots"]');
+    if (!robotsTag) {
+        robotsTag = document.createElement('meta');
+        robotsTag.setAttribute('name', 'robots');
+        document.head.appendChild(robotsTag);
+    }
+
+    if (isAppSubdomain() || to.path.startsWith('/admin')) {
+        robotsTag.setAttribute('content', 'noindex, nofollow, noarchive');
+    } else {
+        robotsTag.setAttribute('content', 'index, follow');
     }
 })
 
