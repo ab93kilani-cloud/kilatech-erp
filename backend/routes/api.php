@@ -46,13 +46,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('marketing/repair-db', [\App\Http\Controllers\Api\MissingSearchController::class, 'repairDb']);
         Route::apiResource('missing-searches', \App\Http\Controllers\Api\MissingSearchController::class)->only(['index', 'destroy']);
         
-        // SEO Automation (n8n Interface) - Secured for Bot & Marketing
-        Route::prefix('seo')->middleware(['role:Admin,Gérant,Responsable Marketing,n8n_bot', 'seo_log', 'throttle:30,1'])->group(function () {
-            Route::get('products', [\App\Http\Controllers\Api\SeoController::class, 'index']);
-            Route::get('stats', [\App\Http\Controllers\Api\SeoController::class, 'stats']);
-            Route::patch('products/{id}', [\App\Http\Controllers\Api\SeoController::class, 'update']);
-            Route::post('products/bulk', [\App\Http\Controllers\Api\SeoController::class, 'bulkUpdate']);
-        });
+    });
+
+    // SEO Automation (n8n Interface) - Accessible via Bot or Marketing Team
+    Route::prefix('seo')->middleware([
+        'role:Admin,Gérant,Responsable Marketing,n8n_bot', 
+        'seo_log', 
+        'throttle:60,1'
+    ])->group(function () {
+        Route::get('products', [\App\Http\Controllers\Api\SeoController::class, 'index']);
+        Route::get('stats', [\App\Http\Controllers\Api\SeoController::class, 'stats']);
+        Route::patch('products/{id}', [\App\Http\Controllers\Api\SeoController::class, 'update']);
+        Route::post('products/bulk', [\App\Http\Controllers\Api\SeoController::class, 'bulkUpdate']);
     });
 
     // Catalog & Suppliers
