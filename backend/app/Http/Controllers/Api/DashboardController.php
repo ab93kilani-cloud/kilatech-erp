@@ -75,10 +75,13 @@ class DashboardController extends Controller
                 ->where(DB::raw('COALESCE(invoice_date, created_at)'), '<=', $end)
                 ->sum('total_amount');
             
-            // Devis (Opportunités)
-            $monthQuotes = Quote::where('created_at', '>=', $start)
-                ->where('created_at', '<=', $end)
-                ->sum('total_amount');
+            // Devis (Opportunités) - Somme des lignes car le total n'est pas en DB
+            $monthQuotes = DB::table('quote_lines')
+                ->join('quotes', 'quote_lines.quote_id', '=', 'quotes.id')
+                ->where('quotes.created_at', '>=', $start)
+                ->where('quotes.created_at', '<=', $end)
+                ->whereNull('quotes.deleted_at')
+                ->sum(DB::raw('(unit_price * quantity * (1 - COALESCE(discount_percent, 0) / 100)) * (1 + COALESCE(tax_rate, 20) / 100)'));
             
             // Encaissé (Trésorerie réelle)
             $monthPaid = Invoice::withTrashed()
