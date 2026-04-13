@@ -60,11 +60,14 @@ const curvePath = computed(() => {
     for (let i = 0; i < points.length - 1; i++) {
         const p0 = points[i]
         const p1 = points[i + 1]
-        const cp1x = p0.x + (p1.x - p0.x) / 2
-        const cp1y = p0.y
-        const cp2x = p0.x + (p1.x - p0.x) / 2
-        const cp2y = p1.y
-        d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`
+        
+        if (p0 && p1) {
+            const cp1x = p0.x + (p1.x - p0.x) / 2
+            const cp1y = p0.y
+            const cp2x = p0.x + (p1.x - p0.x) / 2
+            const cp2y = p1.y
+            d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`
+        }
     }
     return d
 })
@@ -75,6 +78,8 @@ const areaPath = computed(() => {
     const first = points[0]
     const last = points[points.length - 1]
     const baseline = 200 - 40 // Same as padding logic
+    
+    if (!first || !last) return ""
     
     return `${curvePath.value} L ${last.x} ${baseline} L ${first.x} ${baseline} Z`
 })
