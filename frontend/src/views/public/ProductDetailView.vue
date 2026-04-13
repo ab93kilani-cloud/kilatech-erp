@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/plugins/axios'
 import { useSEO } from '@/composables/useSEO'
@@ -51,7 +51,10 @@ const fetchProduct = async () => {
         if (product.value) {
             mainImage.value = product.value.image_path
             if (product.value.variants && product.value.variants.length > 0) {
-                selectedVariant.value = product.value.variants[0]
+                const firstVariant = product.value.variants[0];
+                if (firstVariant) {
+                    selectedVariant.value = firstVariant;
+                }
             }
             
             // SEO Update
@@ -96,16 +99,7 @@ const injectJsonLd = (p: Product) => {
 
 const addToCart = () => {
     if (!product.value || !selectedVariant.value) return
-    cartStore.addItem({
-        variantId: selectedVariant.value.id,
-        productId: product.value.id,
-        name: product.value.name,
-        variation: selectedVariant.value.name_variation,
-        price: parseFloat(String(selectedVariant.value.public_price)),
-        quantity: 1,
-        image: product.value.image_path
-    })
-    // Optional: show feedback or open cart
+    cartStore.addItem(product.value, selectedVariant.value, 1)
 }
 
 onMounted(fetchProduct)

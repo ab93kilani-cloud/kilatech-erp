@@ -3,7 +3,6 @@ import { ref, onMounted, computed, watch } from 'vue'
 import api from '@/plugins/axios'
 import { useSEO } from '@/composables/useSEO'
 import { useCartStore } from '@/stores/cart'
-import ProductModal from '@/components/public/ProductModal.vue'
 import CartDrawer from '@/components/public/CartDrawer.vue'
 import { useConfig } from '@/composables/useConfig'
 
@@ -21,6 +20,7 @@ interface Variant {
 interface Product {
   id: number;
   name: string;
+  slug: string;
   category: string;
   description: string;
   public_price: number | string;
@@ -39,14 +39,7 @@ const searchQuery = ref('')
 const activeCategory = ref('Tous')
 
 const cartStore = useCartStore()
-const isModalOpen = ref(false)
 const isCartOpen = ref(false)
-const selectedProduct = ref<Product | null>(null)
-
-const openProductDetails = (product: Product) => {
-    selectedProduct.value = product
-    isModalOpen.value = true
-}
 
 const formatTTCPrice = (product: Product) => {
     if (!product.variants || product.variants.length === 0) return null
@@ -285,14 +278,6 @@ onMounted(() => {
        </div>
     </button>
 
-    <!-- Components -->
-    <ProductModal 
-      v-if="selectedProduct" 
-      :product="selectedProduct" 
-      :show="isModalOpen" 
-      @close="isModalOpen = false" 
-    />
-    
     <CartDrawer 
       :show="isCartOpen" 
       @close="isCartOpen = false" 
