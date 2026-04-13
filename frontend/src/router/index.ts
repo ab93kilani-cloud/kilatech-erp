@@ -263,30 +263,38 @@ const getHomeRouteByRole = (role: string | null) => {
 // Navigation Guard
 router.beforeEach(async (to) => {
     const authStore = useAuthStore()
+    
+    // 1. If we have a token but no user, fetch the profile immediately to avoid role-routing loops
+    if (authStore.token && !authStore.user) {
+        await authStore.fetchProfile()
+    }
+
     const isAuthenticated = authStore.isAuthenticated
     const userRole = authStore.role
 
-    // On app subdomain: redirect root (/) directly to login or dashboard
-    if (isAppSubdomain() && to.name === 'storefront') {
+    // 2. On app subdomain: redirect root (/) directly to login or dashboard
+    if (isAppSubdomain() && (to.name === 'storefront' || to.path === '/')) {
         if (isAuthenticated) {
-            return getHomeRouteByRole(userRole)
+            const target = getHomeRouteByRole(userRole)
+            // Safety: Never redirect to storefront on app subdomain
+            return target.name === 'storefront' ? { name: 'dashboard' } : target
         } else {
             return { name: 'login' }
         }
     }
 
-    // Security check: Block admin routes on the main public domain
+    // 3. Security check: Block admin routes on the main public domain
     if (to.meta.requiresAppSubdomain && !isAppSubdomain()) {
         console.warn('Access denied: Admin routes are only available on app subdomain.');
         return { name: 'storefront' }
     }
 
-    // Protected routes
+    // 4. Protected routes
     if (to.meta.requiresAuth && !isAuthenticated) {
         return { name: 'login' }
     }
     
-    // Role-specific route protection
+    // 5. Role-specific route protection
     if (to.meta.requiresAuth && to.meta.roles) {
         const allowedRoles = to.meta.roles as string[]
         if (userRole && !allowedRoles.includes(userRole)) {
@@ -294,9 +302,14 @@ router.beforeEach(async (to) => {
         }
     }
 
-    // Guest routes (like login)
+    // 6. Guest routes (like login)
     if (to.meta.requiresGuest && isAuthenticated) {
-        return getHomeRouteByRole(userRole)
+        const target = getHomeRouteByRole(userRole)
+        // Safety for subdomain: if we catch login while authenticated, go to dashboard not storefront
+        if (isAppSubdomain() && target.name === 'storefront') {
+            return { name: 'dashboard' }
+        }
+        return target
     }
 })
 
