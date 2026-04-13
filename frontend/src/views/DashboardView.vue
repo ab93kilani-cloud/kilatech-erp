@@ -55,7 +55,10 @@ const chartPoints = computed(() => {
 const curvePath = computed(() => {
     if (chartPoints.value.length < 2) return ""
     const points = chartPoints.value
-    let d = `M ${points[0].x} ${points[0].y}`
+    const firstPoint = points[0]
+    if (!firstPoint) return ""
+    
+    let d = `M ${firstPoint.x} ${firstPoint.y}`
     
     for (let i = 0; i < points.length - 1; i++) {
         const p0 = points[i]
