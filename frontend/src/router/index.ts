@@ -266,6 +266,15 @@ router.beforeEach(async (to) => {
     const isAuthenticated = authStore.isAuthenticated
     const userRole = authStore.role
 
+    // On app subdomain: redirect root (/) directly to login or dashboard
+    if (isAppSubdomain() && to.name === 'storefront') {
+        if (isAuthenticated) {
+            return getHomeRouteByRole(userRole)
+        } else {
+            return { name: 'login' }
+        }
+    }
+
     // Security check: Block admin routes on the main public domain
     if (to.meta.requiresAppSubdomain && !isAppSubdomain()) {
         console.warn('Access denied: Admin routes are only available on app subdomain.');
