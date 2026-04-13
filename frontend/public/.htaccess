@@ -9,7 +9,9 @@
   RewriteRule ^public/(.*)$ api/index.php [QSA,L]
   RewriteRule ^api-login$ api/index.php [QSA,L]
   
-  RewriteRule ^index\.html$ - [L]
+  # Force root to index.html
+  RewriteRule ^$ index.html [L]
+  
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
