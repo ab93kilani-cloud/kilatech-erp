@@ -138,5 +138,3 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('manager/documents/{id}', [\App\Http\Controllers\Api\ManagerController::class, 'deleteDocument']);
     });
 });
-
-Route::get('seo/generate-token', [\App\Http\Controllers\Api\SeoController::class, 'generateToken']);

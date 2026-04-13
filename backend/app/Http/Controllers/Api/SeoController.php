@@ -149,39 +149,6 @@ class SeoController extends Controller
     }
 
     /**
-     * TEMPORARY : Generate token via Browser for Hostinger (No SSH)
-     * SECURITY : Uses a hardcoded secret key. MUST BE DELETED after use.
-     */
-    public function generateToken(Request $request)
-    {
-        $secret = $request->query('secret');
-        $expectedSecret = 'Kila-SEO-Automation-2026';
-
-        if ($secret !== $expectedSecret) {
-            return response()->json(['error' => 'Invalid Secret Key'], 403);
-        }
-
-        $role = Role::firstOrCreate(['name' => 'n8n_bot']);
-        $user = User::firstOrCreate(
-            ['email' => 'n8n@kilatech.ma'],
-            [
-                'name' => 'n8n_bot',
-                'password_hash' => Hash::make(Str::random(32)),
-                'role_id' => $role->id,
-                'is_active' => true
-            ]
-        );
-
-        $token = $user->createToken('n8n-automation', ['seo:manage']);
-
-        return response()->json([
-            'message' => 'Token généré avec succès ! VEUILLEZ SUPPRIMER CETTE ROUTE MAINTENANT.',
-            'n8n_token' => $token->plainTextToken,
-            'user' => 'n8n_bot'
-        ]);
-    }
-
-    /**
      * Logic for progressive SEO scoring.
      */
     private function calculateSeoScore($data)
