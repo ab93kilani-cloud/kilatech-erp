@@ -38,7 +38,8 @@ class AccountingController extends Controller
         $purchaseInvoices = \App\Models\Receipt::withTrashed()
             ->whereNotNull('invoice_path')
             ->whereHas('purchaseOrder', function ($query) use ($year, $months) {
-                $query->whereYear('po_date', $year)
+                $query->withTrashed()
+                      ->whereYear('po_date', $year)
                       ->whereIn(DB::raw('MONTH(po_date)'), $months);
             })
             ->with(['purchaseOrder.supplier'])
