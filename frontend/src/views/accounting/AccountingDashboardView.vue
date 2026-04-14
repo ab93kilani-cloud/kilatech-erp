@@ -192,6 +192,21 @@ onMounted(fetchDashboard)
                 <span class="text-[10px] text-red-500 font-black tracking-widest uppercase">Alertes Action</span>
             </h2>
             <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                <!-- LISTE COMPLETE DES ATTESTATIONS (DISPONIBLES) -->
+                <div class="space-y-3">
+                    <div v-for="supplier in data.suppliers_with_certificates" :key="'valid-' + supplier.id" class="flex items-center justify-between p-3 bg-gray-50/30 rounded-xl border border-gray-100 hover:bg-white hover:shadow-md transition-all group">
+                        <div>
+                            <div class="text-[11px] font-bold text-gray-800">{{ supplier.name }}</div>
+                            <div class="text-[9px] text-gray-400 mt-0.5">Exp: {{ new Date(supplier.tax_certificate_expires_at).toLocaleDateString() }}</div>
+                        </div>
+                        <button @click="downloadFile(supplier.tax_certificate_path, `Cert-Fis-${supplier.name}`)" class="p-1.5 rounded-lg bg-white text-blue-600 border border-blue-50 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="data.suppliers_missing_certificates.length > 0" class="h-px bg-gray-100 my-6"></div>
+
                 <!-- ALERTES (MANQUANTS/PÉRIMÉS) -->
                 <div v-for="supplier in data.suppliers_missing_certificates" :key="'alert-' + supplier.id" class="p-4 bg-red-50/50 rounded-2xl border border-red-100 flex flex-col gap-2 mb-4">
                     <div class="flex items-center justify-between">
@@ -203,21 +218,7 @@ onMounted(fetchDashboard)
                     </div>
                 </div>
 
-                <div class="h-px bg-gray-100 my-6"></div>
-
-                <!-- LISTE COMPLETE DES ATTESTATIONS -->
-                <div class="space-y-3">
-                    <div v-for="supplier in data.suppliers_with_certificates" :key="'valid-' + supplier.id" class="flex items-center justify-between p-3 bg-gray-50/30 rounded-xl border border-gray-100 hover:bg-white hover:shadow-md transition-all group">
-                        <div>
-                            <div class="text-[11px] font-bold text-gray-800">{{ supplier.name }}</div>
-                            <div class="text-[9px] text-gray-400 mt-0.5">Exp: {{ new Date(supplier.tax_certificate_expires_at).toLocaleDateString() }}</div>
-                        </div>
-                        <button @click="downloadFile(supplier.tax_certificate_path, `Cert-Fis-${supplier.name}`)" class="p-1.5 rounded-lg bg-white text-blue-600 border border-blue-50 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
-                        </button>
-                    </div>
-                    <div v-if="data.suppliers_with_certificates.length === 0 && data.suppliers_missing_certificates.length === 0" class="text-center py-20 text-gray-300 italic text-xs">Aucune donnée fournisseur disponible.</div>
-                </div>
+                <div v-if="data.suppliers_with_certificates.length === 0 && data.suppliers_missing_certificates.length === 0" class="text-center py-20 text-gray-300 italic text-xs">Aucune donnée fournisseur disponible.</div>
             </div>
         </div>
     </div>
