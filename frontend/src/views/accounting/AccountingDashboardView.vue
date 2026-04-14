@@ -154,7 +154,10 @@ onMounted(fetchDashboard)
                 <div v-for="receipt in data.purchase_invoices" :key="receipt.id" class="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100 group hover:bg-white hover:shadow-lg transition-all">
                     <div>
                         <div class="text-sm font-black text-gray-900">{{ receipt.receipt_number }}</div>
-                        <div class="text-[10px] text-gray-400 font-bold uppercase">{{ receipt.purchase_order?.supplier?.name }} (BC {{ receipt.purchase_order?.po_number }})</div>
+                        <div class="text-[10px] text-gray-400 font-bold uppercase">
+                            {{ receipt.purchase_order?.supplier?.name }} 
+                            (BC {{ receipt.purchase_order?.po_number }} - {{ Number(receipt.purchase_order?.total_ttc || 0).toLocaleString() }} DH TTC)
+                        </div>
                     </div>
                     <button @click="downloadFile(receipt.invoice_path, `Facture-Achat-${receipt.receipt_number}`)" class="p-2 rounded-xl bg-white text-purple-600 border border-purple-100 opacity-0 group-hover:opacity-100 transition-opacity">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>

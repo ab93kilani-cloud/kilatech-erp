@@ -11,6 +11,17 @@ class PurchaseOrder extends Model
 
     protected $fillable = ['supplier_id', 'created_by', 'po_number', 'po_date', 'status', 'payment_method', 'payment_conditions', 'expected_delivery_date'];
 
+    protected $appends = ['total_ttc'];
+    
+    public function getTotalTtcAttribute()
+    {
+        return $this->lines->sum(function($line) {
+            $ht = (float)($line->unit_price ?? 0) * (int)($line->ordered_quantity ?? 0);
+            $tvaRate = (float)($line->variant?->tva_rate ?? 20);
+            return $ht * (1 + ($tvaRate / 100));
+        });
+    }
+
     public function lines()
     {
         return $this->hasMany(PoLine::class);

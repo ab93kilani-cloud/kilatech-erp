@@ -42,7 +42,7 @@ class AccountingController extends Controller
                       ->whereYear('po_date', $year)
                       ->whereIn(DB::raw('MONTH(po_date)'), $months);
             })
-            ->with(['purchaseOrder' => fn($q) => $q->withTrashed(), 'purchaseOrder.supplier'])
+            ->with(['purchaseOrder' => fn($q) => $q->withTrashed()->with('lines.variant'), 'purchaseOrder.supplier'])
             ->get();
 
         $bankStatements = BankStatement::where('year', $year)
