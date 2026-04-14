@@ -18,6 +18,6 @@ class PoLine extends Model
 
     public function variant()
     {
-        return $this->belongsTo(ProductVariant::class);
+        return $this->belongsTo(ProductVariant::class)->withTrashed();
     }
 }

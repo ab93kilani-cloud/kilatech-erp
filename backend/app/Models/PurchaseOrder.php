@@ -16,7 +16,12 @@ class PurchaseOrder extends Model
     public function getTotalTtcAttribute()
     {
         return $this->lines->sum(function($line) {
-            $ht = (float)($line->unit_price ?? 0) * (int)($line->ordered_quantity ?? 0);
+            $price = $line->unit_price;
+            // Fallback to variant cost price if unit_price is 0/null
+            if (!$price && $line->variant) {
+                $price = $line->variant->cost_price;
+            }
+            $ht = (float)($price ?? 0) * (int)($line->ordered_quantity ?? 0);
             $tvaRate = (float)($line->variant?->tva_rate ?? 20);
             return $ht * (1 + ($tvaRate / 100));
         });
