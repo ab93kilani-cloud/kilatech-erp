@@ -48,7 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
         
     });
 
-    // SEO Automation (n8n Interface) - Accessible via Bot or Marketing Team
+    // SEO Automation (n8n Interface) - Secured for Bot & Marketing
     Route::prefix('seo')->middleware([
         'role:Admin,Gérant,Responsable Marketing,n8n_bot', 
         'seo_log', 
