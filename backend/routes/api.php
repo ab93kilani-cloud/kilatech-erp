@@ -83,8 +83,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('stock-units/validate-qa', [\App\Http\Controllers\Api\StockUnitController::class, 'validateQA']);
     Route::apiResource('stock-units', \App\Http\Controllers\Api\StockUnitController::class);
 
-    // Sales & Finance (Commercial + Admin/Gérant)
-    Route::middleware('role:Admin,Gérant,Commercial')->group(function () {
+    // Sales & Finance (Commercial + Admin/Gérant + Comptable)
+    Route::middleware('role:Admin,Gérant,Commercial,Comptable')->group(function () {
         Route::apiResource('clients', \App\Http\Controllers\Api\ClientController::class);
         
         Route::post('quotes/{quote}/lock', [\App\Http\Controllers\Api\QuoteController::class, 'lock']);
