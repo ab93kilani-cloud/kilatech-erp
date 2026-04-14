@@ -20,7 +20,7 @@ class ManagerController extends Controller
         $year = $request->query('year', date('Y'));
         
         // Revenue from Invoices
-        $revenue = Invoice::whereYear('created_at', $year)->sum('total_amount');
+        $revenue = Invoice::whereYear(DB::raw('COALESCE(invoice_date, created_at)'), $year)->sum('total_amount');
         
         // Purchase costs from Receipts (based on actual_purchase_price in receipt lines)
         $purchases = DB::table('receipt_lines')

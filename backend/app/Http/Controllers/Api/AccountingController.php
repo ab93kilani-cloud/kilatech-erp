@@ -9,6 +9,7 @@ use App\Models\Supplier;
 use App\Models\BankStatement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use ZipArchive;
 
 class AccountingController extends Controller
@@ -26,26 +27,24 @@ class AccountingController extends Controller
             default => [1, 2, 3]
         };
 
-        $salesInvoices = Invoice::whereYear('created_at', $year)
-            ->whereIn(\DB::raw('MONTH(created_at)'), $months)
-            ->with('order.client')
+        $salesInvoices = Invoice::withTrashed()
+            ->where(function ($query) use ($year, $months) {
+                $query->whereYear(DB::raw('COALESCE(invoice_date, created_at)'), $year)
+                      ->whereIn(DB::raw('MONTH(COALESCE(invoice_date, created_at))'), $months);
+            })
+            ->with(['order' => fn($q) => $q->withTrashed(), 'order.client' => fn($q) => $q->withTrashed()])
             ->get();
 
-        $purchaseInvoices = \App\Models\Receipt::whereNotNull('invoice_path')
+        $purchaseInvoices = \App\Models\Receipt::withTrashed()
+            ->whereNotNull('invoice_path')
             ->where(function ($query) use ($year, $months) {
-                $query->where(function ($q) use ($year, $months) {
-                    $q->whereYear('receipt_date', $year)
-                      ->whereIn(\DB::raw('MONTH(receipt_date)'), $months);
-                })->orWhere(function ($q) use ($year, $months) {
-                    $q->whereNull('receipt_date')
-                      ->whereYear('created_at', $year)
-                      ->whereIn(\DB::raw('MONTH(created_at)'), $months);
-                });
+                $query->whereYear(DB::raw('COALESCE(receipt_date, created_at)'), $year)
+                      ->whereIn(DB::raw('MONTH(COALESCE(receipt_date, created_at))'), $months);
             })
             ->with(['purchaseOrder.supplier'])
             ->get();
 
-        $bankStatements = BankStatement::whereYear('created_at', $year)
+        $bankStatements = BankStatement::where('year', $year)
             ->whereIn('month', $months)
             ->with('uploader')
             ->get();
