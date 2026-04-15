@@ -57,7 +57,7 @@ const navigation = computed(() => {
       case 'Responsable d\'Achat':
         return ['Catalogue', 'Fournisseurs', 'Achats / Bons Commande'].includes(name);
       case 'Comptable':
-        return ['Comptabilité'].includes(name);
+        return ['Comptabilité', 'Factures', 'Avoirs', 'Règlements'].includes(name);
       case 'Responsable Marketing':
         return ['Catalogue', 'Espace Marketing (SEO)'].includes(name);
       case 'Logisticien':
