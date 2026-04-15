@@ -57,12 +57,19 @@ class AccountingController extends Controller
         $suppliersWithCertificates = Supplier::whereNotNull('tax_certificate_path')
             ->get();
 
+        $payments = \App\Models\InvoicePayment::with(['invoice' => fn($q) => $q->withTrashed()->with(['order.client' => fn($q) => $q->withTrashed()])])
+            ->where(function ($query) use ($year, $months) {
+                $query->whereYear('payment_date', $year)
+                      ->whereIn(DB::raw('MONTH(payment_date)'), $months);
+            })->get();
+
         return response()->json([
             'sales_invoices' => $salesInvoices,
             'purchase_invoices' => $purchaseInvoices,
             'bank_statements' => $bankStatements,
             'suppliers_missing_certificates' => $suppliersMissingCertificates,
-            'suppliers_with_certificates' => $suppliersWithCertificates
+            'suppliers_with_certificates' => $suppliersWithCertificates,
+            'payments' => $payments
         ]);
     }
 

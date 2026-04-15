@@ -91,7 +91,7 @@ onMounted(fetchDashboard)
     </div>
 
     <!-- Overview Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
         <div class="bg-white p-8 rounded-[2rem] shadow-xl shadow-gray-100/50 border border-gray-50 flex flex-col items-center">
             <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -119,6 +119,13 @@ onMounted(fetchDashboard)
             </div>
             <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Certs. Manquants</div>
             <div class="text-3xl font-black text-red-600">{{ data.suppliers_missing_certificates.length }}</div>
+        </div>
+        <div class="bg-white p-8 rounded-[2rem] shadow-xl shadow-gray-100/50 border border-gray-50 flex flex-col items-center">
+            <div class="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Règlements reçus</div>
+            <div class="text-3xl font-black text-gray-900">{{ data.payments?.length || 0 }}</div>
         </div>
     </div>
 
@@ -164,6 +171,31 @@ onMounted(fetchDashboard)
                     </button>
                 </div>
                 <div v-if="data.purchase_invoices.length === 0" class="text-center py-20 text-gray-300">Aucune facture d'achat scannée par le service QA pour cette période.</div>
+            </div>
+        </div>
+
+        <!-- RÈGLEMENTS SECTION -->
+        <div class="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-xl shadow-green-200/20 border border-green-50 relative overflow-hidden">
+            <h2 class="text-xl font-bold text-gray-900 mb-8 flex items-center justify-between">
+                <span>Règlements Clients</span>
+                <span class="text-[10px] text-green-500 font-black tracking-widest uppercase">Trésorerie Reçue</span>
+            </h2>
+            <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                <div v-for="payment in data.payments" :key="payment.id" class="flex items-center justify-between p-4 bg-green-50/30 rounded-2xl border border-green-100/50 group hover:bg-white hover:shadow-lg transition-all">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-gray-900 uppercase">{{ payment.invoice?.order?.client?.company_name || 'Client Direct' }}</span>
+                            <span class="text-[9px] px-2 py-0.5 bg-gray-100 rounded text-gray-400 font-bold">{{ payment.invoice?.invoice_number }}</span>
+                        </div>
+                        <div class="text-[9px] text-gray-400 font-bold mt-1 uppercase">
+                            {{ new Date(payment.payment_date).toLocaleDateString() }} • {{ payment.payment_method }}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-black text-green-600">+ {{ Number(payment.amount).toLocaleString() }} DH</div>
+                    </div>
+                </div>
+                <div v-if="data.payments?.length === 0" class="text-center py-20 text-gray-300 text-sm">Aucun règlement enregistré pour cette période.</div>
             </div>
         </div>
 
