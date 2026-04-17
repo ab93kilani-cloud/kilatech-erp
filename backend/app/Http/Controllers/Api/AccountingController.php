@@ -63,13 +63,23 @@ class AccountingController extends Controller
                       ->whereIn(DB::raw('MONTH(payment_date)'), $months);
             })->get();
 
+        $overdueSalesCount = Invoice::where('balance_due', '>', 0)
+            ->where('due_date', '<', now())
+            ->count();
+
+        $overduePurchaseCount = PurchaseOrder::where('status', '!=', 'paid') // Assuming status tracking for POs
+            ->where('due_date', '<', now())
+            ->count();
+
         return response()->json([
             'sales_invoices' => $salesInvoices,
             'purchase_invoices' => $purchaseInvoices,
             'bank_statements' => $bankStatements,
             'suppliers_missing_certificates' => $suppliersMissingCertificates,
             'suppliers_with_certificates' => $suppliersWithCertificates,
-            'payments' => $payments
+            'payments' => $payments,
+            'overdue_sales_count' => $overdueSalesCount,
+            'overdue_purchase_count' => $overduePurchaseCount
         ]);
     }
 
@@ -109,5 +119,22 @@ class AccountingController extends Controller
         ]);
 
         return response()->json($supplier);
+    }
+    public function financeOverview()
+    {
+        $unpaidInvoices = Invoice::where('balance_due', '>', 0)
+            ->with(['order.client'])
+            ->orderBy('due_date', 'asc')
+            ->get();
+
+        $unpaidPurchases = PurchaseOrder::where('status', '!=', 'paid')
+            ->with(['supplier', 'lines.variant'])
+            ->orderBy('due_date', 'asc')
+            ->get();
+
+        return response()->json([
+            'unpaid_invoices' => $unpaidInvoices,
+            'unpaid_purchases' => $unpaidPurchases
+        ]);
     }
 }

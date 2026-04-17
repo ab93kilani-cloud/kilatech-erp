@@ -9,11 +9,12 @@ class Invoice extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['order_id', 'invoice_number', 'invoice_date', 'total_amount', 'balance_due', 'status', 'discount_amount', 'payment_method'];
+    protected $fillable = ['order_id', 'invoice_number', 'invoice_date', 'due_date', 'total_amount', 'balance_due', 'status', 'discount_amount', 'payment_method'];
     
     protected $casts = [
         'total_amount' => 'decimal:4',
         'balance_due' => 'decimal:4',
+        'due_date' => 'date',
     ];
 
     public function order()

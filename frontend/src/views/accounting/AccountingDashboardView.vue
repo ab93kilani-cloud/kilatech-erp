@@ -89,6 +89,26 @@ onMounted(fetchDashboard)
           </div>
       </div>
     </div>
+    
+    <!-- Red Alert Counter for Overdue Items -->
+    <div v-if="(data.overdue_sales_count + data.overdue_purchase_count) > 0" class="mb-10 animate-pulse">
+        <div class="bg-red-600 rounded-[2rem] p-6 shadow-2xl shadow-red-200 text-white flex items-center justify-between">
+            <div class="flex items-center gap-6">
+                <div class="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black uppercase tracking-tight">Alerte Échéances Dépassées</h3>
+                    <p class="text-sm font-bold text-red-100 uppercase tracking-widest mt-1">
+                        {{ data.overdue_sales_count }} Factures Clients • {{ data.overdue_purchase_count }} Règlements Fournisseurs en retard
+                    </p>
+                </div>
+            </div>
+            <router-link :to="{ name: 'payments' }" class="px-8 py-4 bg-white text-red-600 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-50 transition-colors shadow-lg">
+                Gérer le recouvrement
+            </router-link>
+        </div>
+    </div>
 
     <!-- Overview Stats -->
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-10">

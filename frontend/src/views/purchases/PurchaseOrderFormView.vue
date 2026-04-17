@@ -16,6 +16,7 @@ const form = ref({
     supplier_id: '',
     po_date: '',
     expected_delivery_date: '',
+    due_date: '',
     payment_method: 'Virement',
     payment_conditions: 'A reception de facture',
 })
@@ -125,6 +126,7 @@ const savePurchaseOrder = async () => {
         const payload = {
             supplier_id: form.value.supplier_id,
             po_date: form.value.po_date,
+            due_date: form.value.due_date,
             expected_delivery_date: form.value.expected_delivery_date,
             payment_method: form.value.payment_method,
             payment_conditions: form.value.payment_conditions,
@@ -247,7 +249,7 @@ onMounted(async () => {
             <div class="sm:col-span-3">
                 <label class="block text-sm font-medium leading-6 text-gray-900">Échéance de paiement *</label>
                 <div class="mt-2">
-                    <input v-model="form.payment_conditions" placeholder="ex: 30 jours fin de mois, À réception..." required type="text" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
+                    <input v-model="form.due_date" required type="date" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-3">
                 </div>
             </div>
         </div>

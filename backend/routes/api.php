@@ -125,7 +125,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Accounting Space
     Route::middleware('role:Admin,Gérant,Comptable')->group(function () {
         Route::get('accounting/dashboard', [\App\Http\Controllers\Api\AccountingController::class, 'dashboard']);
-        Route::post('accounting/bank-statements', [\App\Http\Controllers\Api\AccountingController::class, 'uploadBankStatement']);
+        Route::get('accounting/finance-overview', [\App\Http\Controllers\Api\AccountingController::class, 'financeOverview']);
+        Route::post('accounting/bank-statement', [\App\Http\Controllers\Api\AccountingController::class, 'uploadBankStatement']);
         Route::post('suppliers/{supplier}/tax-certificate', [\App\Http\Controllers\Api\AccountingController::class, 'uploadSupplierCertificate']);
     });
     Route::get('documents/{path}', [\App\Http\Controllers\Api\FileController::class, 'download'])->where('path', '.*');
