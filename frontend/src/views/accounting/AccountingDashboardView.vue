@@ -7,7 +7,9 @@ const data = ref<any>({
     purchase_invoices: [],
     bank_statements: [],
     suppliers_missing_certificates: [],
-    suppliers_with_certificates: []
+    suppliers_with_certificates: [],
+    overdue_sales_count: 0,
+    overdue_purchase_count: 0
 })
 
 const currentYear = new Date().getFullYear()
