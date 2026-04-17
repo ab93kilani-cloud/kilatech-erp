@@ -174,7 +174,7 @@ const router = createRouter({
                     path: 'invoices',
                     name: 'invoices',
                     component: () => import('../views/finance/InvoiceListView.vue'),
-                    meta: { roles: ['Admin', 'Gérant', 'Commercial'] }
+                    meta: { roles: ['Admin', 'Gérant', 'Commercial', 'Comptable'] }
                 },
                 {
                     path: 'credit-notes/create',
@@ -185,13 +185,13 @@ const router = createRouter({
                     path: 'credit-notes',
                     name: 'credit-notes',
                     component: () => import('../views/finance/CreditNoteListView.vue'),
-                    meta: { roles: ['Admin', 'Gérant', 'Commercial'] }
+                    meta: { roles: ['Admin', 'Gérant', 'Commercial', 'Comptable'] }
                 },
                 {
                     path: 'payments',
                     name: 'payments',
                     component: () => import('../views/finance/PaymentListView.vue'),
-                    meta: { roles: ['Admin', 'Gérant', 'Commercial'] }
+                    meta: { roles: ['Admin', 'Gérant', 'Commercial', 'Comptable'] }
                 },
                 {
                     path: 'users',
