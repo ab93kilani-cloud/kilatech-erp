@@ -7,9 +7,17 @@ interface PurchaseOrder {
   po_number: string;
   order_date: string;
   status: string;
+  due_date: string | null;
+  total_ttc: number;
+  balance_due: number;
   supplier: { name: string };
   expected_delivery_date: string | null;
   receipts?: any[];
+  payments?: any[];
+}
+ 
+const formatPrice = (val: number | string) => {
+    return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(val))
 }
 
 const pos = ref<PurchaseOrder[]>([])
@@ -308,6 +316,45 @@ const submitReceive = async () => {
         isReceiving.value = false
     }
 }
+ 
+const showPaymentModal = ref(false)
+const isSubmittingPayment = ref(false)
+const paymentForm = ref({
+    purchase_order_id: 0,
+    amount: 0,
+    payment_date: new Date().toISOString().split('T')[0],
+    maturity_date: '',
+    payment_method: 'Virement',
+    reference: '',
+    notes: ''
+})
+ 
+const openPaymentModal = (po: any) => {
+    selectedPO.value = po
+    paymentForm.value.purchase_order_id = po.id
+    paymentForm.value.amount = Number(Number(po.balance_due).toFixed(2))
+    paymentForm.value.payment_date = new Date().toISOString().split('T')[0]
+    paymentForm.value.maturity_date = ''
+    paymentForm.value.payment_method = 'Chèque'
+    paymentForm.value.reference = ''
+    paymentForm.value.notes = ''
+    showPaymentModal.value = true
+}
+ 
+const submitPayment = async () => {
+    if (paymentForm.value.amount <= 0) return alert("Le montant doit être supérieur à 0")
+    isSubmittingPayment.value = true
+    try {
+        await api.post('/supplier-payments', paymentForm.value)
+        showPaymentModal.value = false
+        fetchPOs()
+        alert("Règlement enregistré avec succès")
+    } catch (e: any) {
+        alert(e.response?.data?.message || "Erreur lors de l'enregistrement du règlement")
+    } finally {
+        isSubmittingPayment.value = false
+    }
+}
 
 onMounted(() => {
     fetchPOs()
@@ -354,25 +401,44 @@ onMounted(() => {
               <table class="min-w-full divide-y divide-gray-300">
                 <thead class="bg-gray-50">
                 <tr>
-                   <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">N° Commande</th>
-                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fournisseur</th>
-                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date Prévue</th>
-                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Statut</th>
+                   <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-[10px] font-black uppercase text-gray-400">N° Commande</th>
+                   <th scope="col" class="px-3 py-3.5 text-left text-[10px] font-black uppercase text-gray-400">Fournisseur</th>
+                   <th v-if="activeTab === 'archived'" scope="col" class="px-3 py-3.5 text-center text-[10px] font-black uppercase text-gray-400">Situation Financière</th>
+                   <th v-else scope="col" class="px-3 py-3.5 text-left text-[10px] font-black uppercase text-gray-400">Date Prévue</th>
+                   <th v-if="activeTab === 'archived'" scope="col" class="px-3 py-3.5 text-center text-[10px] font-black uppercase text-gray-400">Échéance</th>
+                   <th scope="col" class="px-3 py-3.5 text-left text-[10px] font-black uppercase text-gray-400">Statut</th>
                    <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
                 <tr v-for="po in filteredPOs" :key="po.id" :class="{'bg-gray-50': po.status === 'draft'}">
-                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">{{ po.po_number }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ po.supplier?.name }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ po.expected_delivery_date || '-' }}</td>
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-black text-gray-900">{{ po.po_number }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm font-semibold text-gray-600">{{ po.supplier?.name }}</td>
                   
+                  <td v-if="activeTab === 'archived'" class="px-3 py-4 text-center">
+                    <div class="text-[10px] font-bold text-gray-900">{{ formatPrice(po.total_ttc) }} DH</div>
+                    <div class="flex items-center justify-center gap-2 mt-1">
+                        <span v-if="po.balance_due <= 0" class="text-[8px] font-black bg-green-100 text-green-700 px-1.5 py-0.5 rounded uppercase">SOLDE OK</span>
+                        <span v-else class="text-[8px] font-black bg-red-100 text-red-700 px-1.5 py-0.5 rounded uppercase">RESTE {{ formatPrice(po.balance_due) }}</span>
+                    </div>
+                  </td>
+                  <td v-else class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 font-medium">{{ po.expected_delivery_date || '-' }}</td>
+                  
+                  <td v-if="activeTab === 'archived'" class="px-3 py-4 text-center">
+                    <div v-if="po.due_date" class="text-xs font-black text-gray-900">{{ new Date(po.due_date).toLocaleDateString() }}</div>
+                    <div v-if="po.payments?.some((p: any) => p.maturity_date)" class="mt-1">
+                        <div v-for="pay in po.payments.filter((p: any) => p.maturity_date)" :key="pay.id" class="text-[8px] font-bold text-blue-600 uppercase">
+                            Chèque: {{ new Date(pay.maturity_date).toLocaleDateString() }}
+                        </div>
+                    </div>
+                  </td>
+
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                      <span v-if="po.status === 'draft'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 uppercase">Brouillon</span>
                      <span v-else-if="po.status === 'ordered'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 tracking-wider font-black">COMMANDÉ</span>
                      <span v-else-if="po.status === 'sent'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">ENVOYÉE</span>
                      <span v-else-if="po.status === 'partially_received'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Partiellement Reçu</span>
-                     <span v-else-if="po.status === 'received'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Réception Terminée</span>
+                     <span v-else-if="po.status === 'received' || po.status === 'completed'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 font-bold uppercase">ARCHIVÉ / LIVRÉ</span>
                      <span v-else class="text-gray-500 uppercase text-xs">{{ po.status }}</span>
                   </td>
                   
@@ -389,6 +455,7 @@ onMounted(() => {
                   </td>
                   
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-3">
+                     <button v-if="activeTab === 'archived' && po.balance_due > 0" @click="openPaymentModal(po)" class="text-brand-600 hover:text-brand-900 font-bold bg-brand-50 px-2 py-1 rounded border border-brand-200">RÉGLER</button>
                      <button @click="downloadPDF(po.id)" class="text-gray-600 hover:text-gray-900 font-medium">📥 Commande</button>
                      <button v-if="po.receipts?.length && po.receipts[0]?.invoice_path" @click="downloadInvoice(po.receipts[0].id)" class="text-blue-600 hover:text-blue-900 font-medium">🧾 Facture Fourn.</button>
                      <button v-if="po.status === 'draft'" @click="confirmPO(po.id)" class="text-brand-600 hover:text-brand-900 font-medium">Confirmer la Commande</button>
@@ -398,7 +465,7 @@ onMounted(() => {
                      <router-link v-else :to="{ name: 'purchases.show', params: { id: po.id } }" class="text-blue-600 hover:text-blue-900 font-medium tracking-tight">Ouvrir</router-link>
                      <button v-if="po.status === 'draft' || po.status === 'ordered' || po.status === 'sent'" @click="deletePO(po.id)" class="text-red-400 hover:text-red-600 flex items-center gap-1 inline-flex ml-4 group">
                         <svg class="h-4 w-4 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        <span class="text-[10px] uppercase font-bold tracking-widest">Supprimer</span>
+                        <span class="text-[10px] font-bold tracking-widest uppercase">Supprimer</span>
                      </button>
                   </td>
                 </tr>
@@ -475,77 +542,77 @@ onMounted(() => {
     </div>
 
     <!-- Modal Scanner Ultra-Complet Mobile-First -->
-    <div v-if="isPreviewModalOpen" class="fixed inset-0 z-[60] bg-black sm:bg-gray-900 sm:bg-opacity-90 flex flex-col overflow-hidden h-[100dvh]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      
-      <!-- Header Mobile Slim -->
-      <div class="bg-black/40 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-white/10 text-white z-10">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-black tracking-[0.2em] uppercase">Scanner Pro</span>
-          <span class="bg-brand-600 text-[10px] px-2 py-0.5 rounded-full">{{ scannedPages.length + (previewImage ? 1 : 0) }} PG</span>
-        </div>
-        <button @click="isPreviewModalOpen = false" class="p-2 -mr-2 text-white/60 hover:text-white transition-colors">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-      </div>
+    ...
+    
+    <!-- Modal de Règlement Fournisseur -->
+    <div v-if="showPaymentModal && selectedPO" class="relative z-[70]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-gray-950 bg-opacity-75 transition-opacity"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-3xl bg-white px-4 pb-4 pt-5 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-8 border border-gray-100">
+                    <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 to-indigo-600"></div>
+                    
+                    <div class="text-center sm:text-left">
+                        <h3 class="text-xl font-black leading-6 text-gray-900 uppercase tracking-tight" id="modal-title">
+                            Régler le Fournisseur
+                        </h3>
+                        <div class="mt-3 bg-gray-50 rounded-2xl p-4 border border-gray-100 flex items-center justify-between">
+                            <div>
+                                <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Commande</div>
+                                <div class="text-sm font-bold text-gray-900">{{ selectedPO.po_number }}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-[10px] font-black text-red-400 uppercase tracking-widest">Reste à payer</div>
+                                <div class="text-lg font-black text-red-600">{{ formatPrice(selectedPO.balance_due) }} DH</div>
+                            </div>
+                        </div>
+                    </div>
 
-      <!-- Main Scanning Zone -->
-      <div class="flex-1 relative flex items-center justify-center p-0 overflow-hidden">
-        <div v-if="previewImage" class="w-full h-full">
-          <img id="cropper-target" :src="previewImage" class="max-w-full hidden" />
-        </div>
-        <div v-else class="text-white text-center p-10 animate-pulse">
-          <p class="text-sm font-bold uppercase tracking-widest text-gray-400">Prêt pour la photo suivante...</p>
-        </div>
+                    <form @submit.prevent="submitPayment" class="mt-8 space-y-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Date Paiement</label>
+                                <input type="date" v-model="paymentForm.payment_date" required class="block w-full rounded-xl border-gray-200 py-3 px-4 text-sm font-bold text-gray-900 focus:ring-purple-500 focus:border-purple-500 shadow-sm transition-all h-12">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Montant (DH)</label>
+                                <input type="number" step="any" min="0.01" :max="selectedPO.balance_due" v-model.number="paymentForm.amount" required class="block w-full rounded-xl border-gray-200 py-3 px-4 text-sm font-black text-gray-900 focus:ring-purple-500 focus:border-purple-500 shadow-sm transition-all h-12">
+                            </div>
+                        </div>
 
-        <!-- Overlay de conversion -->
-        <div v-if="isConverting" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20">
-          <div class="w-12 h-12 border-4 border-white/10 border-t-brand-500 rounded-full animate-spin"></div>
-          <p class="mt-4 text-xs font-black text-white uppercase tracking-widest">Génération du PDF...</p>
-        </div>
-      </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Mode de règlement</label>
+                            <select v-model="paymentForm.payment_method" required class="block w-full rounded-xl border-gray-200 py-3 px-4 text-sm font-bold text-gray-900 focus:ring-purple-500 focus:border-purple-500 shadow-sm transition-all h-12">
+                                <option value="Chèque">Chèque</option>
+                                <option value="Virement">Virement</option>
+                                <option value="Effet / Traite">Effet / Traite</option>
+                                <option value="Espèces">Espèces</option>
+                            </select>
+                        </div>
 
-      <!-- Toolbar Mobile (Bottom Reach) -->
-      <div class="bg-gray-950 border-t border-white/10 p-4 pb-12 sm:pb-6 space-y-4 z-10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
-        
-        <!-- ROW 1: Filtres GÉANTS (Grid pour éviter les coupures) -->
-        <div class="grid grid-cols-3 gap-2">
-          <button @click="activeFilter = 'scan'" :class="[activeFilter === 'scan' ? 'bg-brand-600 ring-4 ring-brand-400/30 text-white' : 'bg-gray-800 text-gray-400', 'py-4 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all shadow-xl']">SCAN PRO</button>
-          <button @click="activeFilter = 'bw'" :class="[activeFilter === 'bw' ? 'bg-white text-black ring-4 ring-white/20' : 'bg-gray-800 text-gray-400', 'py-4 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all shadow-xl']">N&B ECO</button>
-          <button @click="activeFilter = 'original'" :class="[activeFilter === 'original' ? 'bg-indigo-600 ring-4 ring-indigo-400/30 text-white' : 'bg-gray-800 text-gray-400', 'py-4 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all shadow-xl']">PHOTO</button>
-        </div>
+                        <div v-if="paymentForm.payment_method === 'Chèque' || paymentForm.payment_method === 'Effet / Traite'" class="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <label class="block text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1.5 ml-1">Date d'échéance du titre *</label>
+                            <input type="date" v-model="paymentForm.maturity_date" required class="block w-full rounded-xl border-blue-200 py-3 px-4 text-sm font-black text-blue-700 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all h-12">
+                            <p class="mt-2 text-[9px] text-blue-400 font-medium italic">Indiquez la date d'encaissement prévue du chèque.</p>
+                        </div>
 
-        <!-- ROW 2: Actions Secondaires (Icons) -->
-        <div class="flex items-center justify-between gap-4">
-          <button @click="isPreviewModalOpen = false" class="flex-1 flex items-center justify-center gap-2 p-4 bg-red-900/40 text-red-500 rounded-2xl border border-red-900/50">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            <span class="text-[10px] font-black uppercase">Abandon</span>
-          </button>
-          <button @click="rotateInCropper" class="flex-1 flex items-center justify-center gap-2 p-4 bg-gray-800 text-brand-400 rounded-2xl border border-gray-700">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-            <span class="text-[10px] font-black uppercase">Pivoter</span>
-          </button>
-        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Référence / Notes</label>
+                            <input type="text" v-model="paymentForm.reference" placeholder="N° de chèque, Réf virement..." class="block w-full rounded-xl border-gray-200 py-3 px-4 text-sm font-bold text-gray-900 focus:ring-purple-500 focus:border-purple-500 shadow-sm transition-all h-12">
+                        </div>
 
-        <!-- ROW 3: Actions Principales XL -->
-        <div class="flex items-center gap-3">
-          <button @click="addPageAndContinue" class="flex-1 bg-white text-black h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform border-2 border-gray-100">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            <span>+ Page</span>
-          </button>
-
-          <button @click="finishAndUpload" :disabled="isConverting" class="flex-[1.5] bg-emerald-600 text-white h-16 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-emerald-500/20 active:scale-95 transition-transform disabled:opacity-50 border-2 border-emerald-500/50">
-            {{ isConverting ? 'ENVOI...' : 'VALIDER (' + (scannedPages.length + (previewImage ? 1 : 0)) + ' PG)' }}
-          </button>
+                        <div class="mt-8 space-y-3">
+                            <button type="submit" :disabled="isSubmittingPayment" class="flex w-full items-center justify-center rounded-2xl bg-brand-600 h-14 text-sm font-black text-white uppercase tracking-[0.2em] shadow-xl hover:bg-brand-700 transition-all active:scale-95 disabled:opacity-50">
+                                {{ isSubmittingPayment ? 'Enregistrement...' : 'Valider le Paiement' }}
+                            </button>
+                            <button @click="showPaymentModal = false" type="button" class="w-full py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">
+                                Annuler
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        
-        <!-- Preview miniature -->
-        <div v-if="scannedPages.length > 0" class="flex gap-4 overflow-x-auto py-2 px-2 no-scrollbar justify-center">
-          <div v-for="(img, idx) in scannedPages" :key="idx" class="relative flex-shrink-0">
-            <img :src="img" class="h-14 w-10 object-cover rounded-lg border-2 border-brand-500/50 shadow-lg" />
-            <span class="absolute -top-2 -right-2 bg-brand-600 text-[8px] text-white w-4 h-4 flex items-center justify-center rounded-full font-black">{{ idx + 1 }}</span>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>

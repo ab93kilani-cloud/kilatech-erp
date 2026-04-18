@@ -15,12 +15,14 @@ class SupplierPayment extends Model
         'payment_date',
         'payment_method',
         'reference',
-        'notes'
+        'notes',
+        'maturity_date'
     ];
 
     protected $casts = [
         'amount' => 'decimal:4',
         'payment_date' => 'date',
+        'maturity_date' => 'date',
     ];
 
     public function purchaseOrder()

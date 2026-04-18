@@ -28,9 +28,10 @@ class SupplierPaymentController extends Controller
             'payment_method' => 'required|string',
             'reference' => 'nullable|string',
             'notes' => 'nullable|string',
+            'maturity_date' => 'nullable|date',
         ]);
 
-        $po = PurchaseOrder::findOrFail($request->purchase_order_id);
+        $po = PurchaseOrder::withTrashed()->findOrFail($request->purchase_order_id);
 
         DB::beginTransaction();
         try {

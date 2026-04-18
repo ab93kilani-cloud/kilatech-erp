@@ -15,7 +15,13 @@ class PurchaseOrder extends Model
         'due_date' => 'date',
     ];
 
-    protected $appends = ['total_ttc'];
+    protected $appends = ['total_ttc', 'balance_due'];
+    
+    public function getBalanceDueAttribute()
+    {
+        $paid = $this->payments->sum('amount');
+        return round($this->total_ttc - $paid, 4);
+    }
     
     public function getTotalTtcAttribute()
     {
