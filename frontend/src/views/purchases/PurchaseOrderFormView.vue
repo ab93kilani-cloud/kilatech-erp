@@ -19,7 +19,10 @@ const form = ref({
     due_date: '',
     payment_method: 'Virement',
     payment_conditions: 'A reception de facture',
+    status: ''
 })
+ 
+const isArchived = computed(() => ['received', 'completed'].includes(form.value.status))
 
 // Maya: Groupe les variantes par produit pour la sélection en 2 étapes, filtré par fournisseur
 const products = computed(() => {
@@ -173,6 +176,7 @@ onMounted(async () => {
             form.value.due_date = po.due_date ? po.due_date.split('T')[0] : ''
             form.value.payment_method = po.payment_method || 'Virement'
             form.value.payment_conditions = po.payment_conditions || ''
+            form.value.status = po.status || ''
             
             lines.value = po.lines.map((l: any) => ({
                 selectedProductId: l.variant?.product_id || '',
@@ -214,7 +218,7 @@ onMounted(async () => {
             <div class="sm:col-span-2">
                 <label class="block text-sm font-medium leading-6 text-gray-900">Fournisseur *</label>
                 <div class="mt-2">
-                    <select v-model="form.supplier_id" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-2">
+                    <select v-model="form.supplier_id" :disabled="isArchived" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 px-2 disabled:bg-gray-100 italic">
                         <option value="" disabled>Sélectionner...</option>
                         <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
                     </select>
@@ -262,10 +266,13 @@ onMounted(async () => {
                    <h3 class="text-lg font-bold text-gray-900">Articles à commander</h3>
                    <p class="text-xs text-gray-500">Ajoutez les produits et spécifiez les quantités attendues.</p>
                 </div>
-                <button @click="addLine" type="button" class="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 hover:bg-brand-100 transition-all shadow-sm border border-brand-200">
+                <button v-if="!isArchived" @click="addLine" type="button" class="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 hover:bg-brand-100 transition-all shadow-sm border border-brand-200">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Ajouter un article
                 </button>
+                <div v-else class="text-[10px] bg-blue-50 text-blue-600 px-3 py-1.5 border border-blue-100 rounded-full font-black uppercase tracking-widest">
+                    Mode Régularisation : Prix Uniquement
+                </div>
             </div>
 
             <div class="space-y-3">
@@ -285,7 +292,7 @@ onMounted(async () => {
                     <!-- 1. Sélection Produit (Famille) -->
                     <div class="sm:col-span-3">
                         <div class="relative">
-                            <select v-model="line.selectedProductId" @change="onProductSelect(line)" required class="block w-full rounded-lg border-gray-200 py-2 px-3 text-sm font-semibold text-gray-900 focus:ring-brand-500 focus:border-brand-500 shadow-sm bg-gray-50/30">
+                            <select v-model="line.selectedProductId" @change="onProductSelect(line)" :disabled="isArchived" required class="block w-full rounded-lg border-gray-200 py-2 px-3 text-sm font-semibold text-gray-900 focus:ring-brand-500 focus:border-brand-500 shadow-sm bg-gray-50/30 disabled:opacity-70">
                                 <option value="" disabled>Choisir le produit...</option>
                                 <option v-for="p in products" :key="p.id" :value="p.id">
                                     {{ p.brand ? '[' + p.brand + '] ' : '' }}{{ p.name }}
@@ -318,22 +325,22 @@ onMounted(async () => {
                     <!-- Prix Unitaire Achat -->
                     <div class="sm:col-span-2">
                         <div class="relative">
-                            <input v-model.number="line.unit_price" required type="number" step="0.01" min="0" class="block w-full rounded-lg border-gray-200 py-2 text-center text-gray-900 font-bold focus:ring-brand-500 focus:border-brand-500 sm:text-sm">
-                            <div class="absolute -top-2 left-1/2 -translate-x-1/2 px-1 bg-white text-[8px] font-bold text-gray-400 uppercase tracking-tighter">P.U. HT</div>
+                            <input v-model.number="line.unit_price" required type="number" step="0.01" min="0" class="block w-full rounded-lg border-brand-300 py-2 text-center text-brand-700 font-extrabold focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-brand-50/50">
+                            <div class="absolute -top-2 left-1/2 -translate-x-1/2 px-1 bg-white text-[8px] font-bold text-brand-600 uppercase tracking-tighter">Modifier Prix HT</div>
                         </div>
                     </div>
 
                     <!-- Quantité -->
                     <div class="sm:col-span-2">
                          <div class="relative">
-                            <input v-model.number="line.quantity" required type="number" min="1" class="block w-full rounded-lg border-gray-200 py-2 text-center text-gray-900 font-black focus:ring-brand-500 focus:border-brand-500 sm:text-sm">
+                            <input v-model.number="line.quantity" :disabled="isArchived" required type="number" min="1" class="block w-full rounded-lg border-gray-200 py-2 text-center text-gray-900 font-black focus:ring-brand-500 focus:border-brand-500 sm:text-sm disabled:bg-gray-100">
                             <div class="absolute -top-2 left-1/2 -translate-x-1/2 px-1 bg-white text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Qté</div>
                          </div>
                     </div>
 
                     <!-- Bouton Supprimer Ligne -->
                     <div class="sm:col-span-1 flex items-center justify-end">
-                        <button v-if="lines.length > 1" @click="removeLine(index)" type="button" class="text-gray-300 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50" title="Supprimer">
+                        <button v-if="lines.length > 1 && !isArchived" @click="removeLine(index)" type="button" class="text-gray-300 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50" title="Supprimer">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                     </div>

@@ -94,11 +94,11 @@ class PurchaseOrderController extends Controller
         ]));
     }
 
-    public function update(Request $request, PurchaseOrder $purchaseOrder)
+    public function update(Request $request, $id)
     {
-        if ($purchaseOrder->status !== 'draft') {
-            return response()->json(['message' => 'Seul un PO en brouillon peut être modifié'], 400);
-        }
+        $purchaseOrder = PurchaseOrder::withTrashed()->findOrFail($id);
+        
+        $isArchived = in_array($purchaseOrder->status, ['received', 'completed']);
 
         $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
@@ -119,17 +119,25 @@ class PurchaseOrderController extends Controller
                 'due_date' => $request->due_date ?? $purchaseOrder->due_date,
             ]);
 
-            // Clear old lines and recreate
-            $purchaseOrder->lines()->delete();
-
-            foreach ($request->lines as $line) {
-                PoLine::create([
-                    'purchase_order_id' => $purchaseOrder->id,
-                    'variant_id' => $line['variant_id'],
-                    'unit_price' => $line['unit_price'],
-                    'ordered_quantity' => $line['ordered_quantity'],
-                    'received_quantity' => 0,
-                ]);
+            if ($isArchived) {
+                // SAFE UPDATE: Update prices only for existing lines to preserve reception links
+                foreach ($request->lines as $lineData) {
+                    $purchaseOrder->lines()
+                        ->where('variant_id', $lineData['variant_id'])
+                        ->update(['unit_price' => $lineData['unit_price']]);
+                }
+            } else {
+                // DRAFT UPDATE: Clear old lines and recreate (Full flexibility)
+                $purchaseOrder->lines()->delete();
+                foreach ($request->lines as $line) {
+                    PoLine::create([
+                        'purchase_order_id' => $purchaseOrder->id,
+                        'variant_id' => $line['variant_id'],
+                        'unit_price' => $line['unit_price'],
+                        'ordered_quantity' => $line['ordered_quantity'],
+                        'received_quantity' => 0,
+                    ]);
+                }
             }
 
             DB::commit();
