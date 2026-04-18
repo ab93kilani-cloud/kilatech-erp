@@ -225,9 +225,9 @@ onMounted(() => {
                                             <span>Échéance :</span>
                                             <input 
                                                 type="date" 
-                                                :value="inv.due_date" 
+                                                :value="inv.due_date ? inv.due_date.split('T')[0] : ''" 
                                                 @change="updateDueDate(inv.id, 'invoice', $event)"
-                                                class="bg-transparent border-0 p-0 text-[10px] font-black text-blue-600 focus:ring-0 cursor-pointer hover:bg-white rounded transition-colors"
+                                                class="bg-white/50 border border-gray-200 px-2 py-1 text-[10px] font-black text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer hover:bg-white rounded-lg shadow-sm transition-all h-8"
                                             >
                                         </div>
                                     </div>
@@ -270,12 +270,12 @@ onMounted(() => {
                                     <div class="flex items-center gap-2">
                                         <input 
                                             type="date" 
-                                            :value="po.due_date" 
+                                            :value="po.due_date ? po.due_date.split('T')[0] : ''" 
                                             @change="updateDueDate(po.id, 'purchase', $event)"
-                                            class="bg-transparent border-0 p-0 text-[11px] font-black text-purple-600 focus:ring-0 cursor-pointer hover:bg-white rounded transition-colors"
+                                            class="bg-white/50 border border-gray-200 px-2 py-1 text-[11px] font-black text-purple-600 focus:ring-2 focus:ring-purple-500 cursor-pointer hover:bg-white rounded-lg shadow-sm transition-all h-8"
                                         >
                                     </div>
-                                    <span v-if="isOverdue(po.due_date)" class="text-[9px] font-bold text-red-500 uppercase tracking-tighter">Échéance épuisée</span>
+                                    <span v-if="isOverdue(po.due_date)" class="text-[9px] font-bold text-red-500 uppercase tracking-tighter mt-2 inline-block">Échéance dépassée</span>
                                 </td>
                                 <td class="px-6 py-4 bg-gray-50 border-y border-transparent">
                                     <div class="font-black text-gray-900">{{ po.supplier?.name }}</div>
