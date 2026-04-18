@@ -252,6 +252,9 @@ const deletePO = async (id: number) => {
     }
 }
 
+// --- RÈGLEMENT FOURNISSEUR ---
+// (Déplacé après les compute pour plus de clarté)
+
 const filteredPOs = computed(() => pos.value)
 
 const downloadPDF = async (id: number) => {
