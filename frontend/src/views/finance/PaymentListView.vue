@@ -61,6 +61,24 @@ const isOverdue = (date: string) => {
     return new Date(date) < new Date()
 }
 
+const updateDueDate = async (id: number, type: 'invoice' | 'purchase', event: any) => {
+    const newDate = event.target.value
+    if (!newDate) return
+    try {
+        await api.post('/accounting/quick-update-due-date', { id, type, due_date: newDate })
+        // Mettre à jour localement pour feedback immédiat
+        if (type === 'invoice') {
+            const inv = financeOverview.value.unpaid_invoices.find(i => i.id === id)
+            if (inv) inv.due_date = newDate
+        } else {
+            const po = financeOverview.value.unpaid_purchases.find(p => p.id === id)
+            if (po) po.due_date = newDate
+        }
+    } catch (e: any) {
+        alert('Erreur lors de la mise à jour de la date.')
+    }
+}
+
 onMounted(() => {
     fetchPayments()
 })
@@ -202,7 +220,17 @@ onMounted(() => {
                                 <td class="px-6 py-4 rounded-l-2xl bg-gray-50 border-y border-l border-transparent transition-all">
                                     <span v-if="isOverdue(inv.due_date)" class="px-3 py-1 bg-red-100 text-red-600 font-black rounded-lg text-[9px] uppercase">EN RETARD</span>
                                     <span v-else class="px-3 py-1 bg-blue-100 text-blue-600 font-black rounded-lg text-[9px] uppercase">À VENIR</span>
-                                    <div class="text-[10px] font-bold text-gray-900 mt-2">Échéance : {{ inv.due_date ? new Date(inv.due_date).toLocaleDateString() : 'Non définie' }}</div>
+                                    <div class="mt-2 group/date relative">
+                                        <div class="text-[10px] font-bold text-gray-900 flex items-center gap-2">
+                                            <span>Échéance :</span>
+                                            <input 
+                                                type="date" 
+                                                :value="inv.due_date" 
+                                                @change="updateDueDate(inv.id, 'invoice', $event)"
+                                                class="bg-transparent border-0 p-0 text-[10px] font-black text-blue-600 focus:ring-0 cursor-pointer hover:bg-white rounded transition-colors"
+                                            >
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 bg-gray-50 border-y border-transparent transition-all">
                                     <div class="font-black text-gray-900">{{ inv.order?.client?.company_name || inv.order?.client?.contact_name }}</div>
@@ -239,7 +267,14 @@ onMounted(() => {
                         <tbody class="text-xs">
                             <tr v-for="po in financeOverview.unpaid_purchases" :key="po.id" class="group transition-all text-gray-600">
                                 <td class="px-6 py-4 rounded-l-2xl bg-gray-50 border-y border-l border-transparent">
-                                    <div class="font-black text-gray-900">{{ po.due_date ? new Date(po.due_date).toLocaleDateString() : 'À définir' }}</div>
+                                    <div class="flex items-center gap-2">
+                                        <input 
+                                            type="date" 
+                                            :value="po.due_date" 
+                                            @change="updateDueDate(po.id, 'purchase', $event)"
+                                            class="bg-transparent border-0 p-0 text-[11px] font-black text-purple-600 focus:ring-0 cursor-pointer hover:bg-white rounded transition-colors"
+                                        >
+                                    </div>
                                     <span v-if="isOverdue(po.due_date)" class="text-[9px] font-bold text-red-500 uppercase tracking-tighter">Échéance épuisée</span>
                                 </td>
                                 <td class="px-6 py-4 bg-gray-50 border-y border-transparent">

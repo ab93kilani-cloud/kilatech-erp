@@ -126,6 +126,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:Admin,Gérant,Comptable')->group(function () {
         Route::get('accounting/dashboard', [\App\Http\Controllers\Api\AccountingController::class, 'dashboard']);
         Route::get('accounting/finance-overview', [\App\Http\Controllers\Api\AccountingController::class, 'financeOverview']);
+        Route::post('accounting/quick-update-due-date', [\App\Http\Controllers\Api\AccountingController::class, 'quickUpdateDueDate']);
         Route::post('accounting/bank-statement', [\App\Http\Controllers\Api\AccountingController::class, 'uploadBankStatement']);
         Route::post('accounting/bank-statements', [\App\Http\Controllers\Api\AccountingController::class, 'uploadBankStatement']);
         Route::post('suppliers/{supplier}/tax-certificate', [\App\Http\Controllers\Api\AccountingController::class, 'uploadSupplierCertificate']);

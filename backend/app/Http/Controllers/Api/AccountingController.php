@@ -139,4 +139,21 @@ class AccountingController extends Controller
             'unpaid_purchases' => $unpaidPurchases
         ]);
     }
+
+    public function quickUpdateDueDate(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+            'type' => 'required|in:invoice,purchase',
+            'due_date' => 'required|date'
+        ]);
+
+        if ($request->type === 'invoice') {
+            \App\Models\Invoice::where('id', $request->id)->update(['due_date' => $request->due_date]);
+        } else {
+            \App\Models\PurchaseOrder::where('id', $request->id)->update(['due_date' => $request->due_date]);
+        }
+
+        return response()->json(['message' => 'Date d\'échéance mise à jour']);
+    }
 }
