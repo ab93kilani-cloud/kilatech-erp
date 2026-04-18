@@ -40,14 +40,36 @@ const showAlert = (msg: string) => {
     setTimeout(() => { feedbackMessage.value = '' }, 4000);
 }
 
-const generateInvoice = async (order: Order) => {
+// --- Invoicing Modal ---
+const showInvoiceModal = ref(false)
+const selectedOrderForInvoice = ref<Order | null>(null)
+const invoiceForm = ref({
+    invoice_date: new Date().toISOString().split('T')[0],
+    due_date: new Date().toISOString().split('T')[0]
+})
+
+const openInvoiceModal = (order: Order) => {
+    selectedOrderForInvoice.value = order
+    invoiceForm.value.invoice_date = new Date().toISOString().split('T')[0]
+    // Default due date to today + 30 days or same day
+    invoiceForm.value.due_date = new Date().toISOString().split('T')[0]
+    showInvoiceModal.value = true
+}
+
+const confirmGenerateInvoice = async () => {
+    if (!selectedOrderForInvoice.value) return
     try {
-        await api.post(`/orders/${order.id}/generate-invoice`)
+        await api.post(`/orders/${selectedOrderForInvoice.value.id}/generate-invoice`, invoiceForm.value)
+        showInvoiceModal.value = false
         fetchOrders()
         showAlert('✅ Facture générée avec succès.')
     } catch (e: any) {
         showAlert('❌ Erreur : ' + (e.response?.data?.message || e.message))
     }
+}
+
+const generateInvoice = async (order: Order) => {
+    openInvoiceModal(order)
 }
 
 const revertOrder = async (order: Order) => {
@@ -196,6 +218,40 @@ onMounted(() => {
           </div>
         </div>
       </div>
+    </div>
+    <!-- Invoicing Confirmation Modal -->
+    <div v-if="showInvoiceModal" class="relative z-50">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-[2rem] bg-white px-8 pb-8 pt-10 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md">
+                    <div class="mb-6">
+                        <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight">Générer la Facture</h3>
+                        <p class="text-xs text-gray-500 mt-1">Définissez les dates pour le document {{ selectedOrderForInvoice?.order_number }}</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Date de Facture</label>
+                            <input type="date" v-model="invoiceForm.invoice_date" class="w-full rounded-xl border-gray-100 bg-gray-50 text-sm font-bold focus:ring-blue-500 focus:border-blue-500 p-3">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Date d'Échéance (Paiement)</label>
+                            <input type="date" v-model="invoiceForm.due_date" class="w-full rounded-xl border-gray-100 bg-gray-50 text-sm font-bold focus:ring-blue-500 focus:border-blue-500 p-3">
+                        </div>
+                    </div>
+
+                    <div class="mt-10 flex gap-3">
+                        <button @click="showInvoiceModal = false" class="flex-1 py-3 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 rounded-xl transition-all">
+                            Annuler
+                        </button>
+                        <button @click="confirmGenerateInvoice" class="flex-1 py-3 px-6 text-[10px] font-black uppercase tracking-widest bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
+                            Confirmer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
   </div>
 </template>

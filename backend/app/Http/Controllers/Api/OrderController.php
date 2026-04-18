@@ -328,11 +328,14 @@ class OrderController extends Controller
     /**
      * Génère manuellement une facture pour un Bon de Livraison existant.
      */
-    public function generateInvoice(Order $order)
+    public function generateInvoice(Request $request, Order $order)
     {
         if ($order->invoice && $order->invoice->status !== 'cancelled') {
             return response()->json(['message' => 'Une facture existe déjà pour ce Bon de Livraison.'], 400);
         }
+
+        $invDate = $request->input('invoice_date', $order->order_date ?? now()->toDateString());
+        $dueDate = $request->input('due_date', $invDate);
 
         DB::beginTransaction();
         try {
@@ -365,8 +368,8 @@ class OrderController extends Controller
             $invoice = Invoice::create([
                 'order_id' => $order->id,
                 'invoice_number' => $invoiceNumber,
-                'invoice_date' => $order->order_date ?? now()->toDateString(),
-                'due_date' => ($order->quote && $order->quote->valid_until) ? \Carbon\Carbon::parse($order->quote->valid_until)->toDateString() : ($order->order_date ?? now()->toDateString()),
+                'invoice_date' => $invDate,
+                'due_date' => $dueDate,
                 'total_amount' => $totalAmount,
                 'balance_due' => $totalAmount,
                 'status' => 'unpaid',
