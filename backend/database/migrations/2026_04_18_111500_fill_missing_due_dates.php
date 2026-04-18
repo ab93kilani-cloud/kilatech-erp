@@ -13,8 +13,17 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Pour les factures (Ventes)
-        // On initialise la date d'échéance à la date de facture SI elle est absente.
-        // On prend invoice_date en priorité, sinon created_at.
+        // On essaye d'abord de récupérer 'valid_until' du devis lié via la commande.
+        // Sinon on retombe sur invoice_date ou created_at.
+        DB::statement("
+            UPDATE invoices i
+            JOIN orders o ON i.order_id = o.id
+            JOIN quotes q ON o.quote_id = q.id
+            SET i.due_date = COALESCE(q.valid_until, i.invoice_date, i.created_at)
+            WHERE i.due_date IS NULL
+        ");
+
+        // Pour les factures sans devis lié (cas rares ou passage direct)
         DB::table('invoices')
             ->whereNull('due_date')
             ->update([
