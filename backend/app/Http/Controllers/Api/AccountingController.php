@@ -132,7 +132,8 @@ class AccountingController extends Controller
             ->orderBy('due_date', 'asc')
             ->get();
 
-        $unpaidPurchases = PurchaseOrder::with(['supplier', 'lines.variant', 'payments'])
+        $unpaidPurchases = PurchaseOrder::withTrashed()
+            ->with(['supplier', 'lines.variant', 'payments'])
             ->orderBy('due_date', 'asc')
             ->get()
             ->filter(function($po) use ($threshold) {

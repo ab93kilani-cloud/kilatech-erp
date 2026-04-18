@@ -189,8 +189,11 @@ onMounted(() => {
                                 <div class="text-[10px] text-purple-600 font-bold mt-0.5">BC: {{ pay.purchase_order?.po_number }}</div>
                             </td>
                             <td class="px-6 py-4 bg-gray-50 group-hover:bg-purple-50/50 border-y border-transparent group-hover:border-purple-100 transition-all text-gray-500">
-                                <span class="font-bold capitalize">{{ pay.payment_method }}</span>
-                                <span v-if="pay.reference" class="ml-2 px-2 py-0.5 bg-white rounded-lg border border-gray-200 text-[9px]">{{ pay.reference }}</span>
+                                <div class="font-bold capitalize">{{ pay.payment_method }}</div>
+                                <div v-if="pay.maturity_date" class="text-[9px] font-black text-blue-600 mt-0.5 uppercase tracking-tighter">
+                                    Échéance : {{ new Date(pay.maturity_date).toLocaleDateString() }}
+                                </div>
+                                <span v-if="pay.reference" class="mt-1 px-2 py-0.5 bg-white rounded-lg border border-gray-200 text-[9px] inline-block">{{ pay.reference }}</span>
                             </td>
                             <td class="whitespace-nowrap px-6 py-4 rounded-r-2xl bg-gray-50 group-hover:bg-purple-50/50 text-right font-black text-red-600 border-y border-r border-transparent group-hover:border-purple-100 transition-all">
                                 - {{ formatPrice(pay.amount) }} DH
@@ -272,14 +275,19 @@ onMounted(() => {
                             <tr v-for="po in financeOverview.unpaid_purchases" :key="po.id" class="group transition-all text-gray-600">
                                 <td class="px-6 py-4 rounded-l-2xl bg-gray-50 border-y border-l border-transparent">
                                     <div class="flex items-center gap-2">
+                                        <!-- On affiche la date du chèque si elle existe et est future, sinon la date d'échéance du BC -->
+                                        <div v-if="po.payments?.find((p: any) => p.maturity_date && new Date(p.maturity_date).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0))" class="text-[11px] font-black text-blue-600 border border-blue-200 bg-blue-50 px-2 py-1 rounded-lg shadow-sm">
+                                            CHÈQUE : {{ new Date(po.payments.find((p: any) => p.maturity_date && new Date(p.maturity_date).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0)).maturity_date).toLocaleDateString() }}
+                                        </div>
                                         <input 
+                                            v-else
                                             type="date" 
                                             :value="po.due_date ? po.due_date.split('T')[0] : ''" 
                                             @change="updateDueDate(po.id, 'purchase', $event)"
                                             class="bg-white/50 border border-gray-200 px-2 py-1 text-[11px] font-black text-purple-600 focus:ring-2 focus:ring-purple-500 cursor-pointer hover:bg-white rounded-lg shadow-sm transition-all h-8"
                                         >
                                     </div>
-                                    <span v-if="isOverdue(po.due_date)" class="text-[9px] font-bold text-red-500 uppercase tracking-tighter mt-2 inline-block">Échéance dépassée</span>
+                                    <span v-if="isOverdue(po.due_date) && !po.payments?.some((p: any) => p.maturity_date)" class="text-[9px] font-bold text-red-500 uppercase tracking-tighter mt-2 inline-block">Échéance dépassée</span>
                                 </td>
                                 <td class="px-6 py-4 bg-gray-50 border-y border-transparent">
                                     <div class="font-black text-gray-900">{{ po.supplier?.name }}</div>
