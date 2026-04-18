@@ -430,7 +430,7 @@ onMounted(() => {
                   <td v-if="activeTab === 'archived'" class="px-3 py-4 text-center">
                     <div v-if="po.due_date" class="text-xs font-black text-gray-900">{{ new Date(po.due_date).toLocaleDateString() }}</div>
                     <div v-if="po.payments?.some((p: any) => p.maturity_date)" class="mt-1">
-                        <div v-for="pay in po.payments.filter((p: any) => p.maturity_date)" :key="pay.id" class="text-[8px] font-bold text-blue-600 uppercase">
+                        <div v-for="pay in (po.payments || []).filter((p: any) => p.maturity_date)" :key="pay.id" class="text-[8px] font-bold text-blue-600 uppercase">
                             Chèque: {{ new Date(pay.maturity_date).toLocaleDateString() }}
                         </div>
                     </div>
@@ -450,7 +450,7 @@ onMounted(() => {
                         <span v-if="po.receipts[0]?.invoice_status === 'received'" class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded text-[10px]">FACTURE OK</span>
                         <span v-else class="text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded text-[10px]">FACTURE À RÉGLER</span>
                         
-                        <input type="file" :id="'inv-upload-'+po.id" class="hidden" accept="application/pdf,image/*" @change="(e) => handleArchiveInvoice(e, po.receipts![0]?.id)">
+                        <input type="file" :id="'inv-upload-'+po.id" class="hidden" accept="application/pdf,image/*" @change="(e) => handleArchiveInvoice(e, po.receipts[0]?.id)">
                         <label :for="'inv-upload-'+po.id" class="cursor-pointer text-[10px] bg-brand-600 text-white px-2 py-0.5 rounded hover:bg-brand-700 font-bold uppercase transition-transform active:scale-95 shadow-lg">
                            {{ isConverting ? '📦 SCAN EN COURS...' : (po.receipts[0]?.invoice_path ? '🔄 Remplacer' : 'Uploader Doc') }}
                         </label>
