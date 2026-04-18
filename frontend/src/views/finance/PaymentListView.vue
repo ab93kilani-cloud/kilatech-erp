@@ -25,6 +25,7 @@ interface SupplierPayment {
   payment_method: string;
   reference: string;
   maturity_date?: string;
+  cashed_at?: string;
 }
 
 const formatPrice = (val: number | string) => {
@@ -81,6 +82,20 @@ const updateDueDate = async (id: number, type: 'invoice' | 'purchase', event: an
         }
     } catch (e: any) {
         alert('Erreur lors de la mise à jour de la date.')
+    }
+}
+
+const isConfirming = ref<number | null>(null)
+const confirmPayment = async (payId: number) => {
+    if (!confirm("Voulez-vous confirmer définitivement cet encaissement / débit ?")) return
+    isConfirming.value = payId
+    try {
+        await api.post(`/supplier-payments/${payId}/confirm`)
+        await fetchPayments()
+    } catch (e: any) {
+        alert("Erreur lors de la confirmation")
+    } finally {
+        isConfirming.value = null
     }
 }
 
@@ -277,8 +292,8 @@ onMounted(() => {
                                 <td class="px-6 py-4 rounded-l-2xl bg-gray-50 border-y border-l border-transparent">
                                     <div class="flex items-center gap-2">
                                         <!-- On affiche la date du chèque si elle existe et est future, sinon la date d'échéance du BC -->
-                                        <div v-if="po.payments?.find((p: any) => p.maturity_date && new Date(p.maturity_date).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0))" class="text-[11px] font-black text-blue-600 border border-blue-200 bg-blue-50 px-2 py-1 rounded-lg shadow-sm">
-                                            CHÈQUE : {{ new Date(po.payments.find((p: any) => p.maturity_date && new Date(p.maturity_date).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0)).maturity_date).toLocaleDateString() }}
+                                        <div v-if="po.payments?.find((p: any) => p.maturity_date && !p.cashed_at && new Date(p.maturity_date).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0))" class="text-[11px] font-black text-blue-600 border border-blue-200 bg-blue-50 px-2 py-1 rounded-lg shadow-sm">
+                                            CHÈQUE : {{ new Date(po.payments.find((p: any) => p.maturity_date && !p.cashed_at && new Date(p.maturity_date).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0)).maturity_date).toLocaleDateString() }}
                                         </div>
                                         <input 
                                             v-else
@@ -298,10 +313,20 @@ onMounted(() => {
                                     </div>
 
                                     <!-- Pending Checks details -->
-                                    <div v-if="po.payments?.some((p: any) => p.maturity_date && new Date(p.maturity_date) >= new Date())" class="mt-2 space-y-1">
-                                        <div v-for="pay in po.payments.filter((p: any) => p.maturity_date && new Date(p.maturity_date) >= new Date())" :key="pay.id" class="text-[8px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded inline-flex items-center gap-1 border border-blue-100 uppercase">
-                                            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            Chèque pour le {{ new Date(pay.maturity_date).toLocaleDateString() }}
+                                    <div v-if="po.payments?.some((p: any) => p.maturity_date && !p.cashed_at && new Date(p.maturity_date).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0))" class="mt-2 space-y-2">
+                                        <div v-for="pay in (po.payments || []).filter((p: any) => p.maturity_date && !p.cashed_at && new Date(p.maturity_date).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0))" :key="pay.id" class="flex items-center gap-2">
+                                            <div class="text-[8px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded inline-flex items-center gap-1 border border-blue-100 uppercase">
+                                                <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                Chèque pour le {{ new Date(pay.maturity_date).toLocaleDateString() }}
+                                            </div>
+                                            <button 
+                                                @click="confirmPayment(pay.id)"
+                                                :disabled="isConfirming === pay.id"
+                                                class="text-[8px] font-black bg-gray-900 text-white px-2 py-1 rounded hover:bg-black transition-all uppercase flex items-center gap-1 disabled:opacity-50"
+                                            >
+                                                <span v-if="isConfirming === pay.id" class="w-2 h-2 border-b border-white rounded-full animate-spin"></span>
+                                                Confirmer Encaissement
+                                            </button>
                                         </div>
                                     </div>
                                 </td>

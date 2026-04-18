@@ -35,10 +35,7 @@ class SupplierPaymentController extends Controller
 
         DB::beginTransaction();
         try {
-            $payment = SupplierPayment::create($request->all());
-
-            // Optional: Update PO status if fully paid logic is needed here
-            // For now we just record the payment as requested.
+            $payment = $po->payments()->create($request->all());
 
             DB::commit();
             
@@ -55,5 +52,17 @@ class SupplierPaymentController extends Controller
     public function show(SupplierPayment $supplierPayment)
     {
         return response()->json($supplierPayment->load('purchaseOrder.supplier'));
+    }
+
+    public function confirm(SupplierPayment $supplierPayment)
+    {
+        $supplierPayment->update([
+            'cashed_at' => now()
+        ]);
+
+        return response()->json([
+            'message' => 'Règlement confirmé/encaissé avec succès',
+            'payment' => $supplierPayment
+        ]);
     }
 }
