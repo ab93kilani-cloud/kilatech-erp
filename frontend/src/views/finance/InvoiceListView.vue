@@ -559,7 +559,7 @@ onMounted(() => {
               <div class="mt-3 text-center sm:mt-5">
                 <h3 class="text-base font-semibold leading-6 text-gray-900" id="modal-title">Saisir un Règlement</h3>
                 <div class="mt-2 text-sm text-gray-500">
-                    Facture <strong class="text-gray-900">{{ selectedInvoice.invoice_number }}</strong> - Reste à payer : <span class="text-red-500 font-bold">{{ selectedInvoice.balance_due }} MAD</span>
+                    Facture <strong class="text-gray-900">{{ selectedInvoice.invoice_number }}</strong> - Reste à payer : <span class="text-red-500 font-bold">{{ formatPrice(selectedInvoice.balance_due) }} MAD</span>
                 </div>
               </div>
             </div>
