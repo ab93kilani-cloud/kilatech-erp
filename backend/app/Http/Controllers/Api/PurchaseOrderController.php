@@ -120,11 +120,89 @@ class PurchaseOrderController extends Controller
             ]);
 
             if ($isArchived) {
-                // SAFE UPDATE: Update prices only for existing lines to preserve reception links
+                // REGULARIZATION MODE: Update prices AND quantities + Sync Stock
                 foreach ($request->lines as $lineData) {
-                    $purchaseOrder->lines()
+                    $poLine = $purchaseOrder->lines()
                         ->where('variant_id', $lineData['variant_id'])
-                        ->update(['unit_price' => $lineData['unit_price']]);
+                        ->first();
+                    
+                    if ($poLine) {
+                        $oldQty = $poLine->ordered_quantity;
+                        $newQty = $lineData['ordered_quantity'];
+                        $diff = $newQty - $oldQty;
+
+                        // Update PO line
+                        $poLine->update([
+                            'unit_price' => $lineData['unit_price'],
+                            'ordered_quantity' => $newQty,
+                            'received_quantity' => $newQty // Assume full reception for archived
+                        ]);
+
+                        if ($diff !== 0) {
+                            // Sync Physical Stock
+                            // Find all receipt lines for this PO line
+                            $receiptLineIds = \App\Models\ReceiptLine::where('po_line_id', $poLine->id)->pluck('id');
+                            
+                            if ($diff < 0) {
+                                // REDUCTION: Remove available stock units
+                                $unitsToRemove = \App\Models\StockUnit::whereIn('id', function($query) use ($receiptLineIds) {
+                                        $query->select('unit_id')
+                                            ->from('stock_movements')
+                                            ->where('reference_doc_type', \App\Models\ReceiptLine::class)
+                                            ->whereIn('reference_doc_id', $receiptLineIds);
+                                    })
+                                    ->where('status', 'disponible')
+                                    ->limit(abs($diff))
+                                    ->get();
+
+                                foreach ($unitsToRemove as $unit) {
+                                    $unit->movements()->delete();
+                                    $unit->forceDelete();
+                                }
+                            } else {
+                                // ADDITION: Create new stock units
+                                // Find the last lot created for this line
+                                $lastReceiptLine = \App\Models\ReceiptLine::whereIn('id', $receiptLineIds)
+                                    ->where('status', 'approved')
+                                    ->latest()
+                                    ->first();
+                                
+                                $lot = null;
+                                if ($lastReceiptLine) {
+                                    $movement = \App\Models\StockMovement::where('reference_doc_type', \App\Models\ReceiptLine::class)
+                                        ->where('reference_doc_id', $lastReceiptLine->id)
+                                        ->with('unit.lot')
+                                        ->first();
+                                    $lot = $movement?->unit?->lot;
+                                }
+
+                                if (!$lot) {
+                                    // Fallback: create a system lot if none found
+                                    $lot = \App\Models\Lot::create([
+                                        'variant_id' => $poLine->variant_id,
+                                        'lot_number' => 'REGUL-' . now()->format('Ymd'),
+                                        'actual_purchase_price' => $poLine->unit_price
+                                    ]);
+                                }
+
+                                for ($i = 0; $i < $diff; $i++) {
+                                    $unit = \App\Models\StockUnit::create([
+                                        'lot_id' => $lot->id,
+                                        'status' => 'disponible'
+                                    ]);
+
+                                    \App\Models\StockMovement::create([
+                                        'unit_id' => $unit->id,
+                                        'user_id' => $request->user()->id,
+                                        'type' => 'in',
+                                        'to_status' => 'disponible',
+                                        'reference_doc_type' => \App\Models\PurchaseOrder::class,
+                                        'reference_doc_id' => $purchaseOrder->id
+                                    ]);
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
                 // DRAFT UPDATE: Clear old lines and recreate (Full flexibility)

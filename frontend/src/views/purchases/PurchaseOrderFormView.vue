@@ -271,7 +271,7 @@ onMounted(async () => {
                     Ajouter un article
                 </button>
                 <div v-else class="text-[10px] bg-blue-50 text-blue-600 px-3 py-1.5 border border-blue-100 rounded-full font-black uppercase tracking-widest">
-                    Mode Régularisation : Prix Uniquement
+                    Mode Régularisation : Prix & Quantité
                 </div>
             </div>
 
@@ -333,7 +333,7 @@ onMounted(async () => {
                     <!-- Quantité -->
                     <div class="sm:col-span-2">
                          <div class="relative">
-                            <input v-model.number="line.quantity" :disabled="isArchived" required type="number" min="1" class="block w-full rounded-lg border-gray-200 py-2 text-center text-gray-900 font-black focus:ring-brand-500 focus:border-brand-500 sm:text-sm disabled:bg-gray-100">
+                            <input v-model.number="line.quantity" required type="number" min="1" class="block w-full rounded-lg border-gray-200 py-2 text-center text-gray-900 font-black focus:ring-brand-500 focus:border-brand-500 sm:text-sm shadow-sm">
                             <div class="absolute -top-2 left-1/2 -translate-x-1/2 px-1 bg-white text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Qté</div>
                          </div>
                     </div>
