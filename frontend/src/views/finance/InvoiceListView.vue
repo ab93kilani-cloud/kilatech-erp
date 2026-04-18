@@ -16,6 +16,14 @@ interface Invoice {
   created_at : string;
 }
 
+const formatPrice = (val: number | string) => {
+    return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(val))
+}
+
+const formatPrice = (val: number | string) => {
+    return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(val))
+}
+
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 const isAdminOrManager = computed(() => {
@@ -325,11 +333,11 @@ onMounted(() => {
                   <td class="whitespace-nowrap px-3 py-4 text-sm font-bold text-blue-600">
                     {{ inv.due_date ? new Date(inv.due_date).toLocaleDateString('fr-FR') : '-' }}
                   </td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900 text-right font-medium">{{ inv.total_amount }} MAD</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900 text-right font-medium">{{ formatPrice(inv.total_amount) }} MAD</td>
                   
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
                      <span v-if="inv.balance_due == 0" class="text-green-600 font-bold">Soldé (0.00)</span>
-                     <span v-else class="text-red-500 font-bold">{{ inv.balance_due }} MAD</span>
+                     <span v-else class="text-red-500 font-bold">{{ formatPrice(inv.balance_due) }} MAD</span>
                   </td>
 
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">

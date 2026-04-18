@@ -26,6 +26,10 @@ interface SupplierPayment {
   reference: string;
 }
 
+const formatPrice = (val: number | string) => {
+    return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(val))
+}
+
 const activeTab = ref<'clients' | 'suppliers' | 'overdue'>('clients')
 const invoicePayments = ref<InvoicePayment[]>([])
 const supplierPayments = ref<SupplierPayment[]>([])
