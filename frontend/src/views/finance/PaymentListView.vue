@@ -292,8 +292,8 @@ onMounted(() => {
                                 <td class="px-6 py-4 rounded-l-2xl bg-gray-50 border-y border-l border-transparent">
                                     <div class="flex items-center gap-2">
                                         <!-- On affiche la date du chèque si elle existe et est future, sinon la date d'échéance du BC -->
-                                        <div v-if="po.payments?.find((p: any) => p.maturity_date && !p.cashed_at && new Date(p.maturity_date).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0))" class="text-[11px] font-black text-blue-600 border border-blue-200 bg-blue-50 px-2 py-1 rounded-lg shadow-sm">
-                                            CHÈQUE : {{ new Date(po.payments.find((p: any) => p.maturity_date && !p.cashed_at && new Date(p.maturity_date).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0)).maturity_date).toLocaleDateString() }}
+                                        <div v-if="po.payments?.find((p: any) => p.maturity_date && !p.cashed_at)" class="text-[11px] font-black text-blue-600 border border-blue-200 bg-blue-50 px-2 py-1 rounded-lg shadow-sm">
+                                            CHÈQUE : {{ new Date(po.payments.find((p: any) => p.maturity_date && !p.cashed_at).maturity_date).toLocaleDateString() }}
                                         </div>
                                         <input 
                                             v-else
@@ -313,8 +313,8 @@ onMounted(() => {
                                     </div>
 
                                     <!-- Pending Checks details -->
-                                    <div v-if="po.payments?.some((p: any) => p.maturity_date && !p.cashed_at && new Date(p.maturity_date).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0))" class="mt-2 space-y-2">
-                                        <div v-for="pay in (po.payments || []).filter((p: any) => p.maturity_date && !p.cashed_at && new Date(p.maturity_date).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0))" :key="pay.id" class="flex items-center gap-2">
+                                    <div v-if="po.payments?.some((p: any) => p.maturity_date && !p.cashed_at)" class="mt-2 space-y-2">
+                                        <div v-for="pay in (po.payments || []).filter((p: any) => p.maturity_date && !p.cashed_at)" :key="pay.id" class="flex items-center gap-2">
                                             <div class="text-[8px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded inline-flex items-center gap-1 border border-blue-100 uppercase">
                                                 <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                 Chèque pour le {{ new Date(pay.maturity_date).toLocaleDateString() }}

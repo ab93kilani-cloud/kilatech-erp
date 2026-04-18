@@ -139,9 +139,9 @@ class AccountingController extends Controller
             ->filter(function($po) use ($threshold) {
                 // On garde les commandes (non brouillon) :
                 // 1. Qui ont un reste à payer significatif (> 0.50 DH)
-                // 2. OU qui ont des paiements par chèque/effet dont l'échéance n'est pas encore passée (et non encore confirmés manuellement)
+                // 2. OU qui ont des paiements par chèque/effet non encore confirmés manuellement (même si la date d'échéance est passée)
                 $hasPendingChecks = $po->payments->contains(function($pay) {
-                    return $pay->maturity_date && $pay->maturity_date >= now()->startOfDay() && !$pay->cashed_at;
+                    return $pay->maturity_date && !$pay->cashed_at;
                 });
 
                 return $po->status !== 'draft' && ($po->balance_due >= $threshold || $hasPendingChecks);
