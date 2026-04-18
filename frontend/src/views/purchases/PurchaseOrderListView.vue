@@ -431,7 +431,7 @@ onMounted(() => {
                     <div v-if="po.due_date" class="text-[10px] font-black text-gray-900 tracking-widest uppercase">Échéance BL: <br/>{{ new Date(po.due_date).toLocaleDateString() }}</div>
                     
                     <div v-if="po.payments?.length" class="mt-2 space-y-1">
-                        <div v-for="pay in po.payments" :key="pay.id" class="text-[9px] font-bold text-left px-2 py-1 bg-gray-50 border border-gray-100 rounded">
+                        <div v-for="pay in (po.payments || [])" :key="pay.id" class="text-[9px] font-bold text-left px-2 py-1 bg-gray-50 border border-gray-100 rounded">
                             <div class="text-green-700">+ {{ formatPrice(pay.amount) }} DH</div>
                             <div class="text-gray-500 uppercase">{{ pay.payment_method }} {{ pay.payment_date ? ' - ' + new Date(pay.payment_date).toLocaleDateString() : '' }}</div>
                             <div v-if="pay.maturity_date" class="text-blue-600 font-black mt-0.5">
