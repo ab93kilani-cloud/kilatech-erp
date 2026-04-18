@@ -64,7 +64,7 @@ const paymentForm = ref({
 
 const openPaymentModal = (invoice: Invoice) => {
     selectedInvoice.value = invoice
-    paymentForm.value.amount = invoice.balance_due // Pré-remplir avec le Reste à Payer
+    paymentForm.value.amount = Number(Number(invoice.balance_due).toFixed(2)) // Pré-remplir avec le Reste à Payer (arrondi 2 décimales)
     paymentForm.value.payment_date = new Date().toISOString().split('T')[0]
     paymentForm.value.payment_method = 'virement'
     paymentForm.value.notes = ''
@@ -207,7 +207,7 @@ const openEditModal = (invoice: any) => {
         name: (l.variant?.product?.name || 'Produit') + ' ' + (l.variant?.name_variation || ''),
         variant_id: l.variant_id,
         quantity: l.quantity,
-        unit_price: l.unit_price,
+        unit_price: Number(Number(l.unit_price).toFixed(2)),
         discount_percent: l.discount_percent || 0,
         tax_rate: l.tax_rate || 20
     }))
