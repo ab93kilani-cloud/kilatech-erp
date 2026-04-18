@@ -234,6 +234,10 @@
                     <div class="id-line">Réf : {{ $document_number }}</div>
                     <div style="margin-top: 10px;">Date : {{ \Carbon\Carbon::parse($document_date)->format('d/m/Y') }}</div>
                     
+                    @if(!empty($due_date))
+                    <div style="font-weight: bold; color: #003366; margin-top: 5px;">Échéance : {{ \Carbon\Carbon::parse($due_date)->format('d/m/Y') }}</div>
+                    @endif
+                    
                     @if(!empty($validity_date))
                     <div style="font-weight: bold; color: #dc2626; margin-top: 5px;">Validité : Jusqu'au {{ \Carbon\Carbon::parse($validity_date)->format('d/m/Y') }}</div>
                     @endif
@@ -312,8 +316,14 @@
 
                 <div style="font-size: 9px;">
                     <strong>Mode de Règlement :</strong> {{ $payment_method ?? 'Virement ou Chèque' }}<br>
+                    @if(!empty($due_date))
+                    <strong>Échéance de Paiement :</strong> <span style="color: #dc2626; font-weight: bold;">{{ \Carbon\Carbon::parse($due_date)->format('d/m/Y') }}</span><br>
+                    @endif
                     @if(!empty($validity_date))
-                    <strong>Validité :</strong> Jusqu'au {{ \Carbon\Carbon::parse($validity_date)->format('d/m/Y') }}
+                    <strong>Validité :</strong> Jusqu'au {{ \Carbon\Carbon::parse($validity_date)->format('d/m/Y') }}<br>
+                    @endif
+                    @if(!empty($payment_term))
+                    <strong>Conditions :</strong> {{ $payment_term }}<br>
                     @endif
                 </div>
 

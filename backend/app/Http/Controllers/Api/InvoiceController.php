@@ -279,7 +279,8 @@ class InvoiceController extends Controller
         $data = [
             'document_type' => 'Facture',
             'document_number' => $invoice->invoice_number,
-            'document_date' => $invoice->invoice_date ?? $invoice->created_at,
+            'document_date' => $invoice->invoice_date,
+            'due_date' => $invoice->due_date,
             'client_id' => $order->client_id,
             'client_name' => $order->client->company_name ?? $order->client->contact_name,
             'client_contact' => $order->client->contact_name,

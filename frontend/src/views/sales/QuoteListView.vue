@@ -13,6 +13,7 @@ interface Quote {
   locked_by_user_id: number | null;
   locked_by: { name: string } | null;
   locked_at: string | null;
+  due_date: string | null;
 }
 
 const quotes = ref<Quote[]>([])
@@ -124,6 +125,7 @@ onMounted(() => {
                 <tr>
                   <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">ID</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Client</th>
+                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Échéance</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Statut</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Verrou (Edition)</th>
                   <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
@@ -139,7 +141,10 @@ onMounted(() => {
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     {{ quote.client?.company_name || quote.client?.contact_name || 'Client Inconnu' }}
                   </td>
-                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                  <td class="whitespace-nowrap px-3 py-4 text-sm font-bold text-blue-600">
+                    {{ quote.due_date ? new Date(quote.due_date).toLocaleDateString('fr-FR') : '-' }}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <span v-if="quote.status === 'draft'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Brouillon</span>
                       <span v-else-if="quote.status === 'sent'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">📧 Envoyé client</span>
                       <span v-else-if="quote.status === 'confirmed'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Confirmé</span>

@@ -9,7 +9,12 @@ class Order extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['quote_id', 'client_id', 'order_number', 'order_date', 'status', 'discount_amount', 'payment_method'];
+    protected $fillable = ['quote_id', 'order_number', 'client_id', 'order_date', 'due_date', 'status', 'discount_amount', 'payment_method'];
+
+    protected $casts = [
+        'order_date' => 'date',
+        'due_date' => 'date',
+    ];
 
     public function client()
     {

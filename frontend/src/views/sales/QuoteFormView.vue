@@ -38,7 +38,8 @@ const form = ref({
     quote_date: '',
     discount_amount: 0,
     payment_method: '',
-    payment_term: ''
+    payment_term: '',
+    due_date: ''
 })
 
 // Panier du Devis — chaque ligne a un selectedProductId pour la sélection en 2 étapes
@@ -195,6 +196,7 @@ const saveQuote = async () => {
             discount_amount: form.value.discount_amount,
             payment_method: form.value.payment_method,
             payment_term: form.value.payment_term,
+            due_date: form.value.due_date,
             lines: lines.value
         }
 
@@ -235,7 +237,8 @@ const fetchQuote = async () => {
             quote_date: data.quote_date ? (String(data.quote_date).split('T')[0] || '').split(' ')[0] || '' : '',
             discount_amount: data.discount_amount,
             payment_method: data.payment_method || '',
-            payment_term: data.payment_term || ''
+            payment_term: data.payment_term || '',
+            due_date: data.due_date ? data.due_date.split('T')[0] : ''
         }
         lines.value = data.lines.map((l: any) => ({
             selectedProductId: allVariants.value.find((v: any) => v.id === l.variant_id)?.product?.id || '',
@@ -264,6 +267,7 @@ onMounted(() => {
             form.value.quote_date = d.toISOString().split('T')[0] || ''
             d.setDate(d.getDate() + 15)
             form.value.valid_until = d.toISOString().split('T')[0] || ''
+            form.value.due_date = d.toISOString().split('T')[0] || ''
         }
     }
     init()
@@ -328,7 +332,14 @@ onMounted(() => {
             </div>
 
             <div class="sm:col-span-3 lg:col-span-2">
-                <label class="block text-sm font-medium leading-6 text-gray-900">Échéance de Paiement</label>
+                <label class="block text-sm font-medium leading-6 text-gray-900 font-bold text-blue-600 uppercase tracking-tighter">Échéance de Paiement *</label>
+                <div class="mt-2">
+                    <input v-model="form.due_date" required type="date" class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-2 ring-inset ring-blue-100 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-3">
+                </div>
+            </div>
+
+            <div class="sm:col-span-3 lg:col-span-2">
+                <label class="block text-sm font-medium leading-6 text-gray-900 uppercase tracking-tighter text-gray-400 font-bold italic">Condition (Texte)</label>
                 <div class="mt-2">
                     <select v-model="form.payment_term" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6">
                         <option value="">(Standard)</option>
