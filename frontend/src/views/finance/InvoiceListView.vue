@@ -332,7 +332,7 @@ onMounted(() => {
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900 text-right font-medium">{{ formatPrice(inv.total_amount) }} MAD</td>
                   
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
-                     <span v-if="inv.balance_due == 0" class="text-green-600 font-bold">Soldé (0.00)</span>
+                     <span v-if="inv.balance_due < 0.5" class="text-green-600 font-bold">Soldé (0.00)</span>
                      <span v-else class="text-red-500 font-bold">{{ formatPrice(inv.balance_due) }} MAD</span>
                   </td>
 
@@ -346,7 +346,7 @@ onMounted(() => {
                   
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-3">
                     <template v-if="!viewArchived">
-                        <button v-if="inv.balance_due > 0" @click="openPaymentModal(inv)" class="text-brand-600 font-bold hover:text-brand-900 border border-brand-200 bg-brand-50 px-3 py-1 rounded text-xs transition duration-150">
+                        <button v-if="inv.balance_due >= 0.5" @click="openPaymentModal(inv)" class="text-brand-600 font-bold hover:text-brand-900 border border-brand-200 bg-brand-50 px-3 py-1 rounded text-xs transition duration-150">
                             + Règlement
                         </button>
                         <button v-if="isAdminOrManager" @click="openEditModal(inv)" class="text-blue-500 hover:text-blue-700 text-xs font-bold uppercase tracking-tighter transition">Modifier</button>

@@ -124,15 +124,22 @@ class AccountingController extends Controller
     }
     public function financeOverview()
     {
-        $unpaidInvoices = Invoice::where('balance_due', '>', 0)
+        // Tolérance de 0.50 DH pour ignorer les écarts d'arrondis
+        $threshold = 0.5;
+
+        $unpaidInvoices = Invoice::where('balance_due', '>=', $threshold)
             ->with(['order.client'])
             ->orderBy('due_date', 'asc')
             ->get();
 
-        $unpaidPurchases = PurchaseOrder::where('status', '!=', 'paid')
-            ->with(['supplier', 'lines.variant'])
+        $unpaidPurchases = PurchaseOrder::with(['supplier', 'lines.variant', 'payments'])
             ->orderBy('due_date', 'asc')
-            ->get();
+            ->get()
+            ->filter(function($po) use ($threshold) {
+                // On ne garde que ceux qui sont ARCHIVÉS/COMMANDÉS et dont le reste à payer est significatif (> 0.50 DH)
+                return $po->status !== 'draft' && $po->balance_due >= $threshold;
+            })
+            ->values();
 
         return response()->json([
             'unpaid_invoices' => $unpaidInvoices,

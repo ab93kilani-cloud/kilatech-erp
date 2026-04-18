@@ -418,7 +418,7 @@ onMounted(() => {
                   <td v-if="activeTab === 'archived'" class="px-3 py-4 text-center">
                     <div class="text-[10px] font-bold text-gray-900">{{ formatPrice(po.total_ttc) }} DH</div>
                     <div class="flex items-center justify-center gap-2 mt-1">
-                        <span v-if="po.balance_due <= 0" class="text-[8px] font-black bg-green-100 text-green-700 px-1.5 py-0.5 rounded uppercase">SOLDE OK</span>
+                        <span v-if="po.balance_due < 0.5" class="text-[8px] font-black bg-green-100 text-green-700 px-1.5 py-0.5 rounded uppercase">SOLDE OK</span>
                         <span v-else class="text-[8px] font-black bg-red-100 text-red-700 px-1.5 py-0.5 rounded uppercase">RESTE {{ formatPrice(po.balance_due) }}</span>
                     </div>
                   </td>
@@ -455,7 +455,7 @@ onMounted(() => {
                   </td>
                   
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-3">
-                     <button v-if="activeTab === 'archived' && po.balance_due > 0" @click="openPaymentModal(po)" class="text-brand-600 hover:text-brand-900 font-bold bg-brand-50 px-2 py-1 rounded border border-brand-200">RÉGLER</button>
+                     <button v-if="activeTab === 'archived' && po.balance_due >= 0.5" @click="openPaymentModal(po)" class="text-brand-600 hover:text-brand-900 font-bold bg-brand-50 px-2 py-1 rounded border border-brand-200">RÉGLER</button>
                      <button @click="downloadPDF(po.id)" class="text-gray-600 hover:text-gray-900 font-medium">📥 Commande</button>
                      <button v-if="po.receipts?.length && po.receipts[0]?.invoice_path" @click="downloadInvoice(po.receipts[0].id)" class="text-blue-600 hover:text-blue-900 font-medium">🧾 Facture Fourn.</button>
                      <button v-if="po.status === 'draft'" @click="confirmPO(po.id)" class="text-brand-600 hover:text-brand-900 font-medium">Confirmer la Commande</button>
