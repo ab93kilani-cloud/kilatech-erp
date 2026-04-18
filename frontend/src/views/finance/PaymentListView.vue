@@ -173,7 +173,7 @@ onMounted(() => {
                                 <span v-if="pay.reference" class="ml-2 px-2 py-0.5 bg-white rounded-lg border border-gray-200 text-[9px]">{{ pay.reference }}</span>
                             </td>
                             <td class="whitespace-nowrap px-6 py-4 rounded-r-2xl bg-gray-50 group-hover:bg-blue-50/50 text-right font-black text-green-600 border-y border-r border-transparent group-hover:border-blue-100 transition-all">
-                                + {{ Number(pay.amount).toLocaleString() }} DH
+                                + {{ formatPrice(pay.amount) }} DH
                             </td>
                         </tr>
                     </template>
@@ -193,7 +193,7 @@ onMounted(() => {
                                 <span v-if="pay.reference" class="ml-2 px-2 py-0.5 bg-white rounded-lg border border-gray-200 text-[9px]">{{ pay.reference }}</span>
                             </td>
                             <td class="whitespace-nowrap px-6 py-4 rounded-r-2xl bg-gray-50 group-hover:bg-purple-50/50 text-right font-black text-red-600 border-y border-r border-transparent group-hover:border-purple-100 transition-all">
-                                - {{ Number(pay.amount).toLocaleString() }} DH
+                                - {{ formatPrice(pay.amount) }} DH
                             </td>
                         </tr>
                     </template>
@@ -241,8 +241,8 @@ onMounted(() => {
                                     <div class="text-[10px] text-gray-400 font-bold mt-1">FA: {{ inv.invoice_number }}</div>
                                 </td>
                                 <td class="px-6 py-4 rounded-r-2xl bg-gray-50 text-right font-black text-gray-900 border-y border-r border-transparent">
-                                    <div class="text-sm font-black">{{ Number(inv.balance_due).toLocaleString() }} DH</div>
-                                    <div class="text-[9px] text-gray-400 mt-1 uppercase tracking-widest">Sur total {{ Number(inv.total_amount).toLocaleString() }}</div>
+                                    <div class="text-sm font-black">{{ formatPrice(inv.balance_due) }} DH</div>
+                                    <div class="text-[9px] text-gray-400 mt-1 uppercase tracking-widest">Sur total {{ formatPrice(inv.total_amount) }}</div>
                                 </td>
                             </tr>
                             <tr v-if="financeOverview.unpaid_invoices.length === 0">
@@ -286,7 +286,7 @@ onMounted(() => {
                                     <div class="text-[10px] text-gray-400 font-bold mt-1">BC: {{ po.po_number }}</div>
                                 </td>
                                 <td class="px-6 py-4 rounded-r-2xl bg-gray-50 text-right font-black text-gray-900 border-y border-r border-transparent">
-                                    <div class="text-sm font-black">{{ Number(po.total_ttc).toLocaleString() }} DH</div>
+                                    <div class="text-sm font-black">{{ formatPrice(po.total_ttc) }} DH</div>
                                 </td>
                             </tr>
                         </tbody>
