@@ -322,7 +322,9 @@ onMounted(() => {
                           </button>
                       </span>
                   </td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ inv.due_date || '-' }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm font-bold text-blue-600">
+                    {{ inv.due_date ? new Date(inv.due_date).toLocaleDateString('fr-FR') : '-' }}
+                  </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900 text-right font-medium">{{ inv.total_amount }} MAD</td>
                   
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
