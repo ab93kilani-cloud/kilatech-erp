@@ -20,10 +20,6 @@ const formatPrice = (val: number | string) => {
     return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(val))
 }
 
-const formatPrice = (val: number | string) => {
-    return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(val))
-}
-
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 const isAdminOrManager = computed(() => {
