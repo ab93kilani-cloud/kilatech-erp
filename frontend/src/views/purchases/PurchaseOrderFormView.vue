@@ -100,7 +100,7 @@ const onVariantSelect = (line: any) => {
     const variant = allVariants.value.find(v => v.id === Number(line.variant_id));
     if (variant) {
         // On récupère le prix d'achat de la variante (pas du produit parent)
-        line.unit_price = variant.cost_price ? Number(variant.cost_price) : 0;
+        line.unit_price = variant.cost_price ? Number(Number(variant.cost_price).toFixed(2)) : 0;
     }
 }
 
@@ -168,8 +168,9 @@ onMounted(async () => {
             const res = await api.get(`/purchase-orders/${poId.value}`)
             const po = res.data
             form.value.supplier_id = po.supplier_id
-            form.value.po_date = po.po_date || po.created_at.split('T')[0]
-            form.value.expected_delivery_date = po.expected_delivery_date || ''
+            form.value.po_date = po.po_date ? po.po_date.split('T')[0] : (po.created_at ? po.created_at.split('T')[0] : '')
+            form.value.expected_delivery_date = po.expected_delivery_date ? po.expected_delivery_date.split('T')[0] : ''
+            form.value.due_date = po.due_date ? po.due_date.split('T')[0] : ''
             form.value.payment_method = po.payment_method || 'Virement'
             form.value.payment_conditions = po.payment_conditions || ''
             
@@ -177,7 +178,7 @@ onMounted(async () => {
                 selectedProductId: l.variant?.product_id || '',
                 variant_id: l.variant_id,
                 quantity: l.ordered_quantity,
-                unit_price: l.unit_price || 0,
+                unit_price: Number(Number(l.unit_price).toFixed(2)),
                 search: ''
             }))
         } catch (e) {
