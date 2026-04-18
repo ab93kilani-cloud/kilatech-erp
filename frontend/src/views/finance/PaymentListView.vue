@@ -24,6 +24,7 @@ interface SupplierPayment {
   payment_date: string;
   payment_method: string;
   reference: string;
+  maturity_date?: string;
 }
 
 const formatPrice = (val: number | string) => {
