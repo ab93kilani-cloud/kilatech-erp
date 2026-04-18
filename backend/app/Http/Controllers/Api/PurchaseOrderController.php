@@ -80,15 +80,17 @@ class PurchaseOrderController extends Controller
         }
     }
 
-    public function show(PurchaseOrder $purchaseOrder)
+    public function show($id)
     {
+        $purchaseOrder = PurchaseOrder::withTrashed()->findOrFail($id);
         return response()->json($purchaseOrder->load([
             'supplier', 
             'creator', 
             'lines.variant.product',
             'receipts.receiver',
             'receipts.lines.poLine.variant',
-            'receipts.lines.stockMovements.unit.lot'
+            'receipts.lines.stockMovements.unit.lot',
+            'payments'
         ]));
     }
 
