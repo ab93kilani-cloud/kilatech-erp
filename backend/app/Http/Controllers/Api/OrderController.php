@@ -226,6 +226,8 @@ class OrderController extends Controller
             Invoice::create([
                 'order_id' => $order->id,
                 'invoice_number' => $invoiceNumber,
+                'invoice_date' => $docDate->toDateString(),
+                'due_date' => $quote->valid_until ? \Carbon\Carbon::parse($quote->valid_until)->toDateString() : $docDate->toDateString(),
                 'total_amount' => $totalAmount,
                 'balance_due' => $totalAmount, // Total to pay initially
                 'status' => 'unpaid',
@@ -297,6 +299,8 @@ class OrderController extends Controller
             $invoice = Invoice::create([
                 'order_id' => $order->id,
                 'invoice_number' => $invoiceNumber,
+                'invoice_date' => $order->order_date ?? now()->toDateString(),
+                'due_date' => ($order->quote && $order->quote->valid_until) ? \Carbon\Carbon::parse($order->quote->valid_until)->toDateString() : ($order->order_date ?? now()->toDateString()),
                 'total_amount' => $totalAmount,
                 'balance_due' => $totalAmount,
                 'status' => 'unpaid',
@@ -361,6 +365,8 @@ class OrderController extends Controller
             $invoice = Invoice::create([
                 'order_id' => $order->id,
                 'invoice_number' => $invoiceNumber,
+                'invoice_date' => $order->order_date ?? now()->toDateString(),
+                'due_date' => ($order->quote && $order->quote->valid_until) ? \Carbon\Carbon::parse($order->quote->valid_until)->toDateString() : ($order->order_date ?? now()->toDateString()),
                 'total_amount' => $totalAmount,
                 'balance_due' => $totalAmount,
                 'status' => 'unpaid',
