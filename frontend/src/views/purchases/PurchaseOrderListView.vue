@@ -428,10 +428,15 @@ onMounted(() => {
                   <td v-else class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 font-medium">{{ po.expected_delivery_date || '-' }}</td>
                   
                   <td v-if="activeTab === 'archived'" class="px-3 py-4 text-center">
-                    <div v-if="po.due_date" class="text-xs font-black text-gray-900">{{ new Date(po.due_date).toLocaleDateString() }}</div>
-                    <div v-if="po.payments?.some((p: any) => p.maturity_date)" class="mt-1">
-                        <div v-for="pay in (po.payments || []).filter((p: any) => p.maturity_date)" :key="pay.id" class="text-[8px] font-bold text-blue-600 uppercase">
-                            Chèque: {{ new Date(pay.maturity_date).toLocaleDateString() }}
+                    <div v-if="po.due_date" class="text-[10px] font-black text-gray-900 tracking-widest uppercase">Échéance BL: <br/>{{ new Date(po.due_date).toLocaleDateString() }}</div>
+                    
+                    <div v-if="po.payments?.length" class="mt-2 space-y-1">
+                        <div v-for="pay in po.payments" :key="pay.id" class="text-[9px] font-bold text-left px-2 py-1 bg-gray-50 border border-gray-100 rounded">
+                            <div class="text-green-700">+ {{ formatPrice(pay.amount) }} DH</div>
+                            <div class="text-gray-500 uppercase">{{ pay.payment_method }} {{ pay.payment_date ? ' - ' + new Date(pay.payment_date).toLocaleDateString() : '' }}</div>
+                            <div v-if="pay.maturity_date" class="text-blue-600 font-black mt-0.5">
+                                ÉCHÉANCE: {{ new Date(pay.maturity_date).toLocaleDateString() }}
+                            </div>
                         </div>
                     </div>
                   </td>

@@ -22,7 +22,7 @@ class SupplierPaymentController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'purchase_order_id' => 'required|exists:purchase_orders,id',
+            'purchase_order_id' => 'required|integer',
             'amount' => 'required|numeric|min:0',
             'payment_date' => 'required|date',
             'payment_method' => 'required|string',
