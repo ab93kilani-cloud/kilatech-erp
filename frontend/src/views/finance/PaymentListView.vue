@@ -283,10 +283,22 @@ onMounted(() => {
                                 </td>
                                 <td class="px-6 py-4 bg-gray-50 border-y border-transparent">
                                     <div class="font-black text-gray-900">{{ po.supplier?.name }}</div>
-                                    <div class="text-[10px] text-gray-400 font-bold mt-1">BC: {{ po.po_number }}</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">BC: {{ po.po_number }}</div>
+                                        <span v-if="po.balance_due < 0.5" class="bg-green-100 text-green-700 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">SOLDE OK</span>
+                                    </div>
+
+                                    <!-- Pending Checks details -->
+                                    <div v-if="po.payments?.some((p: any) => p.maturity_date && new Date(p.maturity_date) >= new Date())" class="mt-2 space-y-1">
+                                        <div v-for="pay in po.payments.filter((p: any) => p.maturity_date && new Date(p.maturity_date) >= new Date())" :key="pay.id" class="text-[8px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded inline-flex items-center gap-1 border border-blue-100 uppercase">
+                                            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                            Chèque pour le {{ new Date(pay.maturity_date).toLocaleDateString() }}
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 rounded-r-2xl bg-gray-50 text-right font-black text-gray-900 border-y border-r border-transparent">
-                                    <div class="text-sm font-black">{{ formatPrice(po.total_ttc) }} DH</div>
+                                    <div class="text-sm font-black">{{ formatPrice(po.balance_due) }} DH</div>
+                                    <div class="text-[9px] text-gray-400 mt-1 uppercase tracking-widest">Sur total {{ formatPrice(po.total_ttc) }}</div>
                                 </td>
                             </tr>
                         </tbody>
