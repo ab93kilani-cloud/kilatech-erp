@@ -24,7 +24,7 @@ const fetchDashboard = async () => {
         const res = await api.get('/accounting/dashboard', {
             params: { quarter: selectedQuarter.value, year: selectedYear.value }
         })
-        data.value = res.data
+        Object.assign(data.value, res.data)
     } catch (e) {
         console.error('Failed to load accounting dashboard')
     } finally {

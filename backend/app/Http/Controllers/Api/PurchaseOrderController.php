@@ -59,6 +59,7 @@ class PurchaseOrderController extends Controller
                 'payment_method' => $request->payment_method ?? 'Non défini',
                 'payment_conditions' => $request->payment_conditions ?? 'A reception de facture',
                 'expected_delivery_date' => $request->expected_delivery_date ?? null,
+                'due_date' => $request->due_date ?? null,
             ]);
 
             foreach ($request->lines as $line) {
@@ -113,6 +114,7 @@ class PurchaseOrderController extends Controller
                 'payment_method' => $request->payment_method ?? 'Non défini',
                 'payment_conditions' => $request->payment_conditions ?? 'A reception de facture',
                 'expected_delivery_date' => $request->expected_delivery_date ?? null,
+                'due_date' => $request->due_date ?? $purchaseOrder->due_date,
             ]);
 
             // Clear old lines and recreate

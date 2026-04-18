@@ -10,6 +10,8 @@ use App\Models\BankStatement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use App\Models\InvoicePayment;
+use App\Models\Receipt;
 use ZipArchive;
 
 class AccountingController extends Controller
@@ -35,7 +37,7 @@ class AccountingController extends Controller
             ->with(['order' => fn($q) => $q->withTrashed(), 'order.client' => fn($q) => $q->withTrashed()])
             ->get();
 
-        $purchaseInvoices = \App\Models\Receipt::withTrashed()
+        $purchaseInvoices = Receipt::withTrashed()
             ->whereNotNull('invoice_path')
             ->whereHas('purchaseOrder', function ($query) use ($year, $months) {
                 $query->withTrashed()
@@ -57,7 +59,7 @@ class AccountingController extends Controller
         $suppliersWithCertificates = Supplier::whereNotNull('tax_certificate_path')
             ->get();
 
-        $payments = \App\Models\InvoicePayment::with(['invoice' => fn($q) => $q->withTrashed()->with(['order.client' => fn($q) => $q->withTrashed()])])
+        $payments = InvoicePayment::with(['invoice' => fn($q) => $q->withTrashed()->with(['order.client' => fn($q) => $q->withTrashed()])])
             ->where(function ($query) use ($year, $months) {
                 $query->whereYear('payment_date', $year)
                       ->whereIn(DB::raw('MONTH(payment_date)'), $months);
