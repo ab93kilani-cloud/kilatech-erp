@@ -106,7 +106,11 @@ class InvoiceController extends Controller
                             ->orderBy('created_at', 'asc') // FIFO
                             ->limit($diff)
                             ->get();
-                        if ($units->count() < $diff) throw new \Exception("Stock insuffisant pour {$orderLine->variant_id}");
+                        if ($units->count() < $diff) {
+                            $prodName = $orderLine->variant?->product?->name ?? 'Produit';
+                            $variation = $orderLine->variant?->name_variation ? " ($orderLine->variant->name_variation)" : "";
+                            throw new \Exception("Stock insuffisant pour {$prodName}{$variation}. Requis en plus: {$diff}, Disponible: " . $units->count());
+                        }
                         foreach ($units as $u) {
                             $u->update(['status' => 'vendue']);
                             if ($u->serial_number) $snListForUpdate[] = $u->serial_number;
@@ -159,7 +163,12 @@ class InvoiceController extends Controller
                         ->limit($qty)
                         ->get();
 
-                    if ($availableUnits->count() < $qty) throw new \Exception("Stock insuffisant pour le nouveau produit variant #{$variantId}");
+                    if ($availableUnits->count() < $qty) {
+                        $v = \App\Models\ProductVariant::with('product')->find($variantId);
+                        $prodName = $v?->product?->name ?? 'Produit';
+                        $variation = $v?->name_variation ? " ($v->name_variation)" : "";
+                        throw new \Exception("Stock insuffisant pour {$prodName}{$variation}. Demandé: {$qty}, Disponible: " . $availableUnits->count());
+                    }
 
                     $lotNumber = $availableUnits->first()->lot->lot_number;
                     $snList = [];
