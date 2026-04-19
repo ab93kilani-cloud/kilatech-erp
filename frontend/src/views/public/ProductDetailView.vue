@@ -45,7 +45,8 @@ interface Product {
   packaging_unit: string;
   sales_multiplier: number;
   variants: Variant[];
-  public_price?: string | number; // Added to fix build error
+  public_price?: string | number;
+  brand?: string;
   related?: Product[];
 }
 

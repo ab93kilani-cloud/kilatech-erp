@@ -160,9 +160,11 @@ class ProductController extends Controller
         }
 
         // Add related products (same category, excluding current)
+        // Explicit selection for performance and safety
         $related = Product::where('category', $product->category)
             ->where('id', '!=', $product->id)
             ->limit(4)
+            ->select(['id', 'name', 'slug', 'image_path', 'brand', 'public_price', 'category'])
             ->get();
             
         $product->setAttribute('related', $related);
