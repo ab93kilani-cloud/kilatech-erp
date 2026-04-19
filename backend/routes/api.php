@@ -60,6 +60,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('products/bulk', [\App\Http\Controllers\Api\SeoController::class, 'bulkUpdate']);
     });
 
+    // SEO V2 - Simplified for n8n (Query Token Support)
+    Route::get('seo-v2/products', [\App\Http\Controllers\Api\SeoController::class, 'indexV2']);
+    Route::get('seo-v2/stats', [\App\Http\Controllers\Api\SeoController::class, 'statsV2']);
+    Route::post('seo-v2/update/{id}', [\App\Http\Controllers\Api\SeoController::class, 'updateV2']);
+
     // Catalog & Suppliers
     Route::get('products/next-reference', [\App\Http\Controllers\Api\ProductController::class, 'getNextReference']);
     Route::apiResource('products', \App\Http\Controllers\Api\ProductController::class)->except(['index', 'show']);

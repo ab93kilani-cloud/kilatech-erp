@@ -215,4 +215,31 @@ class SeoController extends Controller
         $audit['score'] = $score;
         return $audit;
     }
+
+    /**
+     * V2 Simplified Methods for n8n (Bypass Headers)
+     */
+    public function indexV2(Request $request)
+    {
+        if ($request->input('api_token') !== '96|HCgAbOOfEhkxUUIa8kEKaEpegnFOAwBWVlmKDpeo90c0ca4d') {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        return $this->index($request);
+    }
+
+    public function statsV2(Request $request)
+    {
+        if ($request->input('api_token') !== '96|HCgAbOOfEhkxUUIa8kEKaEpegnFOAwBWVlmKDpeo90c0ca4d') {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        return $this->stats();
+    }
+
+    public function updateV2(Request $request, $id)
+    {
+        if ($request->input('api_token') !== '96|HCgAbOOfEhkxUUIa8kEKaEpegnFOAwBWVlmKDpeo90c0ca4d') {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        return $this->update($request, $id);
+    }
 }
