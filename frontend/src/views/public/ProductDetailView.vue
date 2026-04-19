@@ -35,7 +35,6 @@ interface Product {
   name: string;
   slug: string;
   category: string;
-  brand: string;
   description: string;
   meta_title: string;
   meta_description: string;
