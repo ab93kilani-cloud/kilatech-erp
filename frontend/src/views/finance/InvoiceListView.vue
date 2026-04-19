@@ -162,17 +162,7 @@ const editForm = ref({
 
 // Moteur de recherche de produits (Catalogue)
 const allVariants = ref<any[]>([])
-const products = computed(() => {
-    const map = new Map<number, any>()
-    allVariants.value.forEach(v => {
-        if (!v.product) return
-        if (!map.has(v.product.id)) {
-            map.set(v.product.id, { id: v.product.id, name: v.product.name, brand: v.product.brand, variants: [] })
-        }
-        map.get(v.product.id).variants.push(v)
-    })
-    return Array.from(map.values())
-})
+// allVariants is used directly in filteredCatalog now
 const productSearch = ref('')
 const showProductSearch = ref(false)
 const filteredCatalog = computed(() => {
