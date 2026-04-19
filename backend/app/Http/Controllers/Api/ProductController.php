@@ -301,11 +301,17 @@ class ProductController extends Controller
         return response()->json(null, 204);
     }
 
-    public function generateMarketing(Product $product, \App\Services\MarketingAiService $marketingAi)
+    public function generateMarketing(Product $product)
     {
-        $content = $marketingAi->generateForProduct($product);
-        $product->update($content);
-        return response()->json($product);
+        $product->update(['seo_status' => 'pending']);
+        
+        // Optionnel : Tentative de notification n8n si un webhook est configuré
+        // try { \Illuminate\Support\Facades\Http::post(config('services.n8n.webhook_url'), ['product_id' => $product->id]); } catch(\Exception $e) {}
+
+        return response()->json([
+            'message' => 'Produit mis en attente pour les agents SEO n8n.',
+            'product' => $product
+        ]);
     }
 
     public function seoDiagnostic(Product $product, \App\Services\MarketingAiService $marketingAi)

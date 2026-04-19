@@ -205,13 +205,12 @@ const fetchDiagnostic = async (productId: number) => {
 const generateMarketing = async (productId: number) => {
   isGenerating.value = productId
   try {
-    await api.post(`/products/${productId}/generate-marketing`)
+    const res = await api.post(`/products/${productId}/generate-marketing`)
+    // Refresh products list to show the "Pending" state if needed
     await fetchProducts() 
-    if (selectedProduct.value?.id === productId) {
-        fetchDiagnostic(productId)
-    }
+    alert(res.data.message || 'Produit envoyé aux agents n8n !')
   } catch (e) {
-    alert('Erreur lors de la génération IA')
+    alert('Erreur lors de la mise en attente')
   } finally {
     isGenerating.value = null
   }
