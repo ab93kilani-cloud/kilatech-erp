@@ -5,26 +5,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\ContactController;
 
-// Temporary bridge for n8n token generation on Hostinger
-Route::get('seo/init-n8n-bot/init_7382_seo_bot', function() {
-    $role = \App\Models\Role::firstOrCreate(['name' => 'n8n_bot']);
-    $user = \App\Models\User::firstOrCreate(
-        ['email' => 'n8n@kilatech.ma'],
-        [
-            'name' => 'n8n_bot',
-            'password_hash' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(32)),
-            'role_id' => $role->id,
-            'is_active' => true
-        ]
-    );
-    $token = $user->createToken('n8n-automation', ['seo:manage']);
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Token generated for Hostinger production environment',
-        'token' => $token->plainTextToken
-    ]);
-});
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
