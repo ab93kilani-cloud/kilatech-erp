@@ -41,6 +41,17 @@ const activeCategory = ref('Tous')
 const cartStore = useCartStore()
 const isCartOpen = ref(false)
 
+const addToCart = (product: any, event: Event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    
+    if (product.variants && product.variants.length > 0) {
+        cartStore.addItem(product, product.variants[0], 1)
+        // Opening cart drawer for feedback
+        isCartOpen.value = true
+    }
+}
+
 const formatTTCPrice = (product: Product) => {
     if (!product.variants || product.variants.length === 0) return null
     const firstVariant = product.variants[0]
@@ -215,22 +226,34 @@ onMounted(() => {
               </div>
             </div>
             
-            <div class="mt-4 sm:mt-6">
-              <div class="flex items-center justify-between mb-1 sm:mb-2">
-                <span class="text-[8px] sm:text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-100 uppercase tracking-tighter">{{ product.category }}</span>
+              <div class="mt-4 sm:mt-6 flex flex-col gap-4">
+                <div>
+                  <div class="flex items-center justify-between mb-1 sm:mb-2">
+                    <span class="text-[8px] sm:text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-100 uppercase tracking-tighter">{{ product.category }}</span>
+                  </div>
+                  <h3 class="text-sm sm:text-lg font-bold text-gray-900 group-hover:text-brand-600 transition-colors line-clamp-1">
+                    {{ product.name }}
+                  </h3>
+                  <p class="mt-1 sm:mt-2 text-base sm:text-xl font-black text-brand-900 leading-tight">
+                    {{ formatTTCPrice(product) ? formatTTCPrice(product) + ' MAD' : 'Sur devis' }}
+                    <span v-if="formatTTCPrice(product)" class="text-[8px] sm:text-[10px] font-bold text-gray-400">/ {{ product.unit_name || 'unité' }}</span>
+                  </p>
+                  <div v-if="product.sales_multiplier > 1" class="mt-1 flex flex-col">
+                      <span class="text-[8px] sm:text-[10px] text-brand-600 font-bold uppercase tracking-tighter">Vendu par {{ product.packaging_unit }} de {{ product.sales_multiplier }}</span>
+                      <span class="text-[7px] sm:text-[9px] text-gray-400 font-medium">Soit {{ (parseFloat(String(formatTTCPrice(product) || 0)) * product.sales_multiplier).toFixed(2) }} MAD TTC</span>
+                  </div>
+                </div>
+                
+                <button 
+                  @click.stop.prevent="addToCart(product, $event)"
+                  class="w-full py-3 bg-brand-600 text-white rounded-xl font-bold text-xs sm:text-sm shadow-lg shadow-brand-100 hover:bg-brand-700 hover:-translate-y-0.5 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                  AJOUTER AU PANIER
+                </button>
               </div>
-              <h3 class="text-sm sm:text-lg font-bold text-gray-900 group-hover:text-brand-600 transition-colors line-clamp-1">
-                {{ product.name }}
-              </h3>
-              <p class="mt-1 sm:mt-2 text-base sm:text-xl font-black text-brand-900 leading-tight">
-                {{ formatTTCPrice(product) ? formatTTCPrice(product) + ' MAD' : 'Sur devis' }}
-                <span v-if="formatTTCPrice(product)" class="text-[8px] sm:text-[10px] font-bold text-gray-400">/ {{ product.unit_name || 'unité' }}</span>
-              </p>
-              <div v-if="product.sales_multiplier > 1" class="mt-1 flex flex-col">
-                  <span class="text-[8px] sm:text-[10px] text-brand-600 font-bold uppercase tracking-tighter">Vendu par {{ product.packaging_unit }} de {{ product.sales_multiplier }}</span>
-                  <span class="text-[7px] sm:text-[9px] text-gray-400 font-medium">Soit {{ (parseFloat(String(formatTTCPrice(product) || 0)) * product.sales_multiplier).toFixed(2) }} MAD TTC</span>
-              </div>
-            </div>
           </router-link>
         </div>
         
