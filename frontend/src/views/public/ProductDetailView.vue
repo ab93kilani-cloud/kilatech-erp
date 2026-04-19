@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/plugins/axios'
 import { useSEO } from '@/composables/useSEO'
@@ -45,6 +45,7 @@ interface Product {
   packaging_unit: string;
   sales_multiplier: number;
   variants: Variant[];
+  public_price?: string | number; // Added to fix build error
   related?: Product[];
 }
 
@@ -69,6 +70,11 @@ const incrementQty = () => quantity.value++
 const decrementQty = () => {
     if (quantity.value > 1) quantity.value--
 }
+
+const totalPrice = computed(() => {
+    const price = getDisplayPrice(selectedVariant.value);
+    return price ? price * quantity.value : 0;
+});
 
 const fetchProduct = async () => {
     try {
@@ -220,7 +226,7 @@ onMounted(fetchProduct)
                 <input type="number" v-model="quantity" class="w-16 text-center bg-transparent border-none focus:ring-0 font-bold text-lg" min="1" />
                 <button @click="incrementQty" class="px-5 py-3 hover:bg-gray-200 transition-colors text-gray-600 font-bold text-xl">+</button>
               </div>
-              <p class="text-xs text-gray-400 font-medium">Prix total : <span class="text-brand-600 font-bold">{{ formatPrice(getDisplayPrice(selectedVariant) ? (getDisplayPrice(selectedVariant) * quantity) : 0) }}</span></p>
+              <p class="text-xs text-gray-400 font-medium">Prix total : <span class="text-brand-600 font-bold">{{ formatPrice(totalPrice) }}</span></p>
             </div>
           </div>
 
@@ -276,7 +282,6 @@ onMounted(fetchProduct)
              :key="rel.id"
              :to="{ name: 'product-detail', params: { slug: rel.slug } }"
              class="group bg-white rounded-3xl p-6 border border-gray-100 hover:shadow-2xl hover:shadow-brand-100 transition-all duration-500"
-             @click="window.scrollTo(0,0)"
            >
              <div class="aspect-square rounded-2xl bg-gray-50 overflow-hidden mb-6 p-4">
                 <img :src="getImageUrl(rel.image_path)" :alt="rel.name" class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
