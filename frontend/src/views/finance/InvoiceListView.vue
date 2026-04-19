@@ -191,8 +191,8 @@ const openEditModal = (invoice: any) => {
     editForm.value.id = invoice.id
     editForm.value.invoice_number = invoice.invoice_number
     editForm.value.client_name = invoice.order?.client?.company_name || invoice.order?.client?.contact_name || 'Client Inconnu'
-    editForm.value.invoice_date = invoice.invoice_date || invoice.created_at.split('T')[0]
-    editForm.value.due_date = invoice.due_date || ''
+    editForm.value.invoice_date = (invoice.invoice_date || invoice.created_at).split('T')[0]
+    editForm.value.due_date = invoice.due_date ? invoice.due_date.split('T')[0] : ''
     editForm.value.payment_method = invoice.payment_method || ''
     editForm.value.payments = invoice.payments || []
     
@@ -436,7 +436,7 @@ onMounted(() => {
                         </div>
                         <div class="flex flex-col items-end">
                             <div class="bg-brand-100 text-brand-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">+ Sélectionner</div>
-                            <div v-if="variant.public_price" class="text-[10px] text-blue-500 font-bold mt-1">{{ variant.public_price.toFixed(2) }} MAD TTC</div>
+                            <div v-if="variant.public_price" class="text-[10px] text-blue-500 font-bold mt-1">{{ Number(variant.public_price).toFixed(2) }} MAD TTC</div>
                         </div>
                     </div>
                 </div>
