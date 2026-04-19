@@ -41,7 +41,7 @@ const activeCategory = ref('Tous')
 const cartStore = useCartStore()
 const isCartOpen = ref(false)
 
-const addToCart = (product: any, event: Event) => {
+const addToCart = (product: Product, event: Event) => {
     event.preventDefault()
     event.stopPropagation()
     
