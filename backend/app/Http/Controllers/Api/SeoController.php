@@ -221,7 +221,7 @@ class SeoController extends Controller
      */
     public function indexV2(Request $request)
     {
-        if ($request->input('api_token') !== '96|HCgAbOOfEhkxUUIa8kEKaEpegnFOAwBWVlmKDpeo90c0ca4d') {
+        if ($request->input('api_token') !== 'KILATECH_7382') {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         return $this->index($request);
@@ -229,7 +229,7 @@ class SeoController extends Controller
 
     public function statsV2(Request $request)
     {
-        if ($request->input('api_token') !== '96|HCgAbOOfEhkxUUIa8kEKaEpegnFOAwBWVlmKDpeo90c0ca4d') {
+        if ($request->input('api_token') !== 'KILATECH_7382') {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         return $this->stats();
@@ -237,7 +237,7 @@ class SeoController extends Controller
 
     public function updateV2(Request $request, $id)
     {
-        if ($request->input('api_token') !== '96|HCgAbOOfEhkxUUIa8kEKaEpegnFOAwBWVlmKDpeo90c0ca4d') {
+        if ($request->input('api_token') !== 'KILATECH_7382') {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         return $this->update($request, $id);
