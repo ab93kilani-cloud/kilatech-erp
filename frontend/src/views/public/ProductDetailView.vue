@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/plugins/axios'
 import { useSEO } from '@/composables/useSEO'
@@ -11,6 +11,16 @@ const router = useRouter()
 const { updateSEO } = useSEO()
 const { getImageUrl } = useConfig()
 const cartStore = useCartStore()
+
+// Watch for route changes to refresh data when clicking related products
+watch(() => route.params.slug, (newSlug) => {
+    if (newSlug) {
+        isLoading.value = true
+        quantity.value = 1
+        fetchProduct()
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+})
 
 interface Variant {
   id: number;
@@ -35,12 +45,30 @@ interface Product {
   packaging_unit: string;
   sales_multiplier: number;
   variants: Variant[];
+  related?: Product[];
 }
 
 const product = ref<Product | null>(null)
 const isLoading = ref(true)
 const selectedVariant = ref<Variant | null>(null)
 const mainImage = ref<string | null>(null)
+const quantity = ref(1)
+
+const formatPrice = (price: number | string | null | undefined) => {
+    if (price === null || price === undefined || price === '') return 'Sur devis';
+    const num = parseFloat(price.toString());
+    return num.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MAD';
+}
+
+const getDisplayPrice = (variant: Variant | null) => {
+    if (!variant || !variant.public_price) return null;
+    return parseFloat(variant.public_price.toString());
+}
+
+const incrementQty = () => quantity.value++
+const decrementQty = () => {
+    if (quantity.value > 1) quantity.value--
+}
 
 const fetchProduct = async () => {
     try {
@@ -99,7 +127,10 @@ const injectJsonLd = (p: Product) => {
 
 const addToCart = () => {
     if (!product.value || !selectedVariant.value) return
-    cartStore.addItem(product.value, selectedVariant.value, 1)
+    cartStore.addItem(product.value, selectedVariant.value, quantity.value)
+    
+    // Simple feedback (could be more advanced)
+    alert('Produit ajouté au panier !')
 }
 
 onMounted(fetchProduct)
@@ -149,32 +180,55 @@ onMounted(fetchProduct)
             <p v-if="product.brand" class="text-brand-600 font-bold uppercase tracking-widest text-sm mb-4">Marque: {{ product.brand }}</p>
             
             <div class="flex items-center gap-4 mb-8">
-               <span class="text-4xl font-black text-brand-900">
-                  {{ selectedVariant?.public_price ? selectedVariant.public_price + ' MAD' : 'Sur devis' }}
-               </span>
-               <span class="bg-gray-100 text-gray-500 px-3 py-1 rounded-full text-xs font-bold uppercase">HT</span>
+               <div class="flex flex-col">
+                  <span class="text-xs font-bold text-brand-600 uppercase tracking-tighter">Prix TTC</span>
+                  <span class="text-4xl font-black text-brand-900">
+                    {{ getDisplayPrice(selectedVariant) ? formatPrice(getDisplayPrice(selectedVariant)) : 'Sur devis' }}
+                  </span>
+               </div>
             </div>
           </div>
 
           <!-- Variants selection -->
-          <div v-if="product.variants.length > 1" class="mb-10">
+          <div v-if="product.variants.length > 1" class="mb-8">
             <h3 class="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">Choisir l'option :</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button 
                 v-for="v in product.variants" 
                 :key="v.id"
                 @click="selectedVariant = v"
-                class="flex flex-col items-start p-4 rounded-2xl border-2 transition-all text-left"
+                class="flex justify-between items-center p-4 rounded-2xl border-2 transition-all text-left"
                 :class="selectedVariant?.id === v.id ? 'border-brand-600 bg-brand-50 shadow-sm' : 'border-gray-200 bg-white hover:border-brand-300'"
               >
-                <span class="font-bold text-gray-900">{{ v.name_variation || 'Standard' }}</span>
-                <span class="text-xs text-gray-500">{{ v.public_price }} MAD</span>
+                <div class="flex flex-col">
+                  <span class="font-bold text-gray-900">{{ v.name_variation || 'Standard' }}</span>
+                </div>
+                <div class="text-right">
+                   <span class="text-sm font-black text-brand-700">{{ formatPrice(v.public_price) }}</span>
+                   <span class="text-[10px] block font-bold text-gray-300">TTC</span>
+                </div>
               </button>
             </div>
           </div>
 
-          <div class="prose prose-brand max-w-none text-gray-600 mb-10 leading-relaxed">
-            <div v-html="product.description"></div>
+          <!-- Quantity Selector -->
+          <div class="mb-10 p-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
+            <h3 class="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">Quantité :</h3>
+            <div class="flex items-center gap-6">
+              <div class="flex items-center border-2 border-gray-100 rounded-2xl overflow-hidden bg-gray-50">
+                <button @click="decrementQty" class="px-5 py-3 hover:bg-gray-200 transition-colors text-gray-600 font-bold text-xl">-</button>
+                <input type="number" v-model="quantity" class="w-16 text-center bg-transparent border-none focus:ring-0 font-bold text-lg" min="1" />
+                <button @click="incrementQty" class="px-5 py-3 hover:bg-gray-200 transition-colors text-gray-600 font-bold text-xl">+</button>
+              </div>
+              <p class="text-xs text-gray-400 font-medium">Prix total : <span class="text-brand-600 font-bold">{{ formatPrice(getDisplayPrice(selectedVariant) ? (getDisplayPrice(selectedVariant) * quantity) : 0) }}</span></p>
+            </div>
+          </div>
+
+          <div class="p-8 bg-gray-50 rounded-3xl mb-10 border border-gray-100">
+            <h3 class="text-xs font-black text-gray-900 uppercase tracking-widest mb-4 border-b border-gray-200 pb-2">Description du produit</h3>
+            <div class="prose prose-brand max-w-none text-gray-600 leading-relaxed text-sm">
+              <div v-html="product.description"></div>
+            </div>
           </div>
 
           <div class="mt-auto space-y-4">
@@ -203,6 +257,41 @@ onMounted(fetchProduct)
                </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Related Products -->
+      <div v-if="product && product.related && product.related.length > 0" class="mt-32">
+        <div class="flex items-center justify-between mb-12">
+          <div>
+            <h2 class="text-3xl font-black text-gray-900">Vous pourriez aussi aimer</h2>
+            <p class="text-gray-500 mt-2">Découvrez nos autres produits dans la catégorie <span class="text-brand-600 font-bold">{{ product.category }}</span></p>
+          </div>
+          <div class="h-px flex-1 bg-gray-100 mx-10 hidden sm:block"></div>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+           <router-link 
+             v-for="rel in product.related" 
+             :key="rel.id"
+             :to="{ name: 'product-detail', params: { slug: rel.slug } }"
+             class="group bg-white rounded-3xl p-6 border border-gray-100 hover:shadow-2xl hover:shadow-brand-100 transition-all duration-500"
+             @click="window.scrollTo(0,0)"
+           >
+             <div class="aspect-square rounded-2xl bg-gray-50 overflow-hidden mb-6 p-4">
+                <img :src="getImageUrl(rel.image_path)" :alt="rel.name" class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+             </div>
+             <h4 class="font-bold text-gray-900 group-hover:text-brand-600 transition-colors">{{ rel.name }}</h4>
+             <p class="text-xs text-gray-400 mt-2 uppercase font-bold">{{ rel.brand }}</p>
+             <div class="mt-4 flex items-center justify-between">
+                <span class="font-black text-brand-900">{{ rel.public_price ? formatPrice(rel.public_price) : 'Sur devis' }}</span>
+                <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-all">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+             </div>
+           </router-link>
         </div>
       </div>
     </div>

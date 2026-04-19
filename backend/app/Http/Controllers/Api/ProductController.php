@@ -159,6 +159,14 @@ class ProductController extends Controller
             return response()->json(['message' => 'Produit non trouvé : ' . $idOrSlug], 404);
         }
 
+        // Add related products (same category, excluding current)
+        $related = Product::where('category', $product->category)
+            ->where('id', '!=', $product->id)
+            ->limit(4)
+            ->get();
+            
+        $product->setAttribute('related', $related);
+
         return response()->json($product);
     }
 
