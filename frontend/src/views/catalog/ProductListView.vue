@@ -141,13 +141,13 @@ onMounted(() => {
             <table class="min-w-full divide-y divide-gray-300">
               <thead class="bg-gray-50 sticky top-0 z-20 outline outline-1 outline-gray-200">
                 <tr>
-                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Image</th>
-                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">Produit & Catégorie</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fournisseur & Marque</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Prix Achat</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Prix Public</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Variantes (SKU)</th>
-                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 sticky right-0 bg-gray-50 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)] z-30 w-24 outline outline-1 outline-gray-200">
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 w-20">Image</th>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 min-w-[250px]">Produit & Catégorie</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 min-w-[180px]">Fournisseur & Marque</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-32">Prix Achat</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-32">Prix Public</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 min-w-[200px]">Variantes (SKU)</th>
+                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 sticky right-0 bg-gray-50 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)] z-30 w-36 outline outline-1 outline-gray-200">
                     <span class="sr-only">Modifier</span>
                   </th>
                 </tr>
@@ -162,17 +162,17 @@ onMounted(() => {
                       </div>
                     </div>
                   </td>
-                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm">
+                  <td class="py-4 pl-4 pr-3 text-sm">
                     <div class="flex items-center gap-3">
-                        <button @click="toggleShowcase(product)" :class="product.is_showcase ? 'text-amber-400' : 'text-gray-300 hover:text-amber-400'" class="transition-colors focus:outline-none" :title="product.is_showcase ? 'Retirer de la vitrine' : 'Ajouter à la vitrine'">
+                        <button @click="toggleShowcase(product)" :class="product.is_showcase ? 'text-amber-400' : 'text-gray-300 hover:text-amber-400'" class="transition-colors focus:outline-none flex-shrink-0" :title="product.is_showcase ? 'Retirer de la vitrine' : 'Ajouter à la vitrine'">
                             <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                         </button>
-                        <div>
-                            <div class="font-bold text-gray-900 group-hover:text-brand-600 transition-colors">{{ product.name }}</div>
+                        <div class="min-w-0">
+                            <div class="font-bold text-gray-900 group-hover:text-brand-600 transition-colors truncate" :title="product.name">{{ product.name }}</div>
                             <div class="text-[10px] text-gray-400 mt-0.5 uppercase tracking-wider">{{ product.category }}</div>
                         </div>
                     </div>
-                    <div class="mt-1">
+                    <div class="mt-1 pl-9">
                         <span v-if="product.is_medical" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-red-50 text-red-700 border border-red-100">Médical CE</span>
                         <span v-else class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-50 text-gray-600 border border-gray-200">Standard</span>
                     </div>
@@ -219,11 +219,11 @@ onMounted(() => {
                     </div>
                   </td>
 
-                  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 sticky right-0 bg-white shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)] z-10">
-                    <div class="flex items-center justify-end gap-3">
-                        <router-link :to="{ name: 'catalog.edit', params: { id: product.id } }" class="text-brand-600 hover:text-brand-900 font-bold p-2 bg-brand-50 rounded-md hover:bg-brand-100 transition-colors">Modifier</router-link>
-                        <button @click="deleteProduct(product.id)" class="text-red-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-md" title="Supprimer le produit">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 sticky right-0 bg-white shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)] z-10 w-36">
+                    <div class="flex items-center justify-end gap-2">
+                        <router-link :to="{ name: 'catalog.edit', params: { id: product.id } }" class="text-brand-600 hover:text-brand-900 font-bold px-3 py-1.5 bg-brand-50 rounded-md hover:bg-brand-100 transition-colors text-xs">Modifier</router-link>
+                        <button @click="deleteProduct(product.id)" class="text-red-400 hover:text-red-600 transition-colors p-1.5 hover:bg-red-50 rounded-md" title="Supprimer le produit">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>
                   </td>
