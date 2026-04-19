@@ -309,7 +309,7 @@ class OrderController extends Controller
                 'payment_method' => $order->payment_method,
             ]);
 
-            // Sortie de stock
+            // Sortie de stock STRICTE Maya.
             $this->withdrawStock($order);
 
             // Archivage automatique du BL une fois facturé
@@ -322,7 +322,7 @@ class OrderController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Erreur lors de la validation. Maya.', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
@@ -378,7 +378,7 @@ class OrderController extends Controller
                 'payment_method' => $order->payment_method,
             ]);
 
-            // Sortie de stock
+            // Sortie de stock STRICTE Maya.
             $this->withdrawStock($order);
 
             // Archivage automatique du BL une fois facturé
@@ -391,7 +391,7 @@ class OrderController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Détail Erreur : ' . $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
@@ -659,45 +659,60 @@ class OrderController extends Controller
 
     /**
      * Marque les unités de stock liées à cette commande comme vendues.
+     * Maya: Ajout d'une vérification stricte de disponibilité.
      */
     private function withdrawStock(Order $order)
     {
         foreach ($order->lines as $line) {
+            $needed = $line->quantity;
+            $foundUnits = collect();
+
             if ($line->serial_numbers) {
                 $snArray = array_map('trim', explode(',', $line->serial_numbers));
-                \App\Models\StockUnit::whereIn('serial_number', $snArray)
+                $foundUnits = \App\Models\StockUnit::whereIn('serial_number', $snArray)
                     ->where('status', '!=', 'vendue')
-                    ->update(['status' => 'vendue']);
+                    ->get();
+                
+                if ($foundUnits->count() < count($snArray)) {
+                    $missing = count($snArray) - $foundUnits->count();
+                    throw new \Exception("Stock insuffisant : $missing unité(s) avec numéro de série pour " . ($line->variant?->product?->name ?? 'Produit') . " sont introuvables ou déjà vendues.");
+                }
+
+                \App\Models\StockUnit::whereIn('serial_number', $snArray)->update(['status' => 'vendue']);
+
             } elseif ($line->lot_number) {
-                // Si pas de SN précis, on prend la quantité dans le lot
-                $units = \App\Models\StockUnit::whereHas('lot', function($q) use ($line) {
+                $foundUnits = \App\Models\StockUnit::whereHas('lot', function($q) use ($line) {
                         $q->where('lot_number', $line->lot_number);
                     })
                     ->where('status', '!=', 'vendue')
-                    ->limit($line->quantity)
+                    ->limit($needed)
                     ->get();
                 
-                $snList = [];
-                foreach ($units as $unit) {
+                if ($foundUnits->count() < $needed) {
+                   throw new \Exception("Stock insuffisant dans le lot " . $line->lot_number . " pour " . ($line->variant?->product?->name ?? 'Produit') . ". Requis: $needed, Disponible: " . $foundUnits->count());
+                }
+
+                foreach ($foundUnits as $unit) {
                     $unit->update(['status' => 'vendue']);
-                    if ($unit->serial_number) $snList[] = $unit->serial_number;
                 }
-                if (!empty($snList)) {
-                    $line->update(['serial_numbers' => implode(', ', $snList)]);
-                }
+
             } else {
                 // S'il n'y a ni numéro de série ni lot, on retire du stock le plus ancien (FIFO)
-                $units = \App\Models\StockUnit::with('lot')->whereHas('lot', function($q) use ($line) {
+                $foundUnits = \App\Models\StockUnit::whereHas('lot', function($q) use ($line) {
                         $q->where('variant_id', $line->variant_id);
                     })
                     ->where('status', 'disponible')
                     ->orderBy('created_at', 'asc')
-                    ->limit($line->quantity)
+                    ->limit($needed)
                     ->get();
+
+                if ($foundUnits->count() < $needed) {
+                    throw new \Exception("Stock global insuffisant pour " . ($line->variant?->product?->name ?? 'Produit') . ". Requis: $needed, Disponible: " . $foundUnits->count());
+                }
 
                 $snList = [];
                 $lotNumber = null;
-                foreach ($units as $unit) {
+                foreach ($foundUnits as $unit) {
                     $unit->update(['status' => 'vendue']);
                     if ($unit->serial_number) $snList[] = $unit->serial_number;
                     if (!$lotNumber && $unit->lot) $lotNumber = $unit->lot->lot_number;
@@ -713,4 +728,5 @@ class OrderController extends Controller
             }
         }
     }
+}
 }

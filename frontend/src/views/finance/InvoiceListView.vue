@@ -176,9 +176,14 @@ const products = computed(() => {
 const productSearch = ref('')
 const showProductSearch = ref(false)
 const filteredCatalog = computed(() => {
-    if (!productSearch.value) return products.value.slice(0, 50)
+    if (!productSearch.value) return allVariants.value.slice(0, 50)
     const term = productSearch.value.toLowerCase()
-    return products.value.filter(p => p.name.toLowerCase().includes(term) || p.brand?.toLowerCase().includes(term)).slice(0, 50)
+    return allVariants.value.filter(v => 
+        v.product?.name.toLowerCase().includes(term) || 
+        v.product?.brand?.toLowerCase().includes(term) ||
+        v.name_variation?.toLowerCase().includes(term) ||
+        v.sku.toLowerCase().includes(term)
+    ).slice(0, 50)
 })
 
 const fetchCatalog = async () => {
@@ -214,13 +219,12 @@ const openEditModal = (invoice: any) => {
     showEditModal.value = true
 }
 
-const addSearchedProduct = (product: any) => {
-    const v = product.variants[0] // Prendre la premiere variante par defaut
-    const tva = v?.tva_rate || 20
-    const price = (v?.public_price || 0) / (1 + tva/100)
+const addSearchedProduct = (variant: any) => {
+    const tva = variant.tva_rate || 20
+    const price = (variant.public_price || 0) / (1 + tva/100)
     editForm.value.lines.push({
-        name: product.name + (v?.name_variation ? ' ' + v.name_variation : ''),
-        variant_id: v.id,
+        name: (variant.product?.name || 'Produit') + (variant.name_variation ? ' - ' + variant.name_variation : ''),
+        variant_id: variant.id,
         quantity: 1,
         unit_price: Number(price.toFixed(4)),
         discount_percent: 0,
@@ -430,12 +434,20 @@ onMounted(() => {
                 </div>
                 <!-- Dropdown Résultats -->
                 <div v-if="showProductSearch && filteredCatalog.length > 0" class="absolute z-[100] w-full mt-3 bg-white rounded-2xl shadow-2xl border border-gray-200 max-h-96 overflow-y-auto ring-1 ring-black ring-opacity-5">
-                    <div v-for="prod in filteredCatalog" :key="prod.id" @click="addSearchedProduct(prod)" class="flex items-center justify-between p-5 hover:bg-brand-50 cursor-pointer border-b last:border-0 transition-colors">
+                    <div v-for="variant in filteredCatalog" :key="variant.id" @click="addSearchedProduct(variant)" class="flex items-center justify-between p-5 hover:bg-brand-50 cursor-pointer border-b last:border-0 transition-colors">
                         <div>
-                            <div class="text-sm font-black text-gray-900 tracking-tight">{{ prod.name }}</div>
-                            <div class="text-[10px] text-gray-500 uppercase font-bold mt-0.5 tracking-wider">{{ prod.brand }} | Réf: {{ prod.reference }}</div>
+                            <div class="text-sm font-black text-gray-900 tracking-tight">
+                                {{ variant.product?.name }} 
+                                <span v-if="variant.name_variation" class="text-brand-600 ml-1">[{{ variant.name_variation }}]</span>
+                            </div>
+                            <div class="text-[10px] text-gray-500 uppercase font-bold mt-0.5 tracking-wider">
+                                {{ variant.product?.brand }} | Réf: {{ variant.sku }}
+                            </div>
                         </div>
-                        <div class="bg-brand-100 text-brand-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">+ Ajouter</div>
+                        <div class="flex flex-col items-end">
+                            <div class="bg-brand-100 text-brand-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">+ Sélectionner</div>
+                            <div v-if="variant.public_price" class="text-[10px] text-blue-500 font-bold mt-1">{{ variant.public_price.toFixed(2) }} MAD TTC</div>
+                        </div>
                     </div>
                 </div>
                 <!-- Overlay pour fermer le dropdown -->
