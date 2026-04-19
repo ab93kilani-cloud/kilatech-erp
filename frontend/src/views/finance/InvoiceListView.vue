@@ -166,13 +166,13 @@ const allVariants = ref<any[]>([])
 const productSearch = ref('')
 const showProductSearch = ref(false)
 const filteredCatalog = computed(() => {
-    if (!productSearch.value) return allVariants.value.slice(0, 50)
+    if (!productSearch.value) return (allVariants.value || []).slice(0, 50)
     const term = productSearch.value.toLowerCase()
-    return allVariants.value.filter(v => 
-        v.product?.name.toLowerCase().includes(term) || 
-        v.product?.brand?.toLowerCase().includes(term) ||
-        v.name_variation?.toLowerCase().includes(term) ||
-        v.sku.toLowerCase().includes(term)
+    return (allVariants.value || []).filter(v => 
+        (v.product?.name?.toLowerCase()?.includes(term)) || 
+        (v.product?.brand?.toLowerCase()?.includes(term)) ||
+        (v.name_variation?.toLowerCase()?.includes(term)) ||
+        (v.sku?.toLowerCase()?.includes(term))
     ).slice(0, 50)
 })
 
