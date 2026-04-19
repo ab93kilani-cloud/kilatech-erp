@@ -11,6 +11,11 @@ use App\Http\Controllers\Api\ContactController;
 |--------------------------------------------------------------------------
 |
 */
+
+// SEO V2 - Simplified for n8n (Publicly accessible but token-protected in controller)
+Route::get('seo-v2/products', [\App\Http\Controllers\Api\SeoController::class, 'indexV2']);
+Route::get('seo-v2/stats', [\App\Http\Controllers\Api\SeoController::class, 'statsV2']);
+Route::post('seo-v2/update/{id}', [\App\Http\Controllers\Api\SeoController::class, 'updateV2']);
 // Deployment trigger: Isolation of web requests from ERP quotes.
 
 // Public Routes (Products, Articles, Orders, Login) have been moved to web.php Maya.
@@ -59,11 +64,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('products/{id}', [\App\Http\Controllers\Api\SeoController::class, 'update']);
         Route::post('products/bulk', [\App\Http\Controllers\Api\SeoController::class, 'bulkUpdate']);
     });
-
-    // SEO V2 - Simplified for n8n (Query Token Support)
-    Route::get('seo-v2/products', [\App\Http\Controllers\Api\SeoController::class, 'indexV2']);
-    Route::get('seo-v2/stats', [\App\Http\Controllers\Api\SeoController::class, 'statsV2']);
-    Route::post('seo-v2/update/{id}', [\App\Http\Controllers\Api\SeoController::class, 'updateV2']);
 
     // Catalog & Suppliers
     Route::get('products/next-reference', [\App\Http\Controllers\Api\ProductController::class, 'getNextReference']);
