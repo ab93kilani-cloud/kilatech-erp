@@ -91,10 +91,10 @@ const fetchProduct = async () => {
                 }
             }
             
-            // SEO Update
+            // SEO Update (Prioritize Optimized AI Content)
             updateSEO({
-                title: product.value.meta_title || product.value.name,
-                description: product.value.meta_description || product.value.description?.substring(0, 160)
+                title: product.value.seo_title || product.value.meta_title || product.value.name,
+                description: product.value.seo_description || product.value.meta_description || product.value.description?.substring(0, 160)
             })
 
             // JSON-LD Structured Data

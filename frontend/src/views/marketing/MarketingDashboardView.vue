@@ -427,9 +427,10 @@ const saveMarketing = async () => {
           <thead class="bg-gray-50">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produit</th>
-              <th v-if="activeTab === 'seo'" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sante SEO</th>
-              <th v-if="activeTab === 'social'" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-sm">Sante Social</th>
-              <th v-if="activeTab === 'social'" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-sm">Reseaux Sociaux</th>
+              <th v-if="activeTab === 'seo'" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qualité SEO</th>
+              <th v-if="activeTab === 'seo'" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance GSC</th>
+              <th v-if="activeTab === 'social'" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-sm">Santé Social</th>
+              <th v-if="activeTab === 'social'" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-sm">Réseaux Sociaux</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider text-sm">Actions IA</th>
             </tr>
           </thead>
@@ -450,16 +451,23 @@ const saveMarketing = async () => {
               <td v-if="activeTab === 'seo'" class="px-6 py-4 whitespace-nowrap">
                 <div class="flex flex-col gap-1.5">
                     <div class="flex items-center justify-between gap-4">
-                        <span class="text-[10px] font-bold text-gray-400 uppercase">Qualite</span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase">Score Agent</span>
                         <span class="text-[10px] font-black" :class="{
-                            'text-emerald-600': calculateSeoScore(product).score > 80,
-                            'text-amber-600': calculateSeoScore(product).score <= 80 && calculateSeoScore(product).score > 50,
-                            'text-red-600': calculateSeoScore(product).score <= 50
+                            'text-emerald-600': (product.seo_score || 0) > 80,
+                            'text-amber-600': (product.seo_score || 0) <= 80 && (product.seo_score || 0) > 50,
+                            'text-red-600': (product.seo_score || 0) <= 50
                         }">
-                            {{ calculateSeoScore(product).score }}%
+                            {{ product.seo_score || 0 }}%
                         </span>
                     </div>
                 </div>
+              </td>
+              <td v-if="activeTab === 'seo'" class="px-6 py-4 whitespace-nowrap">
+                <div v-if="product.gsc_position" class="flex flex-col gap-1">
+                    <span class="text-[11px] font-black text-gray-700">Pos. {{ product.gsc_position }}</span>
+                    <span class="text-[9px] font-bold text-gray-400 uppercase">CTR: {{ product.gsc_ctr }}% | {{ product.gsc_impressions }} Imp.</span>
+                </div>
+                <div v-else class="text-[10px] text-gray-300 italic">Pas de données GSC</div>
               </td>
               <td v-if="activeTab === 'social'" class="px-6 py-4 whitespace-nowrap">
                 <div class="flex flex-col gap-1.5">

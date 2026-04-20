@@ -64,7 +64,10 @@ class SeoController extends Controller
             'seo_description' => 'nullable|string',
             'seo_content' => 'nullable|string',
             'seo_h1' => 'nullable|string|max:255',
-            'seo_priority' => 'nullable|in:high,medium,low'
+            'seo_priority' => 'nullable|in:high,medium,low',
+            'gsc_position' => 'nullable|numeric',
+            'gsc_ctr' => 'nullable|numeric',
+            'gsc_impressions' => 'nullable|integer',
         ]);
 
         // 1. Calculate Hash (SHA256)
