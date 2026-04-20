@@ -38,6 +38,10 @@ interface Product {
   description: string;
   meta_title: string;
   meta_description: string;
+  seo_title?: string;
+  seo_description?: string;
+  seo_score?: number;
+  seo_status?: string;
   image_path: string | null;
   images: string[];
   unit_name: string;
