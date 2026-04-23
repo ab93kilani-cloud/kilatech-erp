@@ -20,8 +20,9 @@ class SeoController extends Controller
     public function index(Request $request)
     {
         $query = Product::select([
-            'id', 'name', 'reference', 'seo_title', 'seo_status', 
-            'seo_score', 'seo_priority', 'last_seo_update'
+            'id', 'name', 'reference', 'seo_title', 'seo_description', 'seo_h1', 'seo_status', 
+            'seo_score', 'seo_priority', 'seo_audit', 'last_seo_update', 'slug', 'image_path', 'category',
+            'gsc_position', 'gsc_ctr', 'gsc_impressions'
         ]);
 
         if ($request->has('status')) {
@@ -240,8 +241,10 @@ class SeoController extends Controller
 
     public function updateV2(Request $request, $id)
     {
-        if ($request->input('api_token') !== 'KILATECH_7382') {
-            return response()->json(['error' => 'Unauthorized'], 401);
+        $token = $request->header('X-SEO-TOKEN') ?: $request->input('api_token');
+        
+        if ($token !== 'KILATECH_7382') {
+            return response()->json(['error' => 'Unauthorized - Invalid Token'], 401);
         }
         return $this->update($request, $id);
     }
