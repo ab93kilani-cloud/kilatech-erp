@@ -1,3 +1,18 @@
+# ============================================================
+# ModSecurity Bypass for n8n SEO Injection (POST with HTML content)
+# Without this, Hostinger WAF returns 403 on HTML in POST body
+# ============================================================
+<IfModule mod_security.c>
+    <LocationMatch "^/api/seo-v2/">
+        SecRuleEngine Off
+    </LocationMatch>
+</IfModule>
+<IfModule mod_security2.c>
+    <LocationMatch "^/api/seo-v2/">
+        SecRuleEngine Off
+    </LocationMatch>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
