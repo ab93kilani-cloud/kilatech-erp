@@ -84,12 +84,14 @@ const calculateSocialScore = (product: any) => {
   }
 }
 
+const calculateSeoScore = (product: any) => {
   // Prioritize Backend Agent Score if available
   if (product.seo_score !== undefined && product.seo_score !== null && product.seo_audit) {
+    const audit = typeof product.seo_audit === 'string' ? JSON.parse(product.seo_audit) : product.seo_audit;
     return {
       score: product.seo_score,
       health: product.seo_score > 80 ? 'Excellent' : (product.seo_score > 50 ? 'Améliorable' : 'Critique'),
-      checks: product.seo_audit.warnings?.map((w: string, i: number) => ({ id: 'warn_'+i, status: 'warning', label: 'Alerte Agent', advice: w })) || []
+      checks: audit.warnings?.map((w: string, i: number) => ({ id: 'warn_'+i, status: 'warning', label: 'Alerte Agent', advice: w })) || []
     }
   }
 
@@ -188,18 +190,17 @@ const deleteArticle = async (id: number) => {
 const fetchProducts = async () => {
   isLoading.value = true
   try {
-    // Use the SEO endpoint to get all SEO data (seo_score, seo_content, gsc_*, etc.)
     const res = await api.get('/seo/products', { params: { per_page: 200 } })
-    // SEO endpoint returns paginated data with .data wrapper
-    products.value = res.data.data || res.data
-  } catch (e) {
-    console.error('Failed to load SEO products, falling back to /products')
-    try {
-      const fallback = await api.get('/products')
-      products.value = fallback.data
-    } catch (e2) {
-      console.error('Fallback also failed')
+    // Secure extraction for paginated or direct array data
+    if (res.data && res.data.data) {
+        products.value = res.data.data
+    } else {
+        products.value = Array.isArray(res.data) ? res.data : []
     }
+  } catch (e) {
+    console.error('SEO fetch failed, using generic products')
+    const fallback = await api.get('/products')
+    products.value = Array.isArray(fallback.data) ? fallback.data : (fallback.data?.data || [])
   } finally {
     isLoading.value = false
   }
