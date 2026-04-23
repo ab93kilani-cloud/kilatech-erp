@@ -84,14 +84,22 @@ const calculateSocialScore = (product: any) => {
   }
 }
 
-const calculateSeoScore = (product: any) => {
+  // Prioritize Backend Agent Score if available
+  if (product.seo_score !== undefined && product.seo_score !== null && product.seo_audit) {
+    return {
+      score: product.seo_score,
+      health: product.seo_score > 80 ? 'Excellent' : (product.seo_score > 50 ? 'Améliorable' : 'Critique'),
+      checks: product.seo_audit.warnings?.map((w: string, i: number) => ({ id: 'warn_'+i, status: 'warning', label: 'Alerte Agent', advice: w })) || []
+    }
+  }
+
   const checks = []
   let score = 100
 
-  // Title Check
-  const title = product.meta_title || ''
+  // Title Check (Using seo_title or legacy meta_title)
+  const title = product.seo_title || product.meta_title || ''
   if (title.length === 0) {
-    checks.push({ id: 'title_missing', status: 'error', label: 'Titre Meta manquant', advice: 'Ajoutez un titre pour le référencement Google.' })
+    checks.push({ id: 'title_missing', status: 'error', label: 'Titre SEO manquant', advice: 'Ajoutez un titre pour le référencement Google.' })
     score -= 30
   } else if (title.length < 40) {
     checks.push({ id: 'title_short', status: 'warning', label: 'Titre trop court', advice: 'Visez entre 50 et 60 caractères pour plus de visibilité.' })
@@ -104,7 +112,7 @@ const calculateSeoScore = (product: any) => {
   }
 
   // Description Check
-  const desc = product.meta_description || ''
+  const desc = product.seo_description || product.meta_description || ''
   if (desc.length === 0) {
     checks.push({ id: 'desc_missing', status: 'error', label: 'Description manquante', advice: 'Indispensable pour encourager le clic sur Google-Maroc.' })
     score -= 30
@@ -180,10 +188,18 @@ const deleteArticle = async (id: number) => {
 const fetchProducts = async () => {
   isLoading.value = true
   try {
-    const res = await api.get('/products')
-    products.value = res.data
+    // Use the SEO endpoint to get all SEO data (seo_score, seo_content, gsc_*, etc.)
+    const res = await api.get('/seo/products', { params: { per_page: 200 } })
+    // SEO endpoint returns paginated data with .data wrapper
+    products.value = res.data.data || res.data
   } catch (e) {
-    console.error('Failed to load products')
+    console.error('Failed to load SEO products, falling back to /products')
+    try {
+      const fallback = await api.get('/products')
+      products.value = fallback.data
+    } catch (e2) {
+      console.error('Fallback also failed')
+    }
   } finally {
     isLoading.value = false
   }
@@ -275,7 +291,7 @@ onMounted(() => {
 
 const counts = computed(() => {
   const total = products.value.length
-  const optimized = products.value.filter(p => p.meta_title && p.meta_description).length
+  const optimized = products.value.filter(p => p.seo_status === 'optimized' || (p.seo_title && p.seo_description)).length
   const pending = total - optimized
   return { total, optimized, pending }
 })
@@ -679,8 +695,13 @@ const saveMarketing = async () => {
                             <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-bold">G</div>
                             <span class="text-xs text-gray-500">https://kilatech.ma > produit > {{ editForm.slug }}</span>
                         </div>
-                        <h5 class="text-xl text-blue-800 font-medium hover:underline cursor-pointer leading-tight">{{ editForm.meta_title }}</h5>
-                        <p class="text-sm text-gray-600 leading-relaxed">{{ editForm.meta_description }}</p>
+                        <h5 class="text-xl text-blue-800 font-medium hover:underline cursor-pointer leading-tight">{{ editForm.seo_title || editForm.meta_title }}</h5>
+                        <p class="text-sm text-gray-600 leading-relaxed">{{ editForm.seo_description || editForm.meta_description }}</p>
+                        
+                        <div v-if="editForm.seo_content" class="mt-6 pt-6 border-t border-gray-50">
+                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">Contenu Article SEO</span>
+                            <div class="prose prose-sm max-w-none text-gray-500 italic" v-html="editForm.seo_content.substring(0, 300) + '...'"></div>
+                        </div>
                     </div>
 
                     <!-- DIAGNOSTIC ADVICE -->
@@ -714,20 +735,28 @@ const saveMarketing = async () => {
                     <!-- SEO FORM -->
                     <div v-if="activeTab === 'seo'" class="space-y-6">
                         <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Meta Title</label>
-                            <input v-model="editForm.meta_title" :disabled="!isEditing" class="w-full bg-white border border-gray-100 rounded-xl p-4 text-sm font-bold focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:opacity-70 transition-all">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Titre H1 (Page)</label>
+                            <input v-model="editForm.seo_h1" :disabled="!isEditing" placeholder="Titre principal du produit" class="w-full bg-white border border-gray-100 rounded-xl p-4 text-sm font-bold focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:opacity-70 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Meta Title (Google Search)</label>
+                            <input v-model="editForm.seo_title" :disabled="!isEditing" class="w-full bg-white border border-gray-100 rounded-xl p-4 text-sm font-bold focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:opacity-70 transition-all">
                             <div class="flex justify-between mt-2 px-1">
                                 <span class="text-[10px] text-gray-400 italic">Ideal: 50-60 car.</span>
-                                <span class="text-[10px] font-bold" :class="editForm.meta_title?.length > 60 || editForm.meta_title?.length < 40 ? 'text-amber-500' : 'text-emerald-500'">{{ editForm.meta_title?.length || 0 }} car.</span>
+                                <span class="text-[10px] font-bold" :class="editForm.seo_title?.length > 60 || editForm.seo_title?.length < 40 ? 'text-amber-500' : 'text-emerald-500'">{{ editForm.seo_title?.length || 0 }} car.</span>
                             </div>
                         </div>
                         <div>
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Meta Description</label>
-                            <textarea v-model="editForm.meta_description" :disabled="!isEditing" rows="4" class="w-full bg-white border border-gray-100 rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:opacity-70 transition-all"></textarea>
+                            <textarea v-model="editForm.seo_description" :disabled="!isEditing" rows="3" class="w-full bg-white border border-gray-100 rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:opacity-70 transition-all"></textarea>
                             <div class="flex justify-between mt-2 px-1">
                                 <span class="text-[10px] text-gray-400 italic">Ideal: 120-160 car.</span>
-                                <span class="text-[10px] font-bold" :class="editForm.meta_description?.length > 160 || editForm.meta_description?.length < 100 ? 'text-amber-500' : 'text-emerald-500'">{{ editForm.meta_description?.length || 0 }} car.</span>
+                                <span class="text-[10px] font-bold" :class="editForm.seo_description?.length > 160 || editForm.seo_description?.length < 100 ? 'text-amber-500' : 'text-emerald-500'">{{ editForm.seo_description?.length || 0 }} car.</span>
                             </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Contenu SEO (Article Long)</label>
+                            <textarea v-model="editForm.seo_content" :disabled="!isEditing" rows="6" placeholder="Contenu structuré généré par n8n..." class="w-full bg-white border border-gray-100 rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:opacity-70 transition-all"></textarea>
                         </div>
                         <div>
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Context Geographique (Local SEO)</label>
