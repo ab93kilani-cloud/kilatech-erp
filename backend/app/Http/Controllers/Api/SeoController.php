@@ -246,6 +246,25 @@ class SeoController extends Controller
         if ($token !== 'KILATECH_7382') {
             return response()->json(['error' => 'Unauthorized - Invalid Token'], 401);
         }
+
+        // Decode base64-encoded seo_content to bypass ModSecurity WAF on Hostinger
+        // n8n sends HTML content encoded in base64 to avoid 403 on POST with HTML tags
+        if ($request->has('seo_content') && $this->isBase64($request->input('seo_content'))) {
+            $request->merge([
+                'seo_content' => base64_decode($request->input('seo_content'))
+            ]);
+        }
+
         return $this->update($request, $id);
+    }
+
+    /**
+     * Check if a string is valid base64 encoded.
+     */
+    private function isBase64(string $string): bool
+    {
+        if (empty($string)) return false;
+        $decoded = base64_decode($string, true);
+        return $decoded !== false && base64_encode($decoded) === $string;
     }
 }
