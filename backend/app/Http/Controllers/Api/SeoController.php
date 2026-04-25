@@ -261,6 +261,42 @@ class SeoController extends Controller
         return $this->update($request, $id);
     }
 
+    public function auditV2(Request $request, $id)
+    {
+        if ($request->input('api_token') !== 'KILATECH_7382') {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $product = Product::findOrFail($id);
+        
+        $data = [
+            'seo_title' => $product->seo_title,
+            'seo_description' => $product->seo_description,
+            'seo_content' => $product->seo_content,
+        ];
+
+        $auditResult = $this->calculateSeoScore($data);
+
+        $diagnostic = "RAPPORT D'AUDIT TECHNIQUE - PRODUIT ID: {$product->id}\n";
+        $diagnostic .= "--------------------------------------------------\n";
+        $diagnostic .= "NOMBRE DE MOTS : {$auditResult['word_count']}\n";
+        $diagnostic .= "SEO LOCAL (MAROC) : " . ($auditResult['local_seo'] ? 'OUI ✅' : 'NON ❌') . "\n";
+        $diagnostic .= "VILLES DÉTECTÉES : " . (empty($auditResult['detected_cities']) ? 'Aucune' : implode(', ', $auditResult['detected_cities'])) . "\n";
+        $diagnostic .= "STRUCTURE HTML (H2/H3) : " . ($auditResult['has_headings'] ? 'OUI ✅' : 'NON ❌') . "\n";
+        $diagnostic .= "SCORE SEO ACTUEL : {$auditResult['score']}/100\n";
+        
+        if (!empty($auditResult['warnings'])) {
+            $diagnostic .= "\nPOINTS À AMÉLIORER :\n- " . implode("\n- ", $auditResult['warnings']);
+        }
+
+        return response()->json([
+            'success' => true,
+            'product_id' => $product->id,
+            'audit' => $auditResult,
+            'text' => $diagnostic
+        ]);
+    }
+
     /**
      * Check if a string is valid base64 encoded.
      */

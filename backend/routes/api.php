@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\ContactController;
 Route::get('seo-v2/products', [\App\Http\Controllers\Api\SeoController::class, 'indexV2']);
 Route::get('seo-v2/stats', [\App\Http\Controllers\Api\SeoController::class, 'statsV2']);
 Route::post('seo-v2/update/{id}', [\App\Http\Controllers\Api\SeoController::class, 'updateV2']);
+Route::get('seo-v2/audit/{id}', [\App\Http\Controllers\Api\SeoController::class, 'auditV2']);
 // Deployment trigger: Isolation of web requests from ERP quotes.
 
 // Public Routes (Products, Articles, Orders, Login) have been moved to web.php Maya.
