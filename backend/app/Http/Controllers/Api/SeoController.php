@@ -21,7 +21,7 @@ class SeoController extends Controller
     {
         $query = Product::select([
             'id', 'name', 'reference', 'seo_title', 'seo_description', 'seo_h1', 'seo_status', 
-            'seo_score', 'seo_priority', 'seo_audit', 'last_seo_update', 'slug', 'image_path', 'category',
+            'seo_score', 'seo_priority', 'seo_audit', 'last_seo_update', 'slug', 'image_path', 'images', 'category',
             'gsc_position', 'gsc_ctr', 'gsc_impressions'
         ]);
 
@@ -33,7 +33,9 @@ class SeoController extends Controller
             $query->where('seo_priority', $request->priority);
         }
 
-        return response()->json($query->paginate($request->input('per_page', 50)));
+        $products = $query->paginate($request->input('per_page', 50));
+
+        return response()->json($products);
     }
 
     /**
@@ -62,6 +64,7 @@ class SeoController extends Controller
         
         $validated = $request->validate([
             'seo_title' => 'nullable|string|max:255',
+            'seo_alt' => 'nullable|string|max:255',
             'seo_description' => 'nullable|string',
             'seo_content' => 'nullable|string',
             'seo_h1' => 'nullable|string|max:255',

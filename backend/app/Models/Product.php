@@ -17,7 +17,7 @@ class Product extends Model
         'is_medical', 'cost_price', 
         'price_ht', 'tva_rate', 'public_price', 'unit_name', 'packaging_unit', 'sales_multiplier',
         'margin_percent', 'image_path', 'images', 'is_showcase',
-        'seo_title', 'seo_description', 'seo_content', 'seo_h1', 'seo_keywords',
+        'seo_title', 'seo_alt', 'seo_description', 'seo_content', 'seo_h1', 'seo_keywords',
         'seo_hash', 'seo_status', 'seo_priority', 'seo_score', 
         'seo_audit', 'gsc_position', 'gsc_ctr', 'gsc_impressions', 'last_seo_update'
     ];
@@ -35,6 +35,27 @@ class Product extends Model
         'last_seo_update' => 'datetime',
         'gsc_ctr' => 'decimal:2',
     ];
+
+    protected $appends = ['full_image_url', 'full_images_list'];
+
+    public function getFullImageUrlAttribute()
+    {
+        if (!$this->image_path) return null;
+        if (str_starts_with($this->image_path, 'http')) return $this->image_path;
+        return config('app.url') . '/storage/' . ltrim($this->image_path, '/');
+    }
+
+    public function getFullImagesListAttribute()
+    {
+        $list = [];
+        if ($this->images && is_array($this->images)) {
+            $baseUrl = config('app.url') . '/storage/';
+            foreach ($this->images as $img) {
+                $list[] = str_starts_with($img, 'http') ? $img : $baseUrl . ltrim($img, '/');
+            }
+        }
+        return $list;
+    }
 
     public function supplier()
     {
