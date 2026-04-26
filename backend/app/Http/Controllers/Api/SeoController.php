@@ -20,7 +20,7 @@ class SeoController extends Controller
     public function index(Request $request)
     {
         $query = Product::select([
-            'id', 'name', 'reference', 'seo_title', 'seo_description', 'seo_h1', 'seo_status', 
+            'id', 'name', 'reference', 'seo_title', 'seo_description', 'seo_content', 'seo_h1', 'seo_status', 
             'seo_score', 'seo_priority', 'seo_audit', 'last_seo_update', 'slug', 'image_path', 'images', 'category',
             'gsc_position', 'gsc_ctr', 'gsc_impressions'
         ]);
@@ -72,6 +72,9 @@ class SeoController extends Controller
             'gsc_position' => 'nullable|numeric',
             'gsc_ctr' => 'nullable|numeric',
             'gsc_impressions' => 'nullable|integer',
+            'social_linkedin_post' => 'nullable|string',
+            'social_facebook_post' => 'nullable|string',
+            'social_instagram_post' => 'nullable|string',
         ]);
 
         // 1. Calculate Hash (SHA256)
@@ -250,14 +253,7 @@ class SeoController extends Controller
             return response()->json(['error' => 'Unauthorized - Invalid Token'], 401);
         }
 
-        // Decode base64-encoded seo_content to bypass ModSecurity WAF on Hostinger
-        // n8n sends HTML content encoded in base64 to avoid 403 on POST with HTML tags
-        if ($request->has('seo_content') && $this->isBase64($request->input('seo_content'))) {
-            $request->merge([
-                'seo_content' => base64_decode($request->input('seo_content'))
-            ]);
-        }
-
+        // No more base64 needed, we send plain text from n8n now
         return $this->update($request, $id);
     }
 

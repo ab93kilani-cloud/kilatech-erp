@@ -40,6 +40,8 @@ interface Product {
   meta_description: string;
   seo_title?: string;
   seo_description?: string;
+  seo_content?: string;
+  seo_h1?: string;
   seo_score?: number;
   seo_status?: string;
   image_path: string | null;
@@ -185,7 +187,7 @@ onMounted(fetchProduct)
             </nav>
             
             <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight mb-4">
-              {{ product.name }}
+              {{ product.seo_h1 || product.name }}
             </h1>
             <p v-if="product.brand" class="text-brand-600 font-bold uppercase tracking-widest text-sm mb-4">Marque: {{ product.brand }}</p>
             
@@ -235,9 +237,12 @@ onMounted(fetchProduct)
           </div>
 
           <div class="p-8 bg-gray-50 rounded-3xl mb-10 border border-gray-100">
-            <h3 class="text-xs font-black text-gray-900 uppercase tracking-widest mb-4 border-b border-gray-200 pb-2">Description du produit</h3>
+            <h3 class="text-xs font-black text-gray-900 uppercase tracking-widest mb-4 border-b border-gray-200 pb-2">
+                {{ product.seo_content ? 'Expertise & Description' : 'Description du produit' }}
+            </h3>
             <div class="prose prose-brand max-w-none text-gray-600 leading-relaxed text-sm">
-              <div v-html="product.description"></div>
+              <div v-if="product.seo_content" v-html="product.seo_content"></div>
+              <div v-else v-html="product.description"></div>
             </div>
           </div>
 

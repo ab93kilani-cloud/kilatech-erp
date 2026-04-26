@@ -299,12 +299,22 @@ const counts = computed(() => {
 
 const selectedProduct = ref<any | null>(null)
 
-const openPreview = (product: any, socialTab = 'linkedin') => {
+const openPreview = async (product: any, socialTab = 'linkedin') => {
   selectedProduct.value = product
   editForm.value = { ...product }
   isEditing.value = false
   diagnostic.value = null
   activeSocialSubTab.value = socialTab
+  
+  // Fetch full product details to get seo_content if not in list
+  try {
+    const res = await api.get(`/products/${product.id}`)
+    selectedProduct.value = res.data
+    editForm.value = { ...res.data }
+  } catch (e) {
+    console.error('Failed to fetch full product details')
+  }
+  
   fetchDiagnostic(product.id)
 }
 
@@ -699,9 +709,11 @@ const saveMarketing = async () => {
                         <h5 class="text-xl text-blue-800 font-medium hover:underline cursor-pointer leading-tight">{{ editForm.seo_title || editForm.meta_title }}</h5>
                         <p class="text-sm text-gray-600 leading-relaxed">{{ editForm.seo_description || editForm.meta_description }}</p>
                         
-                        <div v-if="editForm.seo_content" class="mt-6 pt-6 border-t border-gray-50">
-                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">Contenu Article SEO</span>
-                            <div class="prose prose-sm max-w-none text-gray-500 italic" v-html="editForm.seo_content.substring(0, 300) + '...'"></div>
+                        <div v-if="editForm.seo_content" class="mt-6 pt-6 border-t border-gray-100">
+                            <span class="text-[10px] font-black text-brand-600 uppercase tracking-widest block mb-4 italic">Aperçu Réel de l'Article</span>
+                            <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-inner max-h-[500px] overflow-y-auto">
+                                <div class="prose prose-sm max-w-none preview-article" v-html="editForm.seo_content"></div>
+                            </div>
                         </div>
                     </div>
 
