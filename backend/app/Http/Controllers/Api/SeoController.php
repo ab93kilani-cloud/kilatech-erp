@@ -277,14 +277,24 @@ class SeoController extends Controller
 
         $auditResult = $this->calculateSeoScore($data);
 
-        $diagnostic = "RAPPORT D'AUDIT TECHNIQUE - PRODUIT ID: {$product->id}\n";
+        $productName = $product->name;
+        $kwInTitle = stripos($product->seo_title, $productName) !== false;
+        $kwInDesc = stripos($product->seo_description, $productName) !== false;
+
+        $diagnostic = "RAPPORT D'AUDIT TECHNIQUE - PRODUIT : " . strtoupper($productName) . " (ID: {$product->id})\n";
         $diagnostic .= "--------------------------------------------------\n";
         $diagnostic .= "NOMBRE DE MOTS : {$auditResult['word_count']}\n";
+        $diagnostic .= "MOT-CLÉ DANS LE TITRE : " . ($kwInTitle ? 'OUI ✅' : 'NON ❌') . "\n";
+        $diagnostic .= "MOT-CLÉ DANS LA DESCRIPTION : " . ($kwInDesc ? 'OUI ✅' : 'NON ❌') . "\n";
         $diagnostic .= "SEO LOCAL (MAROC) : " . ($auditResult['local_seo'] ? 'OUI ✅' : 'NON ❌') . "\n";
         $diagnostic .= "VILLES DÉTECTÉES : " . (empty($auditResult['detected_cities']) ? 'Aucune' : implode(', ', $auditResult['detected_cities'])) . "\n";
         $diagnostic .= "STRUCTURE HTML (H2/H3) : " . ($auditResult['has_headings'] ? 'OUI ✅' : 'NON ❌') . "\n";
         $diagnostic .= "SCORE SEO ACTUEL : {$auditResult['score']}/100\n";
         
+        if (!$kwInTitle || !$kwInDesc) {
+            $auditResult['warnings'][] = "Le mot-clé principal '{$productName}' est manquant dans le titre ou la description.";
+        }
+
         if (!empty($auditResult['warnings'])) {
             $diagnostic .= "\nPOINTS À AMÉLIORER :\n- " . implode("\n- ", $auditResult['warnings']);
         }

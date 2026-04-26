@@ -123,7 +123,7 @@ class DashboardController extends Controller
             'stock_alerts' => $lowStockCount + $expiringLotsCount,
             'pending_quotes' => Quote::whereIn('status', ['draft', 'pending_approval'])->count(),
             'qa_receptions' => ReceiptLine::where('status', 'pending_qa')->distinct('receipt_id')->count('receipt_id'),
-            'marketing_pending' => Article::where('status', 'draft')->count(),
+            'marketing_pending' => Article::where('status', 'draft')->count() + \App\Models\Product::whereIn('seo_status', ['pending', 'review'])->count(),
         ]);
     }
 }
