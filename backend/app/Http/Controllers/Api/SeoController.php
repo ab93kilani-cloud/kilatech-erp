@@ -302,6 +302,7 @@ class SeoController extends Controller
         return response()->json([
             'success' => true,
             'product_id' => $product->id,
+            'product' => $product,
             'audit' => $auditResult,
             'text' => $diagnostic
         ]);
