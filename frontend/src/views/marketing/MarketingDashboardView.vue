@@ -158,6 +158,19 @@ const calculateSeoScore = (product: any) => {
   }
 }
 
+const cleanedSeoContent = computed(() => {
+  let content = editForm.value.seo_content || ''
+  if (!content) return ''
+
+  // 1. Fix Image URLs (redirect to storage proxy because of missing symbolic link)
+  content = content.replace(/https:\/\/app\.kilatech\.ma\/storage\//g, 'https://app.kilatech.ma/api/storage_proxy.php?path=')
+  
+  // 2. Fix SEO Hierarchy: h1 -> h2 (since the page already has an H1)
+  content = content.replace(/<h1/g, '<h2').replace(/<\/h1>/g, '</h2>')
+
+  return content
+})
+
 const currentDiagnostic = computed(() => {
   if (isEditing.value) {
     return activeTab.value === 'seo' ? calculateSeoScore(editForm.value) : calculateSocialScore(editForm.value)
@@ -712,7 +725,7 @@ const saveMarketing = async () => {
                         <div v-if="editForm.seo_content" class="mt-6 pt-6 border-t border-gray-100">
                             <span class="text-[10px] font-black text-brand-600 uppercase tracking-widest block mb-4 italic">Aperçu Réel de l'Article</span>
                             <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-inner max-h-[500px] overflow-y-auto">
-                                <div class="prose prose-sm max-w-none preview-article" v-html="editForm.seo_content"></div>
+                                <div class="prose prose-sm max-w-none preview-article" v-html="cleanedSeoContent"></div>
                             </div>
                         </div>
                     </div>
