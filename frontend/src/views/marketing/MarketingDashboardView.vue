@@ -832,6 +832,29 @@ const saveMarketing = async () => {
     @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all;
 }
 
+/* Styles pour l'aperçu SEO (car Tailwind Typography n'est pas installé) */
+.preview-article :deep(h2) {
+    @apply text-2xl font-bold text-gray-900 mt-8 mb-4 leading-tight;
+}
+.preview-article :deep(h3) {
+    @apply text-xl font-semibold text-gray-800 mt-6 mb-3 leading-snug;
+}
+.preview-article :deep(p) {
+    @apply text-base text-gray-600 mb-4 leading-relaxed;
+}
+.preview-article :deep(ul) {
+    @apply list-disc list-inside mb-4 space-y-2 text-gray-600;
+}
+.preview-article :deep(ol) {
+    @apply list-decimal list-inside mb-4 space-y-2 text-gray-600;
+}
+.preview-article :deep(img) {
+    @apply rounded-xl my-6 w-full max-h-[400px] object-contain bg-gray-50 border border-gray-100;
+}
+.preview-article :deep(a) {
+    @apply text-brand-600 hover:text-brand-700 underline font-medium;
+}
+
 @keyframes fade-in {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
