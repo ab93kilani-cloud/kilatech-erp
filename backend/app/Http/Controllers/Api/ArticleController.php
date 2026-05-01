@@ -66,6 +66,18 @@ class ArticleController extends Controller
         return response()->json($article, 201);
     }
 
+    /**
+     * V2 Method for n8n automated posting.
+     */
+    public function storeV2(Request $request)
+    {
+        if ($request->input('api_token') !== 'KILA-SEO-PROD-2026-X9') {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        return $this->store($request);
+    }
+
     public function show(Article $article)
     {
         return $article->load('product');
