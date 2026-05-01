@@ -305,9 +305,10 @@ onMounted(() => {
 
 const counts = computed(() => {
   const total = products.value.length
-  const optimized = products.value.filter(p => p.seo_status === 'optimized' || (p.seo_title && p.seo_description)).length
+  const optimized = products.value.filter(p => p.seo_status === 'optimized' || (p.seo_score > 50)).length
+  const elite = products.value.filter(p => p.seo_score >= 90).length
   const pending = total - optimized
-  return { total, optimized, pending }
+  return { total, optimized, elite, pending }
 })
 
 const selectedProduct = ref<any | null>(null)
@@ -378,14 +379,17 @@ const saveMarketing = async () => {
         </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div class="text-sm font-medium text-gray-500 mb-1 text-uppercase tracking-wider">Catalogue Total</div>
-        <div class="text-3xl font-bold text-gray-900">{{ counts.total }} produits</div>
+        <div class="text-3xl font-bold text-gray-900">{{ counts.total }}</div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-brand-100 bg-brand-50/10">
+        <div class="text-sm font-medium text-brand-600 mb-1 text-uppercase tracking-wider">⭐ SEO ÉLITE (90%+)</div>
+        <div class="text-3xl font-bold text-brand-600">{{ counts.elite }}</div>
       </div>
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <div class="text-sm font-medium text-emerald-600 mb-1 text-uppercase tracking-wider">Optimisés (SEO)</div>
+        <div class="text-sm font-medium text-emerald-600 mb-1 text-uppercase tracking-wider">Optimisés (>50%)</div>
         <div class="text-3xl font-bold text-emerald-600">{{ counts.optimized }}</div>
       </div>
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -491,14 +495,17 @@ const saveMarketing = async () => {
               <td v-if="activeTab === 'seo'" class="px-6 py-4 whitespace-nowrap">
                 <div class="flex flex-col gap-1.5">
                     <div class="flex items-center justify-between gap-4">
-                        <span class="text-[10px] font-bold text-gray-400 uppercase">Score Agent</span>
-                        <span class="text-[10px] font-black" :class="{
-                            'text-emerald-600': (product.seo_score || 0) > 80,
-                            'text-amber-600': (product.seo_score || 0) <= 80 && (product.seo_score || 0) > 50,
-                            'text-red-600': (product.seo_score || 0) <= 50
-                        }">
-                            {{ product.seo_score || 0 }}%
-                        </span>
+                        <span class="text-[10px] font-black text-gray-400 uppercase">Score Agent</span>
+                        <div class="flex items-center gap-1">
+                            <span v-if="(product.seo_score || 0) >= 90" class="text-[10px] bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded font-black">ELITE</span>
+                            <span class="text-[10px] font-black" :class="{
+                                'text-emerald-600': (product.seo_score || 0) > 80,
+                                'text-amber-600': (product.seo_score || 0) <= 80 && (product.seo_score || 0) > 50,
+                                'text-red-600': (product.seo_score || 0) <= 50
+                            }">
+                                {{ product.seo_score || 0 }}%
+                            </span>
+                        </div>
                     </div>
                 </div>
               </td>
