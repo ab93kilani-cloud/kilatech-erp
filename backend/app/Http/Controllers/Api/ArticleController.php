@@ -107,13 +107,23 @@ class ArticleController extends Controller
             }
         }
 
-        // Sécurité par défaut si pas de produit trouvé
+        // SÉCURITÉ : Si aucun produit n'est trouvé, on prend le tout premier de la base
         if (!isset($articleData['product_id'])) {
-            $articleData['product_id'] = 1;
+            $firstProduct = \App\Models\Product::orderBy('id', 'asc')->first();
+            $articleData['product_id'] = $firstProduct ? $firstProduct->id : null;
         }
 
-        $article = \App\Models\Article::create($articleData);
-        return response()->json($article);
+        // Création de l'article avec gestion d'erreur
+        try {
+            $article = \App\Models\Article::create($articleData);
+            return response()->json($article);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Erreur lors de la création de l\'article',
+                'details' => $e->getMessage(),
+                'received_data' => $articleData
+            ], 500);
+        }
     }
 
     public function show(Article $article)
