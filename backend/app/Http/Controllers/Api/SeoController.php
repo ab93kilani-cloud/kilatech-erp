@@ -231,7 +231,7 @@ class SeoController extends Controller
      */
     public function indexV2(Request $request)
     {
-        if ($request->input('api_token') !== 'KILATECH_7382') {
+        if ($request->input('api_token') !== 'KILA-SEO-PROD-2026-X9') {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         return $this->index($request);
@@ -239,7 +239,7 @@ class SeoController extends Controller
 
     public function statsV2(Request $request)
     {
-        if ($request->input('api_token') !== 'KILATECH_7382') {
+        if ($request->input('api_token') !== 'KILA-SEO-PROD-2026-X9') {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         return $this->stats();
@@ -249,7 +249,7 @@ class SeoController extends Controller
     {
         $token = $request->header('X-SEO-TOKEN') ?: $request->input('api_token');
         
-        if ($token !== 'KILATECH_7382') {
+        if ($token !== 'KILA-SEO-PROD-2026-X9') {
             return response()->json(['error' => 'Unauthorized - Invalid Token'], 401);
         }
 
@@ -259,7 +259,7 @@ class SeoController extends Controller
 
     public function auditV2(Request $request, $id)
     {
-        if ($request->input('api_token') !== 'KILATECH_7382') {
+        if ($request->input('api_token') !== 'KILA-SEO-PROD-2026-X9') {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 

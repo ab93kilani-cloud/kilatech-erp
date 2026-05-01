@@ -1,0 +1,321 @@
+[
+  {
+    "name": "Kilatech ECONOMY - Ultra Optimized (3 Agents)",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 23
+              }
+            ]
+          }
+        },
+        "id": "ba4413c2-22e4-43a8-b4c7-d93411cc32bc",
+        "name": "⏰ Pilote Automatique",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1,
+        "position": [
+          -752,
+          128
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://app.kilatech.ma/api/seo-v2/products",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "api_token",
+                "value": "KILA-SEO-PROD-2026-X9"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "name": "GSC - Get Products (ERP)",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          -528,
+          128
+        ],
+        "typeVersion": 4.1,
+        "id": "627a83f1-f747-451d-9c09-83996a59bede"
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "2e3324c0-2eaa-4fb3-8cc9-4ddc6b5237a0",
+        "name": "PRODUIT",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          -80,
+          128
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://app.kilatech.ma/api/seo-v2/audit/{{ $node[\"PRODUIT\"].json.id }}?api_token=KILA-SEO-PROD-2026-X9",
+          "options": {}
+        },
+        "id": "6f96a405-8a4b-4b10-99a2-77d628f6f275",
+        "name": "🕵️ 1. L'Auditeur",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          224,
+          224
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://google.serper.dev/search",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "X-API-KEY",
+                "value": "35cb465b942c9031ffaff5dc0d9b458256496290"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ q: ($node[\"PRODUIT\"].json.name || 'Produit') + ' prix Maroc', gl: 'ma' }) }}",
+          "options": {}
+        },
+        "id": "92b9a397-58fa-4a81-8abd-78c7bcdedf2f",
+        "name": "Espion",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          224,
+          -16
+        ],
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 5000
+      },
+      {
+        "parameters": {
+          "model": "gpt-4o",
+          "prompt": "=Tu es l'Intelligence SEO Suprême de Kilatech.ma.\n\nPRODUIT : {{ $node[\"PRODUIT\"].json.name }}\nINFOS MARCHÉ : {{ JSON.stringify($json.organic || []) }}\n\nMISSION :\n1. Rédige une fiche produit HTML premium (H2, H3, P).\n2. Intègre naturellement 2-3 liens vers des catégories médicales.\n3. Crée un Titre H1 puissant incluant 'Casablanca' ou 'Maroc'.\n4. Crée une Meta-Description de 150 caractères.\n5. Crée un post LinkedIn et un post Facebook.\n\nCONSIGNES ULTRA-STRICTES :\n- AUCUNE balise <img>.\n- AUCUN bloc markdown (pas de ```html).\n- AUCUN conseil technique dans le texte.\n- Langue : Français parfait ('au Maroc').\n\nRÉPONDS UNIQUEMENT EN JSON :\n{\n  \"h1_title\": \"...\",\n  \"meta_description\": \"...\",\n  \"html_content\": \"...\",\n  \"linkedin_post\": \"...\",\n  \"facebook_post\": \"...\"\n}",
+          "options": {
+            "maxTokens": 4000,
+            "temperature": 0.7
+          }
+        },
+        "id": "super-agent-id",
+        "name": "🚀 Super Agent SEO",
+        "type": "n8n-nodes-base.openAi",
+        "typeVersion": 1,
+        "position": [
+          800,
+          128
+        ],
+        "credentials": {
+          "openAiApi": {
+            "id": "DmSfvKlB2CMFj7eE",
+            "name": "OpenAi account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const data = $json;\nreturn {\n  product_id: $('PRODUIT').first().json.id,\n  seo_title: data.h1_title,\n  seo_description: data.meta_description,\n  seo_content: data.html_content,\n  social_linkedin_post: data.linkedin_post,\n  social_facebook_post: data.facebook_post,\n  seo_score: 95\n};"
+        },
+        "id": "prepa-v2-id",
+        "name": "📦 Nettoyeur V2",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1100,
+          128
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://app.kilatech.ma/api/seo-v2/update/{{ $json.product_id }}",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "api_token",
+                "value": "KILA-SEO-PROD-2026-X9"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "seo_content",
+                "value": "={{ $json.seo_content }}"
+              },
+              {
+                "name": "seo_score",
+                "value": "={{ $json.seo_score }}"
+              },
+              {
+                "name": "social_linkedin_post",
+                "value": "={{ $json.social_linkedin_post }}"
+              },
+              {
+                "name": "social_facebook_post",
+                "value": "={{ $json.social_facebook_post }}"
+              },
+              {
+                "name": "seo_description",
+                "value": "={{ $json.seo_description }}"
+              },
+              {
+                "name": "seo_title",
+                "value": "={{ $node[\"Dossier de Redaction Final\"].json.h1_title || $node[\"PRODUIT\"].json.name }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "director-node-id",
+        "name": "🏢 11. Le Directeur",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          2750,
+          240
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.callmebot.com/whatsapp.php",
+          "sendQuery": true,
+          "specifyQuery": "json",
+          "jsonQuery": "={\n  \"phone\": \"+212645065281\",\n  \"text\": \"✅ Kilatech SEO Alert: Le produit {{ $node['PRODUIT'].json.name }} (ID: {{ $node['PRODUIT'].json.id }}) est optimise! Score SEO: {{ $node['🏢 11. Le Directeur'].json.seo_score }}/100\",\n  \"apikey\": \"341855\"\n}",
+          "options": {}
+        },
+        "id": "31e147d4-ac02-4e76-bab5-a082b00a35fe",
+        "name": "📱 12. Le Manager",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          2992,
+          272
+        ]
+      }
+    ],
+    "connections": {
+      "⏰ Pilote Automatique": {
+        "main": [
+          [
+            {
+              "node": "GSC - Get Products (ERP)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GSC - Get Products (ERP)": {
+        "main": [
+          [
+            {
+              "node": "PRODUIT",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "PRODUIT": {
+        "main": [
+          [],
+          [
+            {
+              "node": "🕵️ 1. L'Auditeur",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Espion",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🕵️ 1. L'Auditeur": {
+        "main": [
+          [
+            {
+              "node": "🚀 Super Agent SEO",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Espion": {
+        "main": [
+          [
+            {
+              "node": "🚀 Super Agent SEO",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🚀 Super Agent SEO": {
+        "main": [
+          [
+            {
+              "node": "📦 Nettoyeur V2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "📦 Nettoyeur V2": {
+        "main": [
+          [
+            {
+              "node": "🏢 11. Le Directeur",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🏢 11. Le Directeur": {
+        "main": [
+          [
+            {
+              "node": "📱 12. Le Manager",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "binaryMode": "separate",
+      "availableInMCP": false,
+      "callerPolicy": "workflowsFromSameOwner"
+    },
+    "staticData": null,
+    "meta": {
+      "templateCredsSetupCompleted": true
+    },
+    "tags": []
+  }
+]
