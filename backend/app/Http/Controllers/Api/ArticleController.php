@@ -97,7 +97,7 @@ class ArticleController extends Controller
             'meta_title' => $request->input('meta_title'),
             'meta_description' => $request->input('meta_description'),
             'image' => $request->input('image'),
-            'seo_alt' => $request->input('seo_alt'),
+            // 'seo_alt' => $request->input('seo_alt'), // Désactivé car la colonne n'existe pas encore
         ];
         // Liaison produit via référence
         if ($reference) {
