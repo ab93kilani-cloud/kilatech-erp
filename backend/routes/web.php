@@ -48,3 +48,9 @@ Route::get('/api/api/products/{id}', [\App\Http\Controllers\Api\ProductControlle
 // SEO V2 - Elite products for n8n
 Route::get('/seo-v2/elite-products', [\App\Http\Controllers\Api\SeoController::class, 'eliteProductsV2']);
 Route::get('/api/seo-v2/elite-products', [\App\Http\Controllers\Api\SeoController::class, 'eliteProductsV2']);
+
+// Public Articles (Blog)
+Route::get('/api/public/articles', [\App\Http\Controllers\Api\ArticleController::class, 'publicList']);
+Route::get('/api/api/public/articles', [\App\Http\Controllers\Api\ArticleController::class, 'publicList']);
+Route::get('/api/public/articles/{slug}', [\App\Http\Controllers\Api\ArticleController::class, 'publicShow']);
+Route::get('/api/api/public/articles/{slug}', [\App\Http\Controllers\Api\ArticleController::class, 'publicShow']);
