@@ -19,7 +19,6 @@ class Article extends Model
         'category',
         'meta_title',
         'meta_description',
-        'seo_alt',
     ];
 
     public function product()

@@ -16,7 +16,7 @@ class ArticleController extends Controller
         $query = Article::where('status', 'published')->with('product');
         
         if ($request->has('category')) {
-            $query->where('category', $request->category);
+            $query->whereRaw('LOWER(category) = ?', [strtolower($request->category)]);
         }
 
         return $query->orderBy('created_at', 'desc')->get();
@@ -93,11 +93,10 @@ class ArticleController extends Controller
             'slug' => \Illuminate\Support\Str::slug($title) . '-' . time(), // Slug unique avec timestamp
             'content' => $request->input('html_content') ?: $request->input('content'),
             'status' => 'published',
-            'category' => $request->input('category') ?: 'blog',
+            'category' => strtolower($request->input('category') ?: 'blog'),
             'meta_title' => $request->input('meta_title'),
             'meta_description' => $request->input('meta_description'),
             'image' => $request->input('image'),
-            // 'seo_alt' => $request->input('seo_alt'), // Désactivé car la colonne n'existe pas encore
         ];
         // Liaison produit via référence
         if ($reference) {
