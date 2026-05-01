@@ -385,7 +385,7 @@ const saveMarketing = async () => {
         <div class="text-3xl font-bold text-gray-900">{{ counts.total }}</div>
       </div>
       <div class="bg-white p-6 rounded-xl shadow-sm border border-brand-100 bg-brand-50/10">
-        <div class="text-sm font-medium text-brand-600 mb-1 text-uppercase tracking-wider">⭐ SEO ÉLITE (90%+)</div>
+        <div class="text-sm font-medium text-brand-600 mb-1 uppercase tracking-wider">SEO ELITE (90%+)</div>
         <div class="text-3xl font-bold text-brand-600">{{ counts.elite }}</div>
       </div>
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
