@@ -90,8 +90,9 @@ class ArticleController extends Controller
         
         $articleData = [
             'title' => $title,
+            'slug' => \Illuminate\Support\Str::slug($title) . '-' . time(), // Slug unique avec timestamp
             'content' => $request->input('html_content') ?: $request->input('content'),
-            'status' => 'published', // On force la publication immédiate
+            'status' => 'published',
             'category' => $request->input('category') ?: 'blog',
             'meta_title' => $request->input('meta_title'),
             'meta_description' => $request->input('meta_description'),
