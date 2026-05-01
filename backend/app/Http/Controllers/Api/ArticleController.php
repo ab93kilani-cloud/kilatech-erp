@@ -13,13 +13,7 @@ class ArticleController extends Controller
 {
     public function publicList(Request $request)
     {
-        $query = Article::where('status', 'published')->with('product');
-        
-        if ($request->has('category')) {
-            $query->whereRaw('LOWER(category) = ?', [strtolower($request->category)]);
-        }
-
-        return $query->orderBy('created_at', 'desc')->get();
+        return Article::where('status', 'published')->orderBy('created_at', 'desc')->get();
     }
 
     public function publicShow($slug)
