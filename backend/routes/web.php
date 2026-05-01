@@ -44,3 +44,7 @@ Route::get('/api/products', [\App\Http\Controllers\Api\ProductController::class,
 Route::get('/api/api/products', [\App\Http\Controllers\Api\ProductController::class, 'index']); // Maya: Double prefix fix for Hostinger index.
 Route::get('/api/products/{id}', [\App\Http\Controllers\Api\ProductController::class, 'show']); // Use {id} instead of {product} to avoid implicit binding issues if needed.
 Route::get('/api/api/products/{id}', [\App\Http\Controllers\Api\ProductController::class, 'show']); // Maya: Double prefix fix for Hostinger show.
+
+// SEO V2 - Elite products for n8n
+Route::get('/seo-v2/elite-products', [\App\Http\Controllers\Api\SeoController::class, 'eliteProductsV2']);
+Route::get('/api/seo-v2/elite-products', [\App\Http\Controllers\Api\SeoController::class, 'eliteProductsV2']);

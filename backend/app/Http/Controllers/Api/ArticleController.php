@@ -57,6 +57,7 @@ class ArticleController extends Controller
             'image' => 'nullable|string',
             'meta_title' => 'nullable|string',
             'meta_description' => 'nullable|string',
+            'seo_alt' => 'nullable|string',
             'category' => 'sometimes|required|in:blog,news',
         ]);
 
@@ -71,11 +72,47 @@ class ArticleController extends Controller
      */
     public function storeV2(Request $request)
     {
+        // 1. PRIORITÉ ABSOLUE : Si c'est une demande de produits Elite, on répond tout de suite
+        if ($request->input('action') === 'get_elite') {
+            return $this->eliteProducts();
+        }
+
+        // 2. Sinon, on vérifie le token pour la publication
         if ($request->input('api_token') !== 'KILA-SEO-PROD-2026-X9') {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        return $this->store($request);
+        // 3. SOLUTION PARFAITE : Liaison par Référence
+        $reference = $request->input('product_reference');
+        
+        // Nettoyage automatique du titre (enlève les '=' de n8n)
+        $title = ltrim($request->input('h1_title') ?: $request->input('title'), '= ');
+        
+        $articleData = [
+            'title' => $title,
+            'content' => $request->input('html_content') ?: $request->input('content'),
+            'status' => 'published', // On force la publication immédiate
+            'category' => $request->input('category') ?: 'blog',
+            'meta_title' => $request->input('meta_title'),
+            'meta_description' => $request->input('meta_description'),
+            'image' => $request->input('image'),
+            'seo_alt' => $request->input('seo_alt'),
+        ];
+        // Liaison produit via référence
+        if ($reference) {
+            $product = \App\Models\Product::where('reference', $reference)->first();
+            if ($product) {
+                $articleData['product_id'] = $product->id;
+            }
+        }
+
+        // Sécurité par défaut si pas de produit trouvé
+        if (!isset($articleData['product_id'])) {
+            $articleData['product_id'] = 1;
+        }
+
+        $article = \App\Models\Article::create($articleData);
+        return response()->json($article);
     }
 
     public function show(Article $article)
@@ -138,5 +175,15 @@ class ArticleController extends Controller
         $articleData = $marketingAi->generateNewsArticle($request->notes);
 
         return response()->json($articleData);
+    }
+
+    public function eliteProducts()
+    {
+        $products = \App\Models\Product::where('status', 'active')
+            ->orderBy('id', 'desc')
+            ->limit(5)
+            ->get(['id', 'name', 'slug', 'reference']);
+
+        return response()->json($products);
     }
 }

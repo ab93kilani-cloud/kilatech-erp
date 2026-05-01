@@ -15,6 +15,22 @@ use App\Models\User;
 class SeoController extends Controller
 {
     /**
+     * Get a list of Elite products for n8n internal linking.
+     */
+    public function eliteProductsV2()
+    {
+        $products = \App\Models\Product::whereNotNull('seo_score')
+            ->orderBy('seo_score', 'desc')
+            ->limit(10)
+            ->get(['id', 'name', 'slug', 'reference', 'seo_score']);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $products
+        ]);
+    }
+
+    /**
      * Get products list with SEO metadata.
      */
     public function index(Request $request)

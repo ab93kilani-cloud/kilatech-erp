@@ -18,6 +18,8 @@ Route::get('seo-v2/stats', [\App\Http\Controllers\Api\SeoController::class, 'sta
 Route::post('seo-v2/update/{id}', [\App\Http\Controllers\Api\SeoController::class, 'updateV2']);
 Route::get('seo-v2/audit/{id}', [\App\Http\Controllers\Api\SeoController::class, 'auditV2']);
 Route::post('seo-v2/articles', [\App\Http\Controllers\Api\ArticleController::class, 'storeV2']);
+Route::get('seo-v2/elite-products', [\App\Http\Controllers\Api\SeoController::class, 'eliteProductsV2']);
+Route::get('seo-debug', function() { return "OK"; });
 // Deployment trigger: Isolation of web requests from ERP quotes.
 
 // Public Routes (Products, Articles, Orders, Login) have been moved to web.php Maya.
