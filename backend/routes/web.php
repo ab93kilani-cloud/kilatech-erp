@@ -18,25 +18,21 @@ Route::get('/robots.txt', function () {
     return response("User-agent: *\nAllow: /\nSitemap: https://kilatech.ma/sitemap.xml", 200)->header('Content-Type', 'text/plain');
 });
 
-// Forced Cache Clear for Hostinger Stability
-Route::get('/api/clear-cache-final', function() {
-    \Illuminate\Support\Facades\Artisan::call('cache:clear');
-    \Illuminate\Support\Facades\Artisan::call('route:clear');
-    return response()->json(['status' => 'Cache Cleared']);
-});
-
-// Public Blog Articles - Direct Logic (Bypassing Controller for Hostinger Stability)
+// Public Blog Articles - Direct Logic (Bypassing Controller and Auth for Hostinger)
 Route::get('/api/public/articles', function(\Illuminate\Http\Request $request) {
-    $query = \App\Models\Article::where('status', 'published');
-    if ($request->has('category')) {
-        $query->where('category', $request->category);
-    }
-    return $query->orderBy('created_at', 'desc')->get();
-});
+    return \App\Models\Article::where('status', 'published')
+        ->when($request->category, function($q, $cat) {
+            return $q->where('category', $cat);
+        })
+        ->orderBy('created_at', 'desc')
+        ->get();
+})->middleware([]);
 
 Route::get('/api/public/articles/{slug}', function($slug) {
-    return \App\Models\Article::where('slug', $slug)->where('status', 'published')->firstOrFail();
-});
+    return \App\Models\Article::where('slug', $slug)
+        ->where('status', 'published')
+        ->firstOrFail();
+})->middleware([]);
 
 Route::get('/', function () {
     return view('welcome');
