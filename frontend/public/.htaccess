@@ -6,6 +6,8 @@
   RewriteRule ^(api|storage) - [L]
   
   # Forward /public routes to the API index
+  RewriteRule ^sitemap\.xml$ api/index.php [QSA,L]
+  RewriteRule ^robots\.txt$ api/index.php [QSA,L]
   RewriteRule ^public/(.*)$ api/index.php [QSA,L]
   RewriteRule ^api-login$ api/index.php [QSA,L]
   
