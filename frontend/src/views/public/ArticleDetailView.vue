@@ -23,7 +23,8 @@ const getImageUrl = (item: any) => {
 
 const fetchArticle = async () => {
     try {
-        const res = await api.get(`/public/articles/${route.params.slug}`)
+        const axiosBase = (await import('axios')).default
+        const res = await axiosBase.get(`${import.meta.env.VITE_API_URL}/public/articles/${route.params.slug}`)
         article.value = res.data
         // Update document metadata for SEO
         updateSEO({

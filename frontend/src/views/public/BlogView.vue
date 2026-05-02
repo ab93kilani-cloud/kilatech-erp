@@ -20,7 +20,9 @@ const getImageUrl = (article: any) => {
 
 const fetchArticles = async () => {
   try {
-    const res = await api.get('/public/articles?category=blog')
+    // Utilisation d'un appel direct sans les cookies de session pour éviter le 401
+    const axiosBase = (await import('axios')).default
+    const res = await axiosBase.get(import.meta.env.VITE_API_URL + '/public/articles?category=blog')
     articles.value = res.data
   } catch (e) {
     console.error('Failed to load blog posts')
