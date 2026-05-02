@@ -21,7 +21,7 @@ Route::get('/robots.txt', function () {
     return response("User-agent: *\nAllow: /\nSitemap: https://kilatech.ma/sitemap.xml", 200)->header('Content-Type', 'text/plain');
 });
 
-Route::get('/final-test-blog', function() {
+Route::get('/api/final-test-blog', function() {
     return \App\Models\Article::where('status', 'published')->get();
 });
 
