@@ -13,25 +13,46 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// CORS Preflight - Hostinger Stability
+Route::options('/{any}', function() {
+    return response()->json('OK')
+        ->header('Access-Control-Allow-Origin', 'https://kilatech.ma')
+        ->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')
+        ->header('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, Authorization')
+        ->header('Access-Control-Allow-Credentials', 'true');
+})->where('any', '.*');
+
 Route::get('/robots.txt', function () {
     $host = request()->getHost();
     return response("User-agent: *\nAllow: /\nSitemap: https://kilatech.ma/sitemap.xml", 200)->header('Content-Type', 'text/plain');
 });
 
-// Public Blog Articles - Direct Logic (Bypassing Controller and Auth for Hostinger)
+// Public Blog Articles - Direct Logic (Bypassing Controller, Auth and CORS for Hostinger)
 Route::get('/api/public/articles', function(\Illuminate\Http\Request $request) {
-    return \App\Models\Article::where('status', 'published')
+    $articles = \App\Models\Article::where('status', 'published')
         ->when($request->category, function($q, $cat) {
             return $q->where('category', $cat);
         })
         ->orderBy('created_at', 'desc')
         ->get();
+
+    return response()->json($articles)
+        ->header('Access-Control-Allow-Origin', 'https://kilatech.ma')
+        ->header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        ->header('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, Authorization')
+        ->header('Access-Control-Allow-Credentials', 'true');
 })->middleware([]);
 
 Route::get('/api/public/articles/{slug}', function($slug) {
-    return \App\Models\Article::where('slug', $slug)
+    $article = \App\Models\Article::where('slug', $slug)
         ->where('status', 'published')
         ->firstOrFail();
+
+    return response()->json($article)
+        ->header('Access-Control-Allow-Origin', 'https://kilatech.ma')
+        ->header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        ->header('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, Authorization')
+        ->header('Access-Control-Allow-Credentials', 'true');
 })->middleware([]);
 
 Route::get('/', function () {
