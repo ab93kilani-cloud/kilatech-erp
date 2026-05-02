@@ -11,10 +11,10 @@ const articles = ref<any[]>([])
 const isLoading = ref(true)
 
 const getImageUrl = (article: any) => {
-  if (article.image) return getStorageUrl(article.image)
   if (article.product && article.product.image_path) {
     return getStorageUrl(article.product.image_path)
   }
+  if (article.image) return getStorageUrl(article.image)
   return '/images/blog_placeholder.png'
 }
 

@@ -14,10 +14,10 @@ const isLoading = ref(true)
 
 const getImageUrl = (item: any) => {
     if (!item) return '/images/blog_placeholder.png'
-    if (item.image) return getStorageUrl(item.image)
     if (item.product && item.product.image_path) {
         return getStorageUrl(item.product.image_path)
     }
+    if (item.image) return getStorageUrl(item.image)
     return '/images/blog_placeholder.png'
 }
 
