@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import api from '@/plugins/axios'
 import publicApi from '@/plugins/axios-public'
 import { useSEO } from '@/composables/useSEO'
 import { useConfig } from '@/composables/useConfig'
