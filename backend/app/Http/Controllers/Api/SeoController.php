@@ -329,7 +329,7 @@ class SeoController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $query = \App\Models\Article::where('status', 'published');
+        $query = \App\Models\Article::where('status', 'published')->with('product');
         
         if ($request->has('category')) {
             $query->where('category', strtolower($request->category));
