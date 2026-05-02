@@ -12,10 +12,6 @@ use App\Http\Controllers\Api\ContactController;
 |
 */
 
-// Public Articles (Blog)
-Route::get('public/articles', [\App\Http\Controllers\Api\PublicBlogController::class, 'index']);
-Route::get('public/articles/{slug}', [\App\Http\Controllers\Api\PublicBlogController::class, 'show']);
-
 // SEO V2 - Simplified for n8n (Publicly accessible but token-protected in controller)
 Route::get('seo-v2/products', [\App\Http\Controllers\Api\SeoController::class, 'indexV2']);
 Route::get('seo-v2/stats', [\App\Http\Controllers\Api\SeoController::class, 'statsV2']);
