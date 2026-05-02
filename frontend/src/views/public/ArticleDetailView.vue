@@ -23,7 +23,7 @@ const getImageUrl = (item: any) => {
 
 const fetchArticle = async () => {
     try {
-        const res = await publicApi.get(`/public/articles/${route.params.slug}`)
+        const res = await publicApi.get(`/seo-v2/blog-detail/${route.params.slug}?api_token=KILA-SEO-PROD-2026-X9`)
         article.value = res.data
         // Update document metadata for SEO
         updateSEO({

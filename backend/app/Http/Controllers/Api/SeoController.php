@@ -321,6 +321,41 @@ class SeoController extends Controller
     }
 
     /**
+     * Authorized Blog List for SEO zone.
+     */
+    public function blogListV2(Request $request)
+    {
+        if ($request->input('api_token') !== 'KILA-SEO-PROD-2026-X9') {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $query = \App\Models\Article::where('status', 'published');
+        
+        if ($request->has('category')) {
+            $query->where('category', strtolower($request->category));
+        }
+
+        return response()->json($query->orderBy('created_at', 'desc')->get());
+    }
+
+    /**
+     * Authorized Blog Detail for SEO zone.
+     */
+    public function blogDetailV2(Request $request, $slug)
+    {
+        if ($request->input('api_token') !== 'KILA-SEO-PROD-2026-X9') {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $article = \App\Models\Article::where('slug', $slug)
+            ->where('status', 'published')
+            ->with('product')
+            ->firstOrFail();
+
+        return response()->json($article);
+    }
+
+    /**
      * Check if a string is valid base64 encoded.
      */
     private function isBase64(string $string): bool

@@ -20,7 +20,7 @@ const getImageUrl = (article: any) => {
 
 const fetchArticles = async () => {
   try {
-    const res = await publicApi.get('/public/articles?category=blog')
+    const res = await publicApi.get('/seo-v2/blog-list?api_token=KILA-SEO-PROD-2026-X9&category=blog')
     articles.value = res.data
   } catch (e) {
     console.error('Failed to load blog posts')

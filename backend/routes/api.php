@@ -19,6 +19,8 @@ Route::post('seo-v2/update/{id}', [\App\Http\Controllers\Api\SeoController::clas
 Route::get('seo-v2/audit/{id}', [\App\Http\Controllers\Api\SeoController::class, 'auditV2']);
 Route::post('seo-v2/articles', [\App\Http\Controllers\Api\ArticleController::class, 'storeV2']);
 Route::get('seo-v2/elite-products', [\App\Http\Controllers\Api\SeoController::class, 'eliteProductsV2']);
+Route::get('seo-v2/blog-list', [\App\Http\Controllers\Api\SeoController::class, 'blogListV2']);
+Route::get('seo-v2/blog-detail/{slug}', [\App\Http\Controllers\Api\SeoController::class, 'blogDetailV2']);
 Route::get('seo-debug', function() { return "OK"; });
 // Deployment trigger: Isolation of web requests from ERP quotes.
 
