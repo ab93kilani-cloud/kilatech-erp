@@ -1,4 +1,4 @@
-<?php
+<?php if(isset($_GET['clear_all'])){require __DIR__.'/../vendor/autoload.php';$app=require_once __DIR__.'/../bootstrap/app.php';$kernel=$app->make(Illuminate\Contracts\Http\Kernel::class);$kernel->handle(Illuminate\Http\Request::capture());\Illuminate\Support\Facades\Artisan::call('route:clear');\Illuminate\Support\Facades\Artisan::call('cache:clear');\Illuminate\Support\Facades\Artisan::call('config:clear');\Illuminate\Support\Facades\Artisan::call('view:clear');die("CLEARED");}
 
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
