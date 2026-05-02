@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-// use App\Models\Article;
+use App\Models\Article;
 use App\Models\Product;
 use App\Services\MarketingAiService;
 use Illuminate\Http\Request;
@@ -11,18 +11,6 @@ use Illuminate\Support\Str;
 
 class ArticleController extends Controller
 {
-    public function publicList(Request $request)
-    {
-        return response()->json(['status' => 'OK', 'message' => 'Route is working']);
-    }
-
-    public function publicShow($slug)
-    {
-        return response()->json(['status' => 'OK']);
-        // $article = Article::where('slug', $slug)->where('status', 'published')->with('product')->firstOrFail();
-        // return $article;
-    }
-
     public function index()
     {
         return Article::with('product')->orderBy('created_at', 'desc')->get();

@@ -11,10 +11,16 @@ class PublicBlogController extends Controller
     public function index(Request $request)
     {
         try {
-            // Test minimal sans category ni relationships
-            return \App\Models\Article::select('id', 'title', 'slug', 'content')->get();
+            $query = \App\Models\Article::where('status', 'published')->with('product');
+            
+            if ($request->has('category')) {
+                $query->whereRaw('LOWER(category) = ?', [strtolower($request->category)]);
+            }
+
+            return $query->orderBy('created_at', 'desc')->get();
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            // Fallback safe
+            return \App\Models\Article::where('status', 'published')->orderBy('created_at', 'desc')->get();
         }
     }
 
