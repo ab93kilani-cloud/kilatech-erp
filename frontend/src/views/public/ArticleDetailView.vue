@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/plugins/axios'
+import publicApi from '@/plugins/axios-public'
 import { useSEO } from '@/composables/useSEO'
 import { useConfig } from '@/composables/useConfig'
 
@@ -23,8 +24,7 @@ const getImageUrl = (item: any) => {
 
 const fetchArticle = async () => {
     try {
-        const axiosBase = (await import('axios')).default
-        const res = await axiosBase.get(`${import.meta.env.VITE_API_URL}/public/articles/${route.params.slug}`)
+        const res = await publicApi.get(`/public/articles/${route.params.slug}`)
         article.value = res.data
         // Update document metadata for SEO
         updateSEO({

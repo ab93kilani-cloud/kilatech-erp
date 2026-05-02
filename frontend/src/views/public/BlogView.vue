@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import api from '@/plugins/axios'
+import publicApi from '@/plugins/axios-public'
 import { useSEO } from '@/composables/useSEO'
 import { useConfig } from '@/composables/useConfig'
 
@@ -20,9 +21,7 @@ const getImageUrl = (article: any) => {
 
 const fetchArticles = async () => {
   try {
-    // Utilisation d'un appel direct sans les cookies de session pour éviter le 401
-    const axiosBase = (await import('axios')).default
-    const res = await axiosBase.get(import.meta.env.VITE_API_URL + '/public/articles?category=blog')
+    const res = await publicApi.get('/public/articles?category=blog')
     articles.value = res.data
   } catch (e) {
     console.error('Failed to load blog posts')
