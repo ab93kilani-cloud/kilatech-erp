@@ -13,7 +13,7 @@ class ArticleController extends Controller
 {
     public function publicList(Request $request)
     {
-        return Article::where('status', 'published')->orderBy('created_at', 'desc')->get();
+        return response()->json(['status' => 'OK', 'message' => 'Route is working']);
     }
 
     public function publicShow($slug)
