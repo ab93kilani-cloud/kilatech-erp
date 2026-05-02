@@ -11,7 +11,7 @@ const articles = ref<any[]>([])
 const isLoading = ref(true)
 
 const getImageUrl = (article: any) => {
-  if (article.image) return article.image
+  if (article.image) return getStorageUrl(article.image)
   if (article.product && article.product.image_path) {
     return getStorageUrl(article.product.image_path)
   }
@@ -48,7 +48,7 @@ onMounted(() => {
           Le Blog <span class="text-brand-600">Experts</span>
         </h1>
         <p class="text-lg text-gray-500 max-w-2xl mx-auto font-light leading-relaxed">
-          Des guides techniques, des comparatifs et des conseils pour optimiser l'utilisation de votre équipement médical.
+          Découvrez nos guides techniques, comparatifs et conseils d'experts pour optimiser votre parc médical.
         </p>
       </div>
     </section>
@@ -69,11 +69,11 @@ onMounted(() => {
         <div v-else class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           <div v-for="article in articles" :key="article.id" class="group flex flex-col bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden">
              <!-- Article Image -->
-             <div class="aspect-[16/9] overflow-hidden bg-gray-50 relative">
+              <div class="aspect-[16/10] overflow-hidden bg-gray-50 relative">
                 <img 
                     :src="getImageUrl(article)" 
                     :alt="article.title" 
-                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
                     @error="(e: any) => e.target.src = '/images/blog_placeholder.png'"
                 />
                 <div v-if="article.product" class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold text-brand-700 uppercase tracking-wider border border-brand-100 shadow-sm">
