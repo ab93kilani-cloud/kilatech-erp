@@ -356,6 +356,54 @@ class SeoController extends Controller
     }
 
     /**
+     * Generate dynamic sitemap.xml
+     */
+    public function sitemap()
+    {
+        $products = \App\Models\Product::select('slug', 'updated_at')->get();
+        $articles = \App\Models\Article::where('status', 'published')->select('slug', 'updated_at')->get();
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+        // Static Pages
+        $staticPages = ['', '/about', '/blog', '/catalogues', '/contact', '/actualites'];
+        foreach ($staticPages as $page) {
+            $xml .= "\n  " . '<url>';
+            $xml .= "\n    " . '<loc>https://kilatech.ma' . $page . '</loc>';
+            $xml .= "\n    " . '<changefreq>weekly</changefreq>';
+            $xml .= "\n    " . '<priority>1.0</priority>';
+            $xml .= "\n  " . '</url>';
+        }
+
+        // Products
+        foreach ($products as $product) {
+            if (!$product->slug) continue;
+            $xml .= "\n  " . '<url>';
+            $xml .= "\n    " . '<loc>https://kilatech.ma/produit/' . $product->slug . '</loc>';
+            $xml .= "\n    " . '<lastmod>' . ($product->updated_at ? $product->updated_at->toAtomString() : now()->toAtomString()) . '</lastmod>';
+            $xml .= "\n    " . '<changefreq>monthly</changefreq>';
+            $xml .= "\n    " . '<priority>0.8</priority>';
+            $xml .= "\n  " . '</url>';
+        }
+
+        // Articles
+        foreach ($articles as $article) {
+            if (!$article->slug) continue;
+            $xml .= "\n  " . '<url>';
+            $xml .= "\n    " . '<loc>https://kilatech.ma/actualites/' . $article->slug . '</loc>';
+            $xml .= "\n    " . '<lastmod>' . ($article->updated_at ? $article->updated_at->toAtomString() : now()->toAtomString()) . '</lastmod>';
+            $xml .= "\n    " . '<changefreq>monthly</changefreq>';
+            $xml .= "\n    " . '<priority>0.7</priority>';
+            $xml .= "\n  " . '</url>';
+        }
+
+        $xml .= "\n" . '</urlset>';
+
+        return response($xml)->header('Content-Type', 'application/xml');
+    }
+
+    /**
      * Check if a string is valid base64 encoded.
      */
     private function isBase64(string $string): bool

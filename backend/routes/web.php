@@ -22,6 +22,9 @@ Route::get('/robots.txt', function () {
     return response("User-agent: *\nAllow: /\nSitemap: https://kilatech.ma/sitemap.xml", 200)->header('Content-Type', 'text/plain');
 });
 
+Route::get('/sitemap.xml', [\App\Http\Controllers\Api\SeoController::class, 'sitemap']);
+Route::get('/api/sitemap.xml', [\App\Http\Controllers\Api\SeoController::class, 'sitemap']);
+
 // Public Blog Articles - Direct Logic (Bypassing Controller, Auth and CORS for Hostinger)
 Route::get('/api/public/articles', function(\Illuminate\Http\Request $request) {
     $articles = \App\Models\Article::where('status', 'published')
