@@ -13,15 +13,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// CORS Preflight - Hostinger Stability
-Route::options('/{any}', function() {
-    return response()->json('OK')
-        ->header('Access-Control-Allow-Origin', 'https://kilatech.ma')
-        ->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')
-        ->header('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, Authorization')
-        ->header('Access-Control-Allow-Credentials', 'true');
-})->where('any', '.*');
-
 Route::get('/robots.txt', function () {
     $host = request()->getHost();
     return response("User-agent: *\nAllow: /\nSitemap: https://kilatech.ma/sitemap.xml", 200)->header('Content-Type', 'text/plain');

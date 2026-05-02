@@ -13,17 +13,6 @@
     </LocationMatch>
 </IfModule>
 
-<IfModule mod_rewrite.c>
-    <IfModule mod_negotiation.c>
-        Options -MultiViews -Indexes
-    </IfModule>
-
-    # Force CORS for kilatech.ma
-    Header set Access-Control-Allow-Origin "https://kilatech.ma"
-    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
-    Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-    Header set Access-Control-Allow-Credentials "true"
-
     RewriteEngine On
 
     # Handle Authorization Header
