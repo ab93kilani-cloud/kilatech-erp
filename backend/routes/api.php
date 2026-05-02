@@ -13,7 +13,12 @@ use App\Http\Controllers\Api\ContactController;
 */
 
 // Public Articles (Blog)
-Route::get('debug-final', function() { return response()->json(['status' => 'OK']); });
+Route::get('debug-final', function() {
+    \Illuminate\Support\Facades\Artisan::call('cache:clear');
+    \Illuminate\Support\Facades\Artisan::call('route:clear');
+    \Illuminate\Support\Facades\Artisan::call('config:clear');
+    return response()->json(['status' => 'Cache Cleared', 'output' => \Illuminate\Support\Facades\Artisan::output()]);
+});
 Route::get('public/articles', [\App\Http\Controllers\Api\PublicBlogController::class, 'index']);
 Route::get('public/articles/{slug}', [\App\Http\Controllers\Api\PublicBlogController::class, 'show']);
 
