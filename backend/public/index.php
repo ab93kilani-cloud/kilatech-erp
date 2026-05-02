@@ -5,6 +5,19 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
+// FORCE REFRESH FOR HOSTINGER
+if (isset($_GET['force_refresh_kilatech'])) {
+    require __DIR__.'/../vendor/autoload.php';
+    $app = require_once __DIR__.'/../bootstrap/app.php';
+    $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+    $kernel->handle($request = Illuminate\Http\Request::capture());
+    \Illuminate\Support\Facades\Artisan::call('route:clear');
+    \Illuminate\Support\Facades\Artisan::call('cache:clear');
+    \Illuminate\Support\Facades\Artisan::call('config:clear');
+    \Illuminate\Support\Facades\Artisan::call('view:clear');
+    die("✅ SERVEUR KILATECH RAFRAICHI AVEC SUCCES");
+}
+
 /*
 |--------------------------------------------------------------------------
 | Check If The Application Is Under Maintenance
