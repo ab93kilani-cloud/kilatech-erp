@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/api/test-server', function() {
+    return response()->json(['status' => 'Server is Alive', 'time' => now()->toDateTimeString()]);
+});
+
 Route::get('/robots.txt', function () {
     $host = request()->getHost();
     return response("User-agent: *\nAllow: /\nSitemap: https://kilatech.ma/sitemap.xml", 200)->header('Content-Type', 'text/plain');
