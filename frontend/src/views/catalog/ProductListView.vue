@@ -110,6 +110,9 @@ onMounted(() => {
           </div>
           <input type="text" v-model="searchQuery" class="block w-full rounded-md border-gray-300 pl-10 focus:border-brand-500 focus:ring-brand-500 sm:text-sm h-10" placeholder="Rechercher un produit..." />
         </div>
+        <router-link :to="{ name: 'categories' }" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 sm:w-auto">
+          Gérer les Catégories
+        </router-link>
         <router-link :to="{ name: 'catalog.create' }" class="inline-flex items-center justify-center rounded-md border border-transparent bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 sm:w-auto">
           Nouveau Produit
         </router-link>
