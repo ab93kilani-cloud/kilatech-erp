@@ -95,7 +95,7 @@ class InvoiceController extends Controller
                     
                     if ($newQty > $oldQty) {
                         $diff = $newQty - $oldQty;
-                        $units = \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
+                        $units = \App\Models\StockUnit::with('lot')->whereHas('lot', function($q) use ($orderLine) {
                                 if ($orderLine->lot_number) {
                                     $q->where('lot_number', $orderLine->lot_number);
                                 } else {
@@ -110,7 +110,7 @@ class InvoiceController extends Controller
                         if ($units->count() < $diff) {
                             // Fallback FIFO si le lot spécifié est insuffisant
                             $missingCount = $diff - $units->count();
-                            $extraUnits = \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
+                            $extraUnits = \App\Models\StockUnit::with('lot')->whereHas('lot', function($q) use ($orderLine) {
                                     $q->where('variant_id', $orderLine->variant_id);
                                 })
                                 ->where('status', 'disponible')

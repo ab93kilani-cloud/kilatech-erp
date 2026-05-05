@@ -684,7 +684,7 @@ class OrderController extends Controller
                 \App\Models\StockUnit::whereIn('serial_number', $snArray)->update(['status' => 'vendue']);
 
             } elseif ($line->lot_number) {
-                $foundUnits = \App\Models\StockUnit::whereHas('lot', function($q) use ($line) {
+                $foundUnits = \App\Models\StockUnit::with('lot')->whereHas('lot', function($q) use ($line) {
                         $q->where('lot_number', $line->lot_number);
                     })
                     ->where('status', '!=', 'vendue')
@@ -694,7 +694,7 @@ class OrderController extends Controller
                 if ($foundUnits->count() < $needed) {
                     // Fallback FIFO si le lot spécifié est insuffisant (débloque la facturation si le stock est dans un autre lot)
                     $missingCount = $needed - $foundUnits->count();
-                    $extraUnits = \App\Models\StockUnit::whereHas('lot', function($q) use ($line) {
+                    $extraUnits = \App\Models\StockUnit::with('lot')->whereHas('lot', function($q) use ($line) {
                             $q->where('variant_id', $line->variant_id);
                         })
                         ->where('status', '!=', 'vendue')
