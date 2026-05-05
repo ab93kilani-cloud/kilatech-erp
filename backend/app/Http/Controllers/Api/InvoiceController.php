@@ -106,10 +106,24 @@ class InvoiceController extends Controller
                             ->orderBy('created_at', 'asc') // FIFO
                             ->limit($diff)
                             ->get();
+
                         if ($units->count() < $diff) {
-                            $prodName = $orderLine->variant?->product?->name ?? 'Produit';
-                            $variation = $orderLine->variant?->name_variation ? " ($orderLine->variant->name_variation)" : "";
-                            throw new \Exception("Stock insuffisant pour {$prodName}{$variation}. Requis en plus: {$diff}, Disponible: " . $units->count());
+                            // Fallback FIFO si le lot spécifié est insuffisant
+                            $missingCount = $diff - $units->count();
+                            $extraUnits = \App\Models\StockUnit::whereHas('lot', function($q) use ($orderLine) {
+                                    $q->where('variant_id', $orderLine->variant_id);
+                                })
+                                ->where('status', 'disponible')
+                                ->whereNotIn('id', $units->pluck('id'))
+                                ->limit($missingCount)
+                                ->get();
+                            
+                            if ($units->count() + $extraUnits->count() < $diff) {
+                                $prodName = $orderLine->variant?->product?->name ?? 'Produit';
+                                $variation = $orderLine->variant?->name_variation ? " ($orderLine->variant->name_variation)" : "";
+                                throw new \Exception("Stock insuffisant pour {$prodName}{$variation}. Requis en plus: {$diff}, Disponible: " . ($units->count() + $extraUnits->count()));
+                            }
+                            $units = $units->concat($extraUnits);
                         }
                         foreach ($units as $u) {
                             $u->update(['status' => 'vendue']);

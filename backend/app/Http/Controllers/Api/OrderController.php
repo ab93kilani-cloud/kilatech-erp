@@ -166,6 +166,9 @@ class OrderController extends Controller
 
             foreach ($quote->lines as $line) {
                 $lot = \App\Models\Lot::where('variant_id', $line->variant_id)
+                    ->whereHas('units', function($q) {
+                        $q->where('status', '!=', 'vendue');
+                    })
                     ->where(function($q) {
                         $q->whereNull('expiration_date')->orWhere('expiration_date', '>=', now());
                     })
@@ -689,7 +692,29 @@ class OrderController extends Controller
                     ->get();
                 
                 if ($foundUnits->count() < $needed) {
-                   throw new \Exception("Stock insuffisant dans le lot " . $line->lot_number . " pour " . ($line->variant?->product?->name ?? 'Produit') . ". Requis: $needed, Disponible: " . $foundUnits->count());
+                    // Fallback FIFO si le lot spécifié est insuffisant (débloque la facturation si le stock est dans un autre lot)
+                    $missingCount = $needed - $foundUnits->count();
+                    $extraUnits = \App\Models\StockUnit::whereHas('lot', function($q) use ($line) {
+                            $q->where('variant_id', $line->variant_id);
+                        })
+                        ->where('status', '!=', 'vendue')
+                        ->whereNotIn('id', $foundUnits->pluck('id'))
+                        ->limit($missingCount)
+                        ->get();
+                    
+                    if ($foundUnits->count() + $extraUnits->count() < $needed) {
+                        throw new \Exception("Stock insuffisant pour " . ($line->variant?->product?->name ?? 'Produit') . ". Requis: $needed, Disponible: " . ($foundUnits->count() + $extraUnits->count()));
+                    }
+                    
+                    $foundUnits = $foundUnits->concat($extraUnits);
+                    
+                    // Mise à jour du BL avec les infos du nouveau lot utilisé
+                    if ($foundUnits->first() && $foundUnits->first()->lot) {
+                        $line->update([
+                            'lot_number' => $foundUnits->first()->lot->lot_number,
+                            'expiry_date' => $foundUnits->first()->lot->expiration_date
+                        ]);
+                    }
                 }
 
                 foreach ($foundUnits as $unit) {
