@@ -56,12 +56,17 @@ const saveCategory = async () => {
 }
 
 const deleteCategory = async (id: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) return
+    console.log('Tentative de suppression de la catégorie ID:', id);
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ? Cette action est irréversible.')) return
+    
     try {
-        await api.delete(`/categories/${id}`)
+        const response = await api.delete(`/categories/${id}`)
+        console.log('Suppression réussie:', response.data);
         categories.value = categories.value.filter(c => c.id !== id)
     } catch (e: any) {
-        alert(e.response?.data?.message || 'Erreur lors de la suppression.')
+        console.error('Erreur lors de la suppression:', e.response?.data || e);
+        const errorMsg = e.response?.data?.message || 'Erreur lors de la suppression. Vérifiez si des produits sont liés à cette catégorie.';
+        alert(errorMsg)
     }
 }
 
