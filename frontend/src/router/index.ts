@@ -94,6 +94,12 @@ const router = createRouter({
                     meta: { roles: ['Admin', 'Gérant', 'Commercial', 'Responsable d\'Achat', 'Responsable Marketing'] }
                 },
                 {
+                    path: 'categories',
+                    name: 'categories',
+                    component: () => import('../views/catalog/CategoryListView.vue'),
+                    meta: { roles: ['Admin', 'Gérant', 'Commercial', 'Responsable d\'Achat', 'Responsable Marketing'] }
+                },
+                {
                     path: 'catalog/:id/edit',
                     name: 'catalog.edit',
                     component: () => import('../views/catalog/ProductFormView.vue')
