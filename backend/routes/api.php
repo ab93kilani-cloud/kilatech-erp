@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('upload', [\App\Http\Controllers\Api\UploadController::class, 'upload']);
         Route::post('articles/generate', [\App\Http\Controllers\Api\ArticleController::class, 'generate']);
         Route::post('articles/generate-news', [\App\Http\Controllers\Api\ArticleController::class, 'generateNews']);
+        Route::post('articles/generate-category-news', [\App\Http\Controllers\Api\ArticleController::class, 'generateCategoryNews']);
         Route::patch('articles/{article}/toggle-status', [\App\Http\Controllers\Api\ArticleController::class, 'toggleStatus']);
         Route::apiResource('articles', \App\Http\Controllers\Api\ArticleController::class);
         

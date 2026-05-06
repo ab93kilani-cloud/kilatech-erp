@@ -190,6 +190,35 @@ class MarketingAiService
         }
     }
 
+    public function generateNewsForCategory($categoryName)
+    {
+        $prompt = "Tu es Expert en Santé Publique au Maroc et Directeur Éditorial chez Kilatech.
+        MISSION : Rédiger un article d'actualité de haute expertise sur l'innovation dans la famille d'équipement : \"{$categoryName}\".
+        
+        CONTEXTE : Le Maroc modernise son système de santé (Généralisation de l'AMO, nouveaux hôpitaux).
+        STRUCTURE : 
+        1. État des lieux de la technologie {$categoryName} au Maroc.
+        2. Pourquoi Kilatech est le partenaire idéal pour ces équipements.
+        3. Futur et perspectives.
+        
+        Format : JSON avec title, content (HTML riche), meta_title, meta_description, slug.";
+
+        if (empty($this->apiKey)) {
+            $title = "L'Innovation dans le domaine : $categoryName au Maroc";
+            return [
+                'title' => $title,
+                'slug' => Str::slug($title) . "-" . time(),
+                'content' => "<h2>Le secteur de $categoryName en pleine mutation</h2><p>Le marché marocain de l'équipement médical, et plus particulièrement la famille <strong>$categoryName</strong>, connaît une croissance sans précédent...</p><h3>L'accompagnement Kilatech</h3><p>Fort de son expertise, Kilatech propose des solutions adaptées...</p>",
+                'meta_title' => "$categoryName Maroc | Actualités Kilatech",
+                'meta_description' => "Découvrez les dernières tendances et innovations sur les équipements de type $categoryName au Maroc.",
+                'status' => 'draft',
+                'category' => 'news',
+            ];
+        }
+
+        return $this->callAi($prompt);
+    }
+
     public function diagnoseSocial($product)
     {
         $checks = [];

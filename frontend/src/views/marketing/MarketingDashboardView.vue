@@ -16,7 +16,10 @@ const activeTab = ref('seo') // 'seo', 'social', 'blog', 'news', 'opportunities'
 const activeSocialSubTab = ref('linkedin') // 'linkedin', 'facebook', 'instagram'
 const showCopySuccess = ref(false)
 const articles = ref<any[]>([])
+const categories = ref<any[]>([])
 const isLoadingArticles = ref(false)
+const isLoadingCategories = ref(false)
+const isGeneratingCategory = ref<number | null>(null)
 const missingSearches = ref<any[]>([])
 
 const getImageUrl = (path: string | null) => {
@@ -200,6 +203,34 @@ const deleteArticle = async (id: number) => {
   }
 }
 
+const fetchCategories = async () => {
+    isLoadingCategories.value = true
+    try {
+        const res = await api.get('/categories')
+        categories.value = res.data
+    } catch (e) {
+        console.error('Failed to load categories')
+    } finally {
+        isLoadingCategories.value = false
+    }
+}
+
+const generateCategoryNews = async (category: any) => {
+    isGeneratingCategory.value = category.id
+    try {
+        const res = await api.post('/articles/generate-category-news', { category_name: category.name })
+        // After generation, it returns the draft article data
+        // We can redirect to the editor or just refresh articles
+        await fetchArticles()
+        alert(`L'actualité pour "${category.name}" a été générée en brouillon !`)
+        activeTab.value = 'news' // Ensure we stay on news tab to see it
+    } catch (e) {
+        alert('Erreur lors de la génération')
+    } finally {
+        isGeneratingCategory.value = null
+    }
+}
+
 const fetchProducts = async () => {
   isLoading.value = true
   try {
@@ -299,6 +330,7 @@ const fetchConfigStatus = async () => {
 onMounted(() => {
     fetchProducts()
     fetchArticles()
+    fetchCategories()
     fetchMissingSearches()
     fetchConfigStatus()
 })
@@ -463,6 +495,35 @@ const saveMarketing = async () => {
                 Nouvel Article {{ activeTab === 'blog' ? 'Blog' : 'Actu' }}
             </router-link>
         </div>
+      </div>
+
+      <!-- Category Automation Sidebar (New for News) -->
+      <div v-if="activeTab === 'news'" class="p-6 bg-emerald-50/30 border-b border-emerald-100/50">
+          <div class="flex items-center justify-between mb-4">
+              <div>
+                  <h3 class="text-sm font-black text-emerald-900 uppercase italic flex items-center gap-2">
+                      <span class="text-lg">🤖</span> Automatisation par Familles (Catégories)
+                  </h3>
+                  <p class="text-[10px] text-emerald-700 font-medium">Générez des articles d'expertise pour chaque famille d'équipement de votre ERP.</p>
+              </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+              <div v-if="isLoadingCategories" class="flex gap-2">
+                  <div v-for="i in 4" :key="'cat-load-'+i" class="h-8 w-24 bg-emerald-100 animate-pulse rounded-full"></div>
+              </div>
+              <button 
+                v-for="cat in categories" 
+                :key="cat.id"
+                @click="generateCategoryNews(cat)"
+                :disabled="isGeneratingCategory === cat.id"
+                class="px-4 py-1.5 rounded-full text-[10px] font-black border transition-all flex items-center gap-2 group"
+                :class="isGeneratingCategory === cat.id ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-200 hover:border-emerald-600 hover:bg-emerald-50'"
+              >
+                  <span v-if="isGeneratingCategory === cat.id" class="animate-spin text-xs">⚙️</span>
+                  {{ cat.name }}
+                  <span class="opacity-0 group-hover:opacity-100 transition-opacity ml-1">✨ Générer Actu</span>
+              </button>
+          </div>
       </div>
 
       <div class="overflow-x-auto">

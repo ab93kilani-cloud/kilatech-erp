@@ -179,4 +179,15 @@ class ArticleController extends Controller
 
         return response()->json($products);
     }
+
+    public function generateCategoryNews(Request $request, MarketingAiService $marketingAi)
+    {
+        $request->validate([
+            'category_name' => 'required|string',
+        ]);
+
+        $articleData = $marketingAi->generateNewsForCategory($request->category_name);
+
+        return response()->json($articleData);
+    }
 }
