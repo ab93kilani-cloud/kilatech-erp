@@ -218,7 +218,7 @@ const fetchCategories = async () => {
 const generateCategoryNews = async (category: any) => {
     isGeneratingCategory.value = category.id
     try {
-        const res = await api.post('/articles/generate-category-news', { category_name: category.name })
+        await api.post('/articles/generate-category-news', { category_name: category.name })
         // After generation, it returns the draft article data
         // We can redirect to the editor or just refresh articles
         await fetchArticles()
