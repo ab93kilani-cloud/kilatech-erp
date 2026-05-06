@@ -79,6 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('suppliers/import', [\App\Http\Controllers\Api\SupplierController::class, 'import']);
     Route::apiResource('suppliers', \App\Http\Controllers\Api\SupplierController::class);
     Route::apiResource('product-suppliers', \App\Http\Controllers\Api\ProductSupplierController::class);
+    Route::post('categories/{category}/generate-presentation', [\App\Http\Controllers\Api\CategoryController::class, 'generatePresentation']);
     Route::apiResource('categories', \App\Http\Controllers\Api\CategoryController::class);
 
     // Procurement & Inventory

@@ -32,16 +32,37 @@ class CategoryController extends Controller
     {
         $request->validate([
             'name' => 'required|string|unique:categories,name,' . $category->id . '|max:255',
+            'description' => 'nullable|string',
+            'seo_title' => 'nullable|string',
+            'seo_description' => 'nullable|string',
         ]);
 
         $oldName = $category->name;
         $category->update([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
+            'description' => $request->description,
+            'seo_title' => $request->seo_title,
+            'seo_description' => $request->seo_description,
         ]);
 
-        // Update all products linked to this category string
-        \App\Models\Product::where('category', $oldName)->update(['category' => $request->name]);
+        // Update all products linked to this category string if name changed
+        if ($oldName !== $request->name) {
+            \App\Models\Product::where('category', $oldName)->update(['category' => $request->name]);
+        }
+
+        return response()->json($category);
+    }
+
+    public function generatePresentation(Category $category, \App\Services\MarketingAiService $marketingAi)
+    {
+        $data = $marketingAi->generateCategoryPresentation($category->name);
+        
+        $category->update([
+            'description' => $data['content'],
+            'seo_title' => $data['seo_title'],
+            'seo_description' => $data['seo_description'],
+        ]);
 
         return response()->json($category);
     }

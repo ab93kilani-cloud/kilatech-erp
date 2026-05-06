@@ -216,6 +216,44 @@ class MarketingAiService
             ];
         }
 
+        try {
+            $data = $this->callAi($prompt);
+            return [
+                'title' => $data['title'] ?? "Actualité Stratégique Kilatech",
+                'slug' => $data['slug'] ?? Str::slug($data['title'] ?? 'actu-'.time()),
+                'content' => $data['content'] ?? "<p>{$notes}</p>",
+                'meta_title' => $data['meta_title'] ?? "Actualité | Kilatech",
+                'meta_description' => $data['meta_description'] ?? "",
+                'status' => 'draft',
+                'category' => 'news',
+            ];
+        } catch (\Exception $e) {
+            Log::error('AI News Generation Failed: ' . $e->getMessage());
+            $this->apiKey = null; 
+            return $this->generateNewsArticle($notes);
+        }
+    }
+
+    public function generateCategoryPresentation($categoryName)
+    {
+        $prompt = "Tu es le Directeur Marketing de Kilatech. 
+        OBJECTIF : Rédiger un texte de PRÉSENTATION DE GAMME pour la catégorie d'équipement : \"{$categoryName}\".
+        
+        TON : Professionnel, rassurant, expert et accueillant.
+        ACCROCHE OBLIGATOIRE : Commencer par \"Kilatech vous présente sa gamme de {$categoryName}...\" ou une variante très proche.
+        CONTENU : Explique que Kilatech sélectionne les meilleurs dispositifs pour cette spécialité, mentionne la qualité, le SAV et l'accompagnement.
+        
+        Format : JSON avec seo_title, seo_description, content (HTML avec <p>, <strong>).";
+
+        if (empty($this->apiKey)) {
+            $title = "Gamme $categoryName | Kilatech Maroc";
+            return [
+                'seo_title' => $title,
+                'seo_description' => "Découvrez l'excellence de la gamme $categoryName chez Kilatech. Équipements de pointe pour les professionnels de santé au Maroc.",
+                'content' => "<p><strong>Kilatech vous présente sa gamme de $categoryName.</strong></p><p>Parce que la précision est au cœur de votre métier, nous avons sélectionné pour vous des dispositifs médicaux alliant innovation technologique et fiabilité absolue. Notre expertise nous permet de vous accompagner dans le choix et l'installation de votre plateau technique partout au Maroc.</p>",
+            ];
+        }
+
         return $this->callAi($prompt);
     }
 

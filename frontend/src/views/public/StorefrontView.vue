@@ -34,6 +34,7 @@ interface Product {
 }
 
 const products = ref<Product[]>([])
+const allCategories = ref<any[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
 const activeCategory = ref('Tous')
@@ -61,8 +62,12 @@ const formatTTCPrice = (product: Product) => {
 
 const fetchProducts = async () => {
     try {
-        const response = await api.get('/products')
-        products.value = response.data
+        const [prodRes, catRes] = await Promise.all([
+            api.get('/products'),
+            api.get('/categories')
+        ])
+        products.value = prodRes.data
+        allCategories.value = catRes.data
     } catch (e: any) {
         console.error("API error or protected route", e)
     } finally {
@@ -85,6 +90,25 @@ const filteredProducts = computed(() => {
         const matchesCategory = activeCategory.value === 'Tous' || p.category === activeCategory.value
         return matchesSearch && matchesCategory
     })
+})
+
+const activeCategoryData = computed(() => {
+    if (activeCategory.value === 'Tous') return null
+    return allCategories.value.find(c => c.name === activeCategory.value)
+})
+
+watch(activeCategoryData, (newCat) => {
+    if (newCat) {
+        updateSEO({
+            title: newCat.seo_title || `${newCat.name} | Kilatech`,
+            description: newCat.seo_description || `Découvrez notre gamme de ${newCat.name} chez Kilatech Maroc.`
+        })
+    } else {
+        updateSEO({
+            title: 'Équipements Médicaux & Solutions Santé',
+            description: 'Kilatech est votre partenaire de confiance pour les dispositifs médicaux de haute qualité au Maroc.'
+        })
+    }
 })
 
 const handleImageError = (e: Event) => {
@@ -212,7 +236,6 @@ onMounted(() => {
             </svg>
           </div>
 
-          <!-- Active Filter Badge (Desktop Only) -->
           <div v-if="activeCategory !== 'Tous'" class="hidden lg:flex items-center gap-2 px-4 py-2 bg-brand-50 border border-brand-100 rounded-xl">
             <span class="text-[10px] font-black text-brand-700 uppercase tracking-tighter">{{ activeCategory }}</span>
             <button @click="activeCategory = 'Tous'" class="text-brand-400 hover:text-brand-600">
@@ -221,6 +244,19 @@ onMounted(() => {
               </svg>
             </button>
           </div>
+        </div>
+
+        <!-- Category Presentation (Gamma Text) -->
+        <div v-if="activeCategoryData && activeCategoryData.description" class="mb-12 animate-fade-in-up">
+            <div class="bg-white p-8 sm:p-12 rounded-[2.5rem] border border-brand-100 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 opacity-5">
+                    <svg class="w-32 h-32 text-brand-600" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C15.4647 8 15.017 8.44772 15.017 9V12C15.017 12.5523 14.5693 13 14.017 13H11.017C10.4647 13 10.017 12.5523 10.017 12V9C10.017 7.34315 11.3601 6 13.017 6H19.017C20.6738 6 22.017 7.34315 22.017 9V15C22.017 16.6569 20.6738 18 19.017 18H16.017L16.017 21H14.017ZM2.0166 21L2.0166 18C2.0166 16.8954 2.91203 16 4.0166 16H7.0166C7.56889 16 8.0166 15.5523 8.0166 15V9C8.0166 8.44772 7.56889 8 7.0166 8H4.0166C3.46432 8 3.0166 8.44772 3.0166 9V12C3.0166 12.5523 2.56889 13 2.0166 13H-0.983398C-1.53568 13 -1.9834 12.5523 -1.9834 12V9C-1.9834 7.34315 -0.640251 6 1.0166 6H7.0166C8.67345 6 10.0166 7.34315 10.0166 9V15C10.0166 16.6569 8.67345 18 7.0166 18H4.0166L4.0166 21H2.0166Z"/></svg>
+                </div>
+                <div class="relative z-10">
+                    <span class="text-brand-600 font-bold uppercase tracking-widest text-[10px] mb-4 block">Présentation Spécialisée</span>
+                    <div class="prose prose-brand max-w-none text-gray-600 text-base sm:text-lg leading-relaxed font-light" v-html="activeCategoryData.description"></div>
+                </div>
+            </div>
         </div>
 
         <div v-if="isLoading" class="flex justify-center py-20">

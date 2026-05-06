@@ -20,6 +20,8 @@ const categories = ref<any[]>([])
 const isLoadingArticles = ref(false)
 const isLoadingCategories = ref(false)
 const isGeneratingCategory = ref<number | null>(null)
+const selectedCategory = ref<any | null>(null)
+const isEditingCategory = ref(false)
 const missingSearches = ref<any[]>([])
 
 const getImageUrl = (path: string | null) => {
@@ -215,19 +217,32 @@ const fetchCategories = async () => {
     }
 }
 
-const generateCategoryNews = async (category: any) => {
+const generateCategoryPresentation = async (category: any) => {
     isGeneratingCategory.value = category.id
     try {
-        await api.post('/articles/generate-category-news', { category_name: category.name })
-        // After generation, it returns the draft article data
-        // We can redirect to the editor or just refresh articles
-        await fetchArticles()
-        alert(`L'actualité pour "${category.name}" a été générée en brouillon !`)
-        activeTab.value = 'news' // Ensure we stay on news tab to see it
+        await api.post(`/categories/${category.id}/generate-presentation`)
+        await fetchCategories()
+        alert(`La présentation de la gamme "${category.name}" a été générée !`)
+        
+        // Open the category for review
+        selectedCategory.value = categories.value.find(c => c.id === category.id)
+        isEditingCategory.value = true
     } catch (e) {
         alert('Erreur lors de la génération')
     } finally {
         isGeneratingCategory.value = null
+    }
+}
+
+const saveCategory = async () => {
+    if (!selectedCategory.value) return
+    try {
+        await api.put(`/categories/${selectedCategory.value.id}`, selectedCategory.value)
+        await fetchCategories()
+        isEditingCategory.value = false
+        alert('Gamme enregistrée !')
+    } catch (e) {
+        alert('Erreur lors de la sauvegarde')
     }
 }
 
@@ -502,27 +517,37 @@ const saveMarketing = async () => {
           <div class="flex items-center justify-between mb-4">
               <div>
                   <h3 class="text-sm font-black text-emerald-900 uppercase italic flex items-center gap-2">
-                      <span class="text-lg">🤖</span> Automatisation par Familles (Catégories)
+                      <span class="text-lg">🤖</span> Présentation des Gammes (Présentation Site Web)
                   </h3>
-                  <p class="text-[10px] text-emerald-700 font-medium">Générez des articles d'expertise pour chaque famille d'équipement de votre ERP.</p>
+                  <p class="text-[10px] text-emerald-700 font-medium">Générez le texte d'introduction "Kilatech vous présente sa gamme..." pour chaque spécialité.</p>
               </div>
           </div>
           <div class="flex flex-wrap gap-2">
               <div v-if="isLoadingCategories" class="flex gap-2">
                   <div v-for="i in 4" :key="'cat-load-'+i" class="h-8 w-24 bg-emerald-100 animate-pulse rounded-full"></div>
               </div>
-              <button 
+              <div 
                 v-for="cat in categories" 
                 :key="cat.id"
-                @click="generateCategoryNews(cat)"
-                :disabled="isGeneratingCategory === cat.id"
-                class="px-4 py-1.5 rounded-full text-[10px] font-black border transition-all flex items-center gap-2 group"
-                :class="isGeneratingCategory === cat.id ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-200 hover:border-emerald-600 hover:bg-emerald-50'"
+                class="flex items-center"
               >
-                  <span v-if="isGeneratingCategory === cat.id" class="animate-spin text-xs">⚙️</span>
-                  {{ cat.name }}
-                  <span class="opacity-0 group-hover:opacity-100 transition-opacity ml-1">✨ Générer Actu</span>
-              </button>
+                <button 
+                    @click="generateCategoryPresentation(cat)"
+                    :disabled="isGeneratingCategory === cat.id"
+                    class="pl-4 pr-2 py-1.5 rounded-l-full text-[10px] font-black border-y border-l transition-all flex items-center gap-2 group"
+                    :class="isGeneratingCategory === cat.id ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-200 hover:border-emerald-600 hover:bg-emerald-50'"
+                >
+                    <span v-if="isGeneratingCategory === cat.id" class="animate-spin text-xs">⚙️</span>
+                    {{ cat.name }}
+                </button>
+                <button 
+                    @click="selectedCategory = cat; isEditingCategory = true"
+                    class="pr-4 pl-2 py-1.5 rounded-r-full text-[10px] font-black border transition-all bg-white text-gray-400 border-gray-200 hover:text-emerald-600 hover:border-emerald-600"
+                >
+                    <span v-if="cat.description">✅</span>
+                    <span v-else>✍️</span>
+                </button>
+              </div>
           </div>
       </div>
 
@@ -890,6 +915,40 @@ const saveMarketing = async () => {
     <!-- Alert Success Copy -->
     <div v-if="showCopySuccess" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-xs shadow-2xl animate-bounce">
        TEXTE COPIE ! REDIRECTION VERS LE RESEAU SOCIAL...
+    </div>
+
+    <!-- Modal Edition Gamme (Catégorie) -->
+    <div v-if="isEditingCategory && selectedCategory" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col animate-fade-in">
+            <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-emerald-50/30">
+                <div>
+                    <h3 class="text-xl font-black text-emerald-900 uppercase">Présentation de la Gamme</h3>
+                    <p class="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Équipements : {{ selectedCategory.name }}</p>
+                </div>
+                <button @click="isEditingCategory = false" class="text-gray-400 hover:text-gray-900 transition-colors bg-white p-2 rounded-full shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-8 space-y-6 overflow-y-auto max-h-[70vh]">
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Titre SEO de la Gamme</label>
+                    <input v-model="selectedCategory.seo_title" class="w-full bg-gray-50 border-none rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Description SEO (Meta)</label>
+                    <textarea v-model="selectedCategory.seo_description" rows="2" class="w-full bg-gray-50 border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none transition-all"></textarea>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Texte de Présentation (HTML)</label>
+                    <p class="text-[9px] text-emerald-600 mb-2 italic">C'est le texte qui s'affichera en haut du catalogue public.</p>
+                    <textarea v-model="selectedCategory.description" rows="8" class="w-full bg-gray-50 border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-serif"></textarea>
+                </div>
+            </div>
+            <div class="px-8 py-6 bg-gray-50 flex justify-end gap-4">
+                <button @click="isEditingCategory = false" class="px-6 py-2 text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Annuler</button>
+                <button @click="saveCategory" class="bg-emerald-600 text-white font-black px-10 py-2.5 rounded-2xl shadow-xl shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95">ENREGISTRER LA PRÉSENTATION</button>
+            </div>
+        </div>
     </div>
 
   </div>
