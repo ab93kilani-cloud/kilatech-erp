@@ -72,13 +72,22 @@
             <div>
               <h2 class="text-3xl font-bold text-gray-900 mb-6">Visitez-nous</h2>
               <div class="rounded-3xl overflow-hidden shadow-xl border-4 border-white mb-6 group">
-                 <!-- Real Map Placeholder or Embed -->
-                 <a href="https://maps.app.goo.gl/yLz1n8Y6uFmN1G8z1" target="_blank" class="block relative">
-                    <img src="/images/contact_map.png" alt="Kilatech Location Map" class="w-full h-auto object-cover transform group-hover:scale-110 transition-transform duration-1000" />
-                    <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                       <span class="bg-white/90 backdrop-blur px-4 py-2 rounded-full font-bold text-xs text-gray-900 shadow-xl">Ouvrir dans Google Maps</span>
-                    </div>
-                 </a>
+                 <!-- Interactive Google Map -->
+                 <div class="relative w-full h-[400px]">
+                   <iframe 
+                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3324.4633!2d-7.52236!3d33.56246!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzPCsDMzJzQ0LjkiTiA3wrAzMScxMS4yIlc!5e0!3m2!1sfr!2sma!4v1715000000000!5m2!1sfr!2sma" 
+                     width="100%" 
+                     height="100%" 
+                     style="border:0;" 
+                     allowfullscreen="true" 
+                     loading="lazy" 
+                     referrerpolicy="no-referrer-when-downgrade"
+                     class="grayscale hover:grayscale-0 transition-all duration-700"
+                   ></iframe>
+                   <a href="https://www.google.com/maps/place/33%C2%B033'44.9%22N+7%C2%B031'11.2%22W/@33.5624685,-7.5197855,17z" target="_blank" class="absolute bottom-4 right-4 bg-white/90 backdrop-blur px-4 py-2 rounded-full font-bold text-[10px] text-gray-900 shadow-xl hover:bg-brand-600 hover:text-white transition-all uppercase tracking-widest">
+                      Ouvrir dans Maps
+                   </a>
+                 </div>
               </div>
               <div class="space-y-4 text-gray-600 font-light">
                  <p class="flex items-start gap-3">
