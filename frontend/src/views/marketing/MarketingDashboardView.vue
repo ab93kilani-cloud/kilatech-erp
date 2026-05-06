@@ -20,6 +20,7 @@ const categories = ref<any[]>([])
 const isLoadingArticles = ref(false)
 const isLoadingCategories = ref(false)
 const isGeneratingCategory = ref<number | null>(null)
+const isGeneratingCategoryNews = ref<number | null>(null)
 const selectedCategory = ref<any | null>(null)
 const isEditingCategory = ref(false)
 const missingSearches = ref<any[]>([])
@@ -223,14 +224,25 @@ const generateCategoryPresentation = async (category: any) => {
         await api.post(`/categories/${category.id}/generate-presentation`)
         await fetchCategories()
         alert(`La présentation de la gamme "${category.name}" a été générée !`)
-        
-        // Open the category for review
         selectedCategory.value = categories.value.find(c => c.id === category.id)
         isEditingCategory.value = true
     } catch (e) {
         alert('Erreur lors de la génération')
     } finally {
         isGeneratingCategory.value = null
+    }
+}
+
+const generateCategoryNews = async (category: any) => {
+    isGeneratingCategoryNews.value = category.id
+    try {
+        await api.post('/articles/generate-category-news', { category_name: category.name })
+        await fetchArticles()
+        alert(`L'actualité pour "${category.name}" a été générée en brouillon !`)
+    } catch (e) {
+        alert('Erreur lors de la génération')
+    } finally {
+        isGeneratingCategoryNews.value = null
     }
 }
 
@@ -517,6 +529,35 @@ const saveMarketing = async () => {
                 Nouvel Article {{ activeTab === 'blog' ? 'Blog' : 'Actu' }}
             </router-link>
         </div>
+      </div>
+
+      <!-- Category News Automation (RESTORED) -->
+      <div v-if="activeTab === 'news'" class="p-6 bg-brand-50/30 border-b border-brand-100/50">
+          <div class="flex items-center justify-between mb-4">
+              <div>
+                  <h3 class="text-sm font-black text-brand-900 uppercase italic flex items-center gap-2">
+                      <span class="text-lg">📰</span> Automatisation des Actualités par Famille
+                  </h3>
+                  <p class="text-[10px] text-brand-700 font-medium">Générez des articles d'actualité stratégique pour votre blog basés sur vos spécialités.</p>
+              </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+              <div v-if="isLoadingCategories" class="flex gap-2">
+                  <div v-for="i in 4" :key="'cat-load-news-'+i" class="h-8 w-24 bg-brand-100 animate-pulse rounded-full"></div>
+              </div>
+              <button 
+                v-for="cat in categories" 
+                :key="'cat-news-'+cat.id"
+                @click="generateCategoryNews(cat)"
+                :disabled="isGeneratingCategoryNews === cat.id"
+                class="px-4 py-1.5 rounded-full text-[10px] font-black border transition-all flex items-center gap-2 group"
+                :class="isGeneratingCategoryNews === cat.id ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-brand-700 border-brand-200 hover:border-brand-600 hover:bg-brand-50'"
+              >
+                  <span v-if="isGeneratingCategoryNews === cat.id" class="animate-spin text-xs">⚙️</span>
+                  {{ cat.name }}
+                  <span class="opacity-0 group-hover:opacity-100 transition-opacity ml-1">✨ Générer Actu</span>
+              </button>
+          </div>
       </div>
 
       <!-- Categories Header -->
