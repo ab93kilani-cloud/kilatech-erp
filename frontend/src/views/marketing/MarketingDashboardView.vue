@@ -476,6 +476,13 @@ const saveMarketing = async () => {
         Actualités
       </button>
       <button 
+        @click="activeTab = 'categories'"
+        :class="activeTab === 'categories' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+        class="whitespace-nowrap py-4 px-6 border-b-2 font-bold text-sm transition-all text-sm"
+      >
+        Gestion des Gammes
+      </button>
+      <button 
         @click="activeTab = 'opportunities'"
         :class="activeTab === 'opportunities' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
         class="whitespace-nowrap py-4 px-6 border-b-2 font-bold text-sm transition-all flex items-center gap-2 text-sm"
@@ -512,46 +519,72 @@ const saveMarketing = async () => {
         </div>
       </div>
 
-      <!-- Category Automation Sidebar (New for News) -->
-      <div v-if="activeTab === 'news'" class="p-6 bg-emerald-50/30 border-b border-emerald-100/50">
-          <div class="flex items-center justify-between mb-4">
-              <div>
-                  <h3 class="text-sm font-black text-emerald-900 uppercase italic flex items-center gap-2">
-                      <span class="text-lg">🤖</span> Présentation des Gammes (Présentation Site Web)
-                  </h3>
-                  <p class="text-[10px] text-emerald-700 font-medium">Générez le texte d'introduction "Kilatech vous présente sa gamme..." pour chaque spécialité.</p>
-              </div>
-          </div>
-          <div class="flex flex-wrap gap-2">
-              <div v-if="isLoadingCategories" class="flex gap-2">
-                  <div v-for="i in 4" :key="'cat-load-'+i" class="h-8 w-24 bg-emerald-100 animate-pulse rounded-full"></div>
-              </div>
-              <div 
-                v-for="cat in categories" 
-                :key="cat.id"
-                class="flex items-center"
-              >
-                <button 
-                    @click="generateCategoryPresentation(cat)"
-                    :disabled="isGeneratingCategory === cat.id"
-                    class="pl-4 pr-2 py-1.5 rounded-l-full text-[10px] font-black border-y border-l transition-all flex items-center gap-2 group"
-                    :class="isGeneratingCategory === cat.id ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-200 hover:border-emerald-600 hover:bg-emerald-50'"
-                >
-                    <span v-if="isGeneratingCategory === cat.id" class="animate-spin text-xs">⚙️</span>
-                    {{ cat.name }}
-                </button>
-                <button 
-                    @click="selectedCategory = cat; isEditingCategory = true"
-                    class="pr-4 pl-2 py-1.5 rounded-r-full text-[10px] font-black border transition-all bg-white text-gray-400 border-gray-200 hover:text-emerald-600 hover:border-emerald-600"
-                >
-                    <span v-if="cat.description">✅</span>
-                    <span v-else>✍️</span>
-                </button>
-              </div>
-          </div>
+      <!-- Categories Header -->
+      <div v-if="activeTab === 'categories'" class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-emerald-50/50">
+        <h2 class="text-lg font-semibold text-emerald-800">
+            Présentation des Gammes (Site Web)
+        </h2>
+        <button @click="fetchCategories" class="text-sm text-emerald-600 hover:text-emerald-900 flex items-center gap-1">
+          Actualiser
+        </button>
       </div>
 
       <div class="overflow-x-auto">
+        <!-- Categories Table -->
+        <table v-if="activeTab === 'categories'" class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-emerald-500 uppercase tracking-wider">Famille (Catégorie)</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-emerald-500 uppercase tracking-wider">État Présentation</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-emerald-500 uppercase tracking-wider">Titre SEO</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-emerald-500 uppercase tracking-wider">Actions IA</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-if="isLoadingCategories" v-for="i in 3" :key="'cat-loader-'+i" class="animate-pulse">
+              <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-100 rounded w-48"></div></td>
+              <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-100 rounded w-24"></div></td>
+              <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-100 rounded w-32"></div></td>
+              <td class="px-6 py-4 whitespace-nowrap text-right"><div class="h-8 bg-gray-100 rounded w-24 ml-auto"></div></td>
+            </tr>
+            <tr v-else v-for="cat in categories" :key="cat.id" class="hover:bg-emerald-50/30 transition-colors">
+              <td class="px-6 py-4">
+                <div class="text-sm font-bold text-gray-900">{{ cat.name }}</div>
+                <div class="text-[10px] text-gray-400 font-mono">{{ cat.slug }}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span v-if="cat.description" class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 uppercase">
+                    ✅ Optimisée
+                </span>
+                <span v-else class="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-700 uppercase italic">
+                    ⏳ Manquante
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-xs text-gray-600 line-clamp-1 max-w-xs">{{ cat.seo_title || '---' }}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right">
+                <div class="flex justify-end gap-2">
+                    <button 
+                        @click="selectedCategory = cat; isEditingCategory = true"
+                        class="text-xs font-black text-gray-500 uppercase hover:text-emerald-600 transition-colors"
+                    >
+                        Modifier
+                    </button>
+                    <button 
+                        @click="generateCategoryPresentation(cat)"
+                        :disabled="isGeneratingCategory === cat.id"
+                        class="bg-emerald-600 text-white px-3 py-1 rounded-lg text-[10px] font-black hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100 disabled:opacity-50"
+                    >
+                        <span v-if="isGeneratingCategory === cat.id" class="animate-spin inline-block">✨</span>
+                        {{ isGeneratingCategory === cat.id ? 'IA...' : 'OPTIMISER PAR IA' }}
+                    </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
         <!-- Products Table (SEO / Social) -->
         <table v-if="activeTab === 'seo' || activeTab === 'social'" class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
