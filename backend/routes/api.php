@@ -161,23 +161,3 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('manager/documents/{id}', [\App\Http\Controllers\Api\ManagerController::class, 'deleteDocument']);
     });
 });
-
-// TEMPORARY REPAIR ROUTE - DELETE AFTER USE
-Route::get('repair-db', function() {
-    try {
-        \Illuminate\Support\Facades\Schema::table('categories', function (\Illuminate\Database\Schema\Blueprint $table) {
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('categories', 'description')) {
-                $table->longText('description')->nullable();
-            }
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('categories', 'seo_title')) {
-                $table->string('seo_title')->nullable();
-            }
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('categories', 'seo_description')) {
-                $table->text('seo_description')->nullable();
-            }
-        });
-        return "Categories table updated successfully.";
-    } catch (\Exception $e) {
-        return "Error: " . $e->getMessage();
-    }
-});

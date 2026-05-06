@@ -80,3 +80,9 @@ Route::get('/api/api/products/{id}', [\App\Http\Controllers\Api\ProductControlle
 // SEO V2 - Elite products for n8n
 Route::get('/seo-v2/elite-products', [\App\Http\Controllers\Api\SeoController::class, 'eliteProductsV2']);
 Route::get('/api/seo-v2/elite-products', [\App\Http\Controllers\Api\SeoController::class, 'eliteProductsV2']);
+
+// Public Categories (for Range Descriptions in Storefront)
+Route::get('/api/categories', [\App\Http\Controllers\Api\CategoryController::class, 'index']);
+Route::get('/api/api/categories', [\App\Http\Controllers\Api\CategoryController::class, 'index']);
+Route::get('/api/categories/{id}', [\App\Http\Controllers\Api\CategoryController::class, 'show']);
+Route::get('/api/api/categories/{id}', [\App\Http\Controllers\Api\CategoryController::class, 'show']);

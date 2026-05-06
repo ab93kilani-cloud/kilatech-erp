@@ -62,14 +62,18 @@ const formatTTCPrice = (product: Product) => {
 
 const fetchProducts = async () => {
     try {
-        const [prodRes, catRes] = await Promise.all([
-            api.get('/products'),
-            api.get('/categories')
-        ])
+        const prodRes = await api.get('/products')
         products.value = prodRes.data
-        allCategories.value = catRes.data
+        
+        // Load categories separately to avoid blocking products if it fails
+        try {
+            const catRes = await api.get('/categories')
+            allCategories.value = catRes.data
+        } catch (catError) {
+            console.warn("Could not load category descriptions", catError)
+        }
     } catch (e: any) {
-        console.error("API error or protected route", e)
+        console.error("API error loading products", e)
     } finally {
         isLoading.value = false
     }
