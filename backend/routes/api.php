@@ -160,8 +160,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('manager/documents', [\App\Http\Controllers\Api\ManagerController::class, 'uploadDocument']);
         Route::delete('manager/documents/{id}', [\App\Http\Controllers\Api\ManagerController::class, 'deleteDocument']);
     });
-
-    });
 });
 
 // TEMPORARY REPAIR ROUTE - DELETE AFTER USE
