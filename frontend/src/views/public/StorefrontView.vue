@@ -168,7 +168,7 @@ onMounted(() => {
     <section class="py-20 bg-gray-50" id="catalogue">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
-        <!-- Header & Search -->
+        <!-- Header -->
         <div class="flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-6 border-b border-gray-200 pb-8 sm:pb-10">
           <div class="flex-1">
             <span class="text-brand-600 font-bold tracking-widest text-[10px] sm:text-xs uppercase">Catalogue Kilatech</span>
@@ -177,7 +177,8 @@ onMounted(() => {
               Explorez notre sélection rigoureuse des technologies médicales les plus innovantes pour votre établissement.
             </p>
           </div>
-          
+        </div>
+
         <!-- Category & Search Filter Bar -->
         <div class="flex flex-col md:flex-row items-center gap-4 mb-12 bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
           <!-- Category Selector -->
