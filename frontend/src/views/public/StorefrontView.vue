@@ -178,35 +178,48 @@ onMounted(() => {
             </p>
           </div>
           
+        <!-- Category & Search Filter Bar -->
+        <div class="flex flex-col md:flex-row items-center gap-4 mb-12 bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
+          <!-- Category Selector -->
+          <div class="relative w-full md:w-80 group">
+            <label class="absolute -top-2.5 left-4 bg-white px-2 text-[10px] font-black text-brand-600 uppercase tracking-widest z-10">Famille d'équipement</label>
+            <div class="relative">
+              <select 
+                v-model="activeCategory" 
+                class="w-full pl-4 pr-10 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-brand-500 outline-none appearance-none cursor-pointer transition-all hover:bg-gray-100"
+              >
+                <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+              </select>
+              <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-brand-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
           <!-- Search Bar -->
-          <div class="relative w-full md:w-96">
+          <div class="relative flex-1 w-full">
             <input 
               v-model="searchQuery" 
               type="text" 
-              placeholder="Rechercher un produit..." 
-              class="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all placeholder:text-gray-400 font-medium"
+              placeholder="Rechercher par nom, référence ou spécialité..." 
+              class="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-brand-500 outline-none transition-all placeholder:text-gray-400"
             />
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-        </div>
 
-        <!-- Category Filters -->
-        <div class="flex flex-wrap items-center gap-3 mb-12">
-          <button 
-            v-for="cat in categories" 
-            :key="cat"
-            @click="activeCategory = cat"
-            :class="[
-              'px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 border',
-              activeCategory === cat 
-                ? 'bg-brand-600 text-white border-brand-600 shadow-lg shadow-brand-200 scale-105' 
-                : 'bg-white text-gray-600 border-gray-200 hover:border-brand-400 hover:text-brand-600'
-            ]"
-          >
-            {{ cat }}
-          </button>
+          <!-- Active Filter Badge (Desktop Only) -->
+          <div v-if="activeCategory !== 'Tous'" class="hidden lg:flex items-center gap-2 px-4 py-2 bg-brand-50 border border-brand-100 rounded-xl">
+            <span class="text-[10px] font-black text-brand-700 uppercase tracking-tighter">{{ activeCategory }}</span>
+            <button @click="activeCategory = 'Tous'" class="text-brand-400 hover:text-brand-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div v-if="isLoading" class="flex justify-center py-20">
