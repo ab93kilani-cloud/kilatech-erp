@@ -79,7 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Catalog & Suppliers
     Route::get('products/next-reference', [\App\Http\Controllers\Api\ProductController::class, 'getNextReference']);
-    Route::apiResource('products', \App\Http\Controllers\Api\ProductController::class)->except(['index', 'show']);
+    Route::apiResource('products', \App\Http\Controllers\Api\ProductController::class)->except(['index']);
     Route::apiResource('product-variants', \App\Http\Controllers\Api\ProductVariantController::class);
     Route::post('suppliers/import', [\App\Http\Controllers\Api\SupplierController::class, 'import']);
     Route::apiResource('suppliers', \App\Http\Controllers\Api\SupplierController::class);
