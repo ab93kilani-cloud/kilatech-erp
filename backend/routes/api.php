@@ -41,17 +41,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('roles', [\App\Http\Controllers\Api\UserController::class, 'roles']);
         Route::apiResource('users', \App\Http\Controllers\Api\UserController::class);
     });
+    // Catalog & Marketing
     Route::post('products/{product}/generate-marketing', [\App\Http\Controllers\Api\ProductController::class, 'generateMarketing']);
-    Route::post('/products/{product}/sync-gsc', [\App\Http\Controllers\Api\ProductController::class, 'syncGsc']);
-
-// Temp Debug Route to clear cache
-Route::get('/clear-config-cache', function() {
-    \Illuminate\Support\Facades\Artisan::call('config:clear');
-    \Illuminate\Support\Facades\Artisan::call('cache:clear');
-    return "Cache vidé !";
-});
+    Route::post('products/{product}/sync-gsc', [\App\Http\Controllers\Api\ProductController::class, 'syncGsc']);
     Route::get('products/{product}/seo-diagnostic', [\App\Http\Controllers\Api\ProductController::class, 'seoDiagnostic']);
     Route::get('products/{product}/social-diagnostic', [\App\Http\Controllers\Api\ProductController::class, 'socialDiagnostic']);
+    
+    // Standard Catalog Routes
+    Route::get('products', [\App\Http\Controllers\Api\ProductController::class, 'index']);
     
     // Blog & Marketing
     Route::middleware('role:Admin,Gérant,Responsable Marketing')->group(function () {
