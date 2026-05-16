@@ -395,3 +395,5 @@ class ProductController extends Controller
         return 'products/' . $fileName;
     }
 }
+   
+ 
