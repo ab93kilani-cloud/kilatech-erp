@@ -886,8 +886,8 @@ const saveMarketing = async () => {
                              <div class="p-4">
                                 <p class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{{ editForm['social_' + activeSocialSubTab + '_post'] || 'Aucun contenu genere.' }}</p>
                              </div>
-                             <div v-if="selectedProduct.image" class="w-full aspect-video bg-gray-50">
-                                <img :src="getImageUrl(selectedProduct.image)" class="w-full h-full object-cover">
+                             <div v-if="selectedProduct.image_path || selectedProduct.image" class="w-full aspect-video bg-gray-50 flex items-center justify-center">
+                                <img :src="getImageUrl(selectedProduct.image_path || selectedProduct.image)" class="max-w-full max-h-full object-contain">
                              </div>
                          </div>
 
@@ -1003,8 +1003,8 @@ const saveMarketing = async () => {
                         
                         <!-- IMAGE SEO (ALT TAG) -->
                         <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex gap-6 items-center">
-                            <div class="w-24 h-24 rounded-xl overflow-hidden border-2 border-white shadow-sm flex-shrink-0 bg-white">
-                                <img :src="getImageUrl(selectedProduct.image)" class="w-full h-full object-contain p-2">
+                            <div class="w-24 h-24 rounded-xl overflow-hidden border-2 border-white shadow-sm flex-shrink-0 bg-white flex items-center justify-center">
+                                <img :src="getImageUrl(selectedProduct.image_path || selectedProduct.image)" class="max-w-full max-h-full object-contain p-2">
                             </div>
                             <div class="flex-1">
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Google Images (ALT Tag)</label>
