@@ -16,10 +16,10 @@ class GoogleSearchConsoleService
     public function __construct()
     {
         $this->client = new \GuzzleHttp\Client();
-        $this->clientId = env('GSC_CLIENT_ID');
-        $this->clientSecret = env('GSC_CLIENT_SECRET');
-        $this->refreshToken = env('GSC_REFRESH_TOKEN');
-        $this->siteUrl = env('GSC_SITE_URL', 'https://kilatech.ma/');
+        $this->clientId = config('services.google.gsc_client_id');
+        $this->clientSecret = config('services.google.gsc_client_secret');
+        $this->refreshToken = config('services.google.gsc_refresh_token');
+        $this->siteUrl = config('services.google.gsc_site_url', 'https://kilatech.ma/');
     }
 
     /**
