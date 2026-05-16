@@ -73,6 +73,7 @@ Route::post('/api/public/contact', [\App\Http\Controllers\Api\ContactController:
 
 // Public product catalog for kilatech.ma (no auth required)
 Route::get('/api/products', [\App\Http\Controllers\Api\ProductController::class, 'index']);
+Route::get('/api/products/{id}', [\App\Http\Controllers\Api\ProductController::class, 'show']);
 Route::get('/api/public/products', [\App\Http\Controllers\Api\ProductController::class, 'index']);
 Route::get('/api/public/products/{id}', [\App\Http\Controllers\Api\ProductController::class, 'show']);
 
