@@ -71,7 +71,9 @@ Route::post('/api/public/quote-request', [\App\Http\Controllers\Api\QuoteControl
 Route::post('/public/contact', [\App\Http\Controllers\Api\ContactController::class, 'store']);
 Route::post('/api/public/contact', [\App\Http\Controllers\Api\ContactController::class, 'store']);
 
-// Public product details (if needed without auth)
+// Public product catalog for kilatech.ma (no auth required)
+Route::get('/api/products', [\App\Http\Controllers\Api\ProductController::class, 'index']);
+Route::get('/api/public/products', [\App\Http\Controllers\Api\ProductController::class, 'index']);
 Route::get('/api/public/products/{id}', [\App\Http\Controllers\Api\ProductController::class, 'show']);
 
 // SEO V2 - Elite products for n8n
