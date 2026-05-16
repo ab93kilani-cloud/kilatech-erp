@@ -364,7 +364,7 @@ class SeoController extends Controller
         $articles = \App\Models\Article::where('status', 'published')->select('slug', 'updated_at')->get();
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-        $xml .= "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+        $xml .= "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">';
 
         // Static Pages
         $staticPages = ['', '/about', '/blog', '/catalogues', '/contact', '/actualites'];
@@ -381,6 +381,12 @@ class SeoController extends Controller
             if (!$product->slug) continue;
             $xml .= "\n  " . '<url>';
             $xml .= "\n    " . '<loc>https://kilatech.ma/produit/' . $product->slug . '</loc>';
+            if ($product->image_path) {
+                $xml .= "\n    " . '<image:image>';
+                $xml .= "\n      " . '<image:loc>https://kilatech.ma/storage/' . $product->image_path . '</image:loc>';
+                $xml .= "\n      " . '<image:title>' . htmlspecialchars($product->seo_title ?: $product->name) . '</image:title>';
+                $xml .= "\n    " . '</image:image>';
+            }
             $xml .= "\n    " . '<lastmod>' . ($product->updated_at ? $product->updated_at->toAtomString() : now()->toAtomString()) . '</lastmod>';
             $xml .= "\n    " . '<changefreq>monthly</changefreq>';
             $xml .= "\n    " . '<priority>0.8</priority>';
@@ -392,6 +398,12 @@ class SeoController extends Controller
             if (!$article->slug) continue;
             $xml .= "\n  " . '<url>';
             $xml .= "\n    " . '<loc>https://kilatech.ma/actualites/' . $article->slug . '</loc>';
+            if ($article->image) {
+                $xml .= "\n    " . '<image:image>';
+                $xml .= "\n      " . '<image:loc>https://kilatech.ma/storage/' . $article->image . '</image:loc>';
+                $xml .= "\n      " . '<image:title>' . htmlspecialchars($article->title) . '</image:title>';
+                $xml .= "\n    " . '</image:image>';
+            }
             $xml .= "\n    " . '<lastmod>' . ($article->updated_at ? $article->updated_at->toAtomString() : now()->toAtomString()) . '</lastmod>';
             $xml .= "\n    " . '<changefreq>monthly</changefreq>';
             $xml .= "\n    " . '<priority>0.7</priority>';

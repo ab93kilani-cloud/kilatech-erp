@@ -42,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('users', \App\Http\Controllers\Api\UserController::class);
     });
     Route::post('products/{product}/generate-marketing', [\App\Http\Controllers\Api\ProductController::class, 'generateMarketing']);
+    Route::post('products/{product}/sync-gsc', [\App\Http\Controllers\Api\ProductController::class, 'syncGsc']);
     Route::get('products/{product}/seo-diagnostic', [\App\Http\Controllers\Api\ProductController::class, 'seoDiagnostic']);
     Route::get('products/{product}/social-diagnostic', [\App\Http\Controllers\Api\ProductController::class, 'socialDiagnostic']);
     

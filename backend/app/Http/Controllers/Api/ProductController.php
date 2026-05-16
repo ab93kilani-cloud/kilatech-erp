@@ -303,15 +303,47 @@ class ProductController extends Controller
 
     public function generateMarketing(Product $product)
     {
-        $product->update(['seo_status' => 'pending']);
+        // We no longer use n8n for this. Mode is now 100% manual for better quality.
+        $product->update(['seo_status' => 'optimized']);
         
-        // Optionnel : Tentative de notification n8n si un webhook est configuré
-        // try { \Illuminate\Support\Facades\Http::post(config('services.n8n.webhook_url'), ['product_id' => $product->id]); } catch(\Exception $e) {}
-
         return response()->json([
-            'message' => 'Produit mis en attente pour les agents SEO n8n.',
+            'message' => 'Mode manuel activé. Vous pouvez maintenant éditer la fiche avec les outils premium.',
             'product' => $product
         ]);
+    }
+
+    /**
+     * Direct GSC Sync (Replacing n8n bridge)
+     */
+    public function syncGsc($id, \App\Services\GoogleSearchConsoleService $gsc)
+    {
+        $product = Product::findOrFail($id);
+        
+        if (!$product->slug) {
+            return response()->json(['success' => false, 'message' => 'Le produit doit avoir un slug pour être synchronisé.'], 422);
+        }
+
+        $path = 'produit/' . $product->slug;
+        $stats = $gsc->getUrlStats($path);
+
+        if ($stats) {
+            $product->update([
+                'gsc_position' => $stats['position'],
+                'gsc_ctr' => $stats['ctr'],
+                'gsc_impressions' => $stats['impressions'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Synchronisation GSC réussie !',
+                'data' => $stats
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Impossible de récupérer les données GSC. Vérifiez la configuration de l\'API.'
+        ], 500);
     }
 
     public function seoDiagnostic(Product $product, \App\Services\MarketingAiService $marketingAi)

@@ -12,6 +12,7 @@ const diagnostic = ref<any | null>(null)
 const isDiagnosing = ref(false)
 const isEditing = ref(false)
 const editForm = ref<any>({})
+const isSyncingGsc = ref(false)
 const activeTab = ref('seo') // 'seo', 'social', 'blog', 'news', 'opportunities'
 const activeSocialSubTab = ref('linkedin') // 'linkedin', 'facebook', 'instagram'
 const showCopySuccess = ref(false)
@@ -400,6 +401,25 @@ watch(activeTab, () => {
 const closePreview = () => {
   selectedProduct.value = null
   isEditing.value = false
+}
+
+const syncGsc = async () => {
+  if (!selectedProduct.value) return
+  isSyncingGsc.value = true
+  try {
+    const res = await api.post(`/products/${selectedProduct.value.id}/sync-gsc`)
+    alert(res.data.message)
+    // Update local data
+    editForm.value.gsc_position = res.data.data.position
+    editForm.value.gsc_ctr = res.data.data.ctr
+    editForm.value.gsc_impressions = res.data.data.impressions
+    selectedProduct.value = { ...selectedProduct.value, ...res.data.data }
+    fetchProducts()
+  } catch (e: any) {
+    alert(e.response?.data?.message || 'Erreur lors de la synchronisation GSC')
+  } finally {
+    isSyncingGsc.value = false
+  }
 }
 
 const saveMarketing = async () => {
@@ -897,10 +917,43 @@ const saveMarketing = async () => {
                         </div>
                     </div>
 
+                    <!-- SEO PERFORMANCE (LIVE) -->
+                    <div v-if="activeTab === 'seo'" class="p-6 bg-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10">
+                            <svg class="h-24 w-24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
+                        </div>
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance Google Search</h4>
+                                <button @click="syncGsc" :disabled="isSyncingGsc" class="text-[10px] font-black bg-brand-600 hover:bg-brand-500 px-3 py-1 rounded-full transition-all flex items-center gap-2">
+                                    <span v-if="isSyncingGsc" class="animate-spin text-xs">⚙️</span>
+                                    {{ isSyncingGsc ? 'Sync...' : 'SYNC LIVE' }}
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase font-bold">Position</p>
+                                    <p class="text-2xl font-black text-brand-400">{{ editForm.gsc_position || '---' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase font-bold">CTR</p>
+                                    <p class="text-2xl font-black text-emerald-400">{{ editForm.gsc_ctr ? editForm.gsc_ctr + '%' : '---' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase font-bold">Impressions</p>
+                                    <p class="text-2xl font-black text-amber-400">{{ editForm.gsc_impressions || '---' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- DIAGNOSTIC ADVICE -->
                      <div v-if="currentDiagnostic" class="space-y-3">
-                        <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Conseils de l'IA Kilatech</h4>
-                        <div v-for="check in currentDiagnostic.checks" :key="check.id" class="flex gap-4 p-4 rounded-2xl border transition-all" :class="{
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Checklist SEO Kilatech</h4>
+                            <span class="text-[10px] font-bold text-gray-500 uppercase">{{ currentDiagnostic.checks.filter(c => c.status === 'success').length }}/{{ currentDiagnostic.checks.length }} Validés</span>
+                        </div>
+                        <div v-for="check in currentDiagnostic.checks" :key="check.id" class="flex gap-4 p-4 rounded-2xl border transition-all hover:shadow-md" :class="{
                             'bg-emerald-50/30 border-emerald-100': check.status === 'success',
                             'bg-amber-50/30 border-amber-100': check.status === 'warning',
                             'bg-red-50/30 border-red-100': check.status === 'error'
@@ -908,7 +961,7 @@ const saveMarketing = async () => {
                             <div class="text-lg">{{ check.status === 'success' ? '✅' : (check.status === 'warning' ? '⚠️' : '❌') }}</div>
                             <div>
                                 <p class="text-xs font-black text-gray-900">{{ check.label }}</p>
-                                <p class="text-[11px] text-gray-500 mt-1 italic">{{ check.advice }}</p>
+                                <p class="text-[11px] text-gray-500 mt-1 italic leading-relaxed">{{ check.advice }}</p>
                             </div>
                         </div>
                      </div>
@@ -948,8 +1001,8 @@ const saveMarketing = async () => {
                             </div>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Contenu SEO (Article Long)</label>
-                            <textarea v-model="editForm.seo_content" :disabled="!isEditing" rows="6" placeholder="Contenu structuré généré par n8n..." class="w-full bg-white border border-gray-100 rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:opacity-70 transition-all"></textarea>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Contenu SEO (Article Long - HTML)</label>
+                            <textarea v-model="editForm.seo_content" :disabled="!isEditing" rows="10" placeholder="Rédigez ici le contenu optimisé pour ce produit..." class="w-full bg-white border border-gray-100 rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:opacity-70 transition-all font-mono"></textarea>
                         </div>
                         <div>
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Context Geographique (Local SEO)</label>
@@ -973,11 +1026,15 @@ const saveMarketing = async () => {
                         </div>
                     </div>
                     
-                    <div class="mt-10 pt-6 border-t border-gray-100 flex justify-center">
-                         <button @click="generateMarketing(selectedProduct.id)" :disabled="isGenerating === selectedProduct.id" class="bg-brand-600 text-white font-black px-10 py-3 rounded-2xl shadow-2xl shadow-brand-200 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50">
-                            <span v-if="isGenerating === selectedProduct.id" class="animate-spin text-xl">✨</span>
-                            <span v-else class="text-xl">⚡</span>
-                            {{ isGenerating === selectedProduct.id ? 'Optimisation IA en cours...' : 'RE-GENERER TOUT PAR IA' }}
+                    <div class="mt-10 pt-6 border-t border-gray-100 flex flex-col gap-4">
+                         <div class="p-4 bg-amber-50 border border-amber-100 rounded-2xl">
+                             <p class="text-[10px] font-black text-amber-700 uppercase mb-1">Mode Manuel Activé</p>
+                             <p class="text-[11px] text-amber-600 font-medium">La liaison n8n a été désactivée pour garantir une qualité maximale. Utilisez les outils ci-dessus pour optimiser ce produit.</p>
+                         </div>
+                         <button @click="generateMarketing(selectedProduct.id)" :disabled="isGenerating === selectedProduct.id" class="bg-slate-100 text-slate-500 font-black px-10 py-3 rounded-2xl hover:bg-slate-200 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
+                            <span v-if="isGenerating === selectedProduct.id" class="animate-spin text-xl">⚙️</span>
+                            <span v-else class="text-xl">🛠️</span>
+                            {{ isGenerating === selectedProduct.id ? 'Traitement...' : 'MARQUER COMME OPTIMISÉ' }}
                          </button>
                     </div>
                 </div>

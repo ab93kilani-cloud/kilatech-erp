@@ -35,6 +35,7 @@ class MarketingAiService
                 'slug' => $seo['slug'] ?? Str::slug($product->name),
                 'meta_title' => $seo['meta_title'] ?? $product->name,
                 'meta_description' => $seo['meta_description'] ?? '',
+                'seo_alt' => $seo['seo_alt'] ?? "Photo " . $product->name . " - Kilatech Maroc",
                 'meta_keywords' => $seo['focus_keywords'] ?? '',
                 'social_linkedin_post' => $social['linkedin_post'] ?? '',
                 'social_facebook_post' => $social['facebook_post'] ?? '',
@@ -50,11 +51,19 @@ class MarketingAiService
     protected function generateSeo($product)
     {
         $prompt = "Tu es un Expert SEO Senior spécialisé dans le B2B Médical au Maroc. 
+        
+        CONSIGNE CRITIQUE : Le titre SEO (meta_title) DOIT impérativement commencer par le nom du produit '{$product->name}'.
+        
         Produit: {$product->name}
         Description: {$product->description}
         Catégorie: {$product->category}
         
-        Génère un JSON avec: meta_title (max 60 chars), meta_description (max 155 chars), slug (url friendly), focus_keywords (5 mots-clés séparés par virgules).";
+        Génère un JSON avec: 
+        - meta_title (max 60 chars, COMMENCE obligatoirement par '{$product->name}'), 
+        - meta_description (max 155 chars, doit être percutante et inclure 'Maroc'), 
+        - seo_alt (max 100 chars, description pour Google Images, ex: '{$product->name} disponible chez Kilatech Maroc'),
+        - slug (url friendly), 
+        - focus_keywords (5 mots-clés séparés par virgules).";
 
         return $this->callAi($prompt);
     }
