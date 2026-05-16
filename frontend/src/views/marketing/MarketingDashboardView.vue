@@ -1000,6 +1000,18 @@ const saveMarketing = async () => {
                                 <span class="text-[10px] font-bold" :class="editForm.seo_description?.length > 160 || editForm.seo_description?.length < 100 ? 'text-amber-500' : 'text-emerald-500'">{{ editForm.seo_description?.length || 0 }} car.</span>
                             </div>
                         </div>
+                        
+                        <!-- IMAGE SEO (ALT TAG) -->
+                        <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex gap-6 items-center">
+                            <div class="w-24 h-24 rounded-xl overflow-hidden border-2 border-white shadow-sm flex-shrink-0 bg-white">
+                                <img :src="getImageUrl(selectedProduct.image)" class="w-full h-full object-contain p-2">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Google Images (ALT Tag)</label>
+                                <input v-model="editForm.seo_alt" :disabled="!isEditing" placeholder="Ex: Surchaussure bleue jetable Kilatech Maroc" class="w-full bg-white border border-gray-100 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:opacity-70 transition-all">
+                                <p class="text-[9px] text-slate-400 mt-2 font-medium italic">Ce texte aide Google à référencer vos photos dans les résultats d'images.</p>
+                            </div>
+                        </div>
                         <div>
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Contenu SEO (Article Long - HTML)</label>
                             <textarea v-model="editForm.seo_content" :disabled="!isEditing" rows="10" placeholder="Rédigez ici le contenu optimisé pour ce produit..." class="w-full bg-white border border-gray-100 rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:opacity-70 transition-all font-mono"></textarea>

@@ -195,6 +195,11 @@ class ProductController extends Controller
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string',
+            'seo_title' => 'nullable|string|max:255',
+            'seo_alt' => 'nullable|string|max:255',
+            'seo_h1' => 'nullable|string|max:255',
+            'seo_description' => 'nullable|string',
+            'seo_content' => 'nullable|string',
             'social_linkedin_post' => 'nullable|string',
             'social_facebook_post' => 'nullable|string',
             'social_instagram_post' => 'nullable|string',
@@ -342,7 +347,7 @@ class ProductController extends Controller
 
         return response()->json([
             'success' => false,
-            'message' => 'Impossible de récupérer les données GSC. Vérifiez la configuration de l\'API.'
+            'message' => 'Impossible de récupérer les données GSC. Vérifiez que vos identifiants (Client ID, Secret, Refresh Token) sont correctement configurés dans le fichier .env'
         ], 500);
     }
 
