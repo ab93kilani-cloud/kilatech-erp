@@ -102,8 +102,13 @@ class GoogleSearchConsoleService
             ];
 
         } catch (\Exception $e) {
-            Log::error('GSC Query Failed: ' . $e->getMessage());
-            return null;
+            $msg = $e->getMessage();
+            if (str_contains($msg, '403')) {
+                $msg = "Accès refusé. Vérifiez que le site {$this->siteUrl} est bien dans votre Search Console et que l'API est activée.";
+            } elseif (str_contains($msg, '401')) {
+                $msg = "Authentification échouée. Votre Refresh Token est peut-être expiré.";
+            }
+            throw new \Exception($msg);
         }
     }
 }

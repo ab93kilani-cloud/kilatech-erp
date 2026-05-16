@@ -322,33 +322,41 @@ class ProductController extends Controller
      */
     public function syncGsc($id, \App\Services\GoogleSearchConsoleService $gsc)
     {
-        $product = Product::findOrFail($id);
-        
-        if (!$product->slug) {
-            return response()->json(['success' => false, 'message' => 'Le produit doit avoir un slug pour être synchronisé.'], 422);
-        }
+        try {
+            $product = Product::findOrFail($id);
+            
+            if (!$product->slug) {
+                return response()->json(['success' => false, 'message' => 'Le produit doit avoir un slug pour être synchronisé.'], 422);
+            }
 
-        $path = 'produit/' . $product->slug;
-        $stats = $gsc->getUrlStats($path);
+            $path = 'produit/' . $product->slug;
+            $stats = $gsc->getUrlStats($path);
 
-        if ($stats) {
-            $product->update([
-                'gsc_position' => $stats['position'],
-                'gsc_ctr' => $stats['ctr'],
-                'gsc_impressions' => $stats['impressions'],
-            ]);
+            if ($stats) {
+                $product->update([
+                    'gsc_position' => $stats['position'],
+                    'gsc_ctr' => $stats['ctr'],
+                    'gsc_impressions' => $stats['impressions'],
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Synchronisation GSC réussie !',
+                    'data' => $stats
+                ]);
+            }
 
             return response()->json([
-                'success' => true,
-                'message' => 'Synchronisation GSC réussie !',
-                'data' => $stats
+                'success' => false,
+                'message' => 'Aucune donnée trouvée pour ce produit dans la Search Console.'
             ]);
-        }
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Impossible de récupérer les données GSC. Vérifiez que vos identifiants (Client ID, Secret, Refresh Token) sont correctement configurés dans le fichier .env'
-        ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur GSC : ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function seoDiagnostic(Product $product, \App\Services\MarketingAiService $marketingAi)
