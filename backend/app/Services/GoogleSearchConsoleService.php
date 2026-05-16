@@ -15,7 +15,7 @@ class GoogleSearchConsoleService
 
     public function __construct()
     {
-        $this->client = new Client();
+        $this->client = new \GuzzleHttp\Client();
         $this->clientId = env('GSC_CLIENT_ID');
         $this->clientSecret = env('GSC_CLIENT_SECRET');
         $this->refreshToken = env('GSC_REFRESH_TOKEN');

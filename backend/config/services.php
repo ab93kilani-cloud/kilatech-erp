@@ -35,12 +35,4 @@ return [
         'api_key' => env('MARKETING_AI_API_KEY'),
     ],
 
-    'google' => [
-        'gsc_client_id' => env('GSC_CLIENT_ID'),
-        'gsc_client_secret' => env('GSC_CLIENT_SECRET'),
-        'gsc_refresh_token' => env('GSC_REFRESH_TOKEN'),
-        'gsc_site_url' => env('GSC_SITE_URL', 'https://kilatech.ma/'),
-    ],
-
-
 ];
