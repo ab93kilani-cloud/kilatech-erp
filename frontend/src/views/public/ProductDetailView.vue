@@ -42,6 +42,7 @@ interface Product {
   seo_description?: string;
   seo_content?: string;
   seo_h1?: string;
+  seo_alt?: string;
   seo_score?: number;
   seo_status?: string;
   image_path: string | null;
@@ -161,7 +162,7 @@ onMounted(fetchProduct)
         <!-- Gallery -->
         <div class="space-y-6">
           <div class="aspect-square bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 group">
-             <img :src="getImageUrl(mainImage)" :alt="product.name" class="w-full h-full object-contain p-8 group-hover:scale-105 transition-transform duration-500" />
+             <img :src="getImageUrl(mainImage)" :alt="product.seo_alt || product.name" class="w-full h-full object-contain p-8 group-hover:scale-105 transition-transform duration-500" />
           </div>
           
           <div v-if="product.images && product.images.length > 0" class="grid grid-cols-4 gap-4">

@@ -951,7 +951,7 @@ const saveMarketing = async () => {
                      <div v-if="currentDiagnostic" class="space-y-3">
                         <div class="flex justify-between items-center">
                             <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Checklist SEO Kilatech</h4>
-                            <span class="text-[10px] font-bold text-gray-500 uppercase">{{ currentDiagnostic.checks.filter(c => c.status === 'success').length }}/{{ currentDiagnostic.checks.length }} Validés</span>
+                            <span class="text-[10px] font-bold text-gray-500 uppercase">{{ (currentDiagnostic.checks as any[]).filter((c: any) => c.status === 'success').length }}/{{ currentDiagnostic.checks.length }} Validés</span>
                         </div>
                         <div v-for="check in currentDiagnostic.checks" :key="check.id" class="flex gap-4 p-4 rounded-2xl border transition-all hover:shadow-md" :class="{
                             'bg-emerald-50/30 border-emerald-100': check.status === 'success',
