@@ -24,6 +24,7 @@ const isMenuOpen = ref(false)
             <router-link :to="{ name: 'news' }" class="text-sm font-bold text-gray-700 hover:text-brand-600 transition-colors uppercase tracking-widest" active-class="text-brand-600 border-b-2 border-brand-600 pb-1">Actualités</router-link>
             
             <router-link :to="{ name: 'about' }" class="text-sm font-bold text-gray-700 hover:text-brand-600 transition-colors uppercase tracking-widest" active-class="text-brand-600 border-b-2 border-brand-600 pb-1">Qui sommes-nous</router-link>
+            <router-link :to="{ name: 'become-partner' }" class="text-sm font-bold text-gray-700 hover:text-brand-600 transition-colors uppercase tracking-widest text-nowrap" active-class="text-brand-600 border-b-2 border-brand-600 pb-1">Devenir Partenaire</router-link>
             <router-link :to="{ name: 'contact' }" class="text-sm font-bold text-gray-700 hover:text-brand-600 transition-colors uppercase tracking-widest" active-class="text-brand-600 border-b-2 border-brand-600 pb-1">Contact</router-link>
         </div>
 
@@ -61,6 +62,7 @@ const isMenuOpen = ref(false)
             <router-link @click="isMenuOpen = false" :to="{ name: 'blog' }" class="block text-lg font-black text-gray-900 uppercase tracking-widest border-l-4 border-transparent pl-4 py-2" active-class="text-brand-600 border-brand-600 bg-brand-50">Blog</router-link>
             <router-link @click="isMenuOpen = false" :to="{ name: 'news' }" class="block text-lg font-black text-gray-900 uppercase tracking-widest border-l-4 border-transparent pl-4 py-2" active-class="text-brand-600 border-brand-600 bg-brand-50">Actualités</router-link>
             <router-link @click="isMenuOpen = false" :to="{ name: 'about' }" class="block text-lg font-black text-gray-900 uppercase tracking-widest border-l-4 border-transparent pl-4 py-2" active-class="text-brand-600 border-brand-600 bg-brand-50">Qui sommes-nous</router-link>
+            <router-link @click="isMenuOpen = false" :to="{ name: 'become-partner' }" class="block text-lg font-black text-gray-900 uppercase tracking-widest border-l-4 border-transparent pl-4 py-2" active-class="text-brand-600 border-brand-600 bg-brand-50">Devenir Partenaire</router-link>
             <router-link @click="isMenuOpen = false" :to="{ name: 'contact' }" class="block text-lg font-black text-gray-900 uppercase tracking-widest border-l-4 border-transparent pl-4 py-2" active-class="text-brand-600 border-brand-600 bg-brand-50">Contact</router-link>
           </div>
         </div>

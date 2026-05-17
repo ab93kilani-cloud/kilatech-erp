@@ -61,6 +61,12 @@ const router = createRouter({
                     path: 'catalogues',
                     name: 'catalogues',
                     component: () => import('../views/public/CataloguesView.vue')
+                },
+                {
+                    path: 'devenir-partenaire',
+                    name: 'become-partner',
+                    component: () => import('../views/public/BecomePartnerView.vue'),
+                    meta: { title: 'Devenir Partenaire | Kilatech' }
                 }
             ]
         },
