@@ -29,7 +29,7 @@ export const initAnalytics = () => {
     t.src=v;s=b.getElementsByTagName(e)[0];
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '123456789012345'); // TODO: Remplacer par le vrai Pixel ID
+    fbq('init', '1711259076714743'); // ID Pixel Kilatech
     fbq('track', 'PageView');
   `;
   document.head.appendChild(fbqScript);
