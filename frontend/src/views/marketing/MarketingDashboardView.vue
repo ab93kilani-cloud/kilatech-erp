@@ -526,6 +526,13 @@ const saveMarketing = async () => {
         Opportunités
         <span v-if="missingSearches.length > 0" class="bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full text-[10px] font-bold">{{ missingSearches.length }}</span>
       </button>
+      <button 
+        @click="activeTab = 'analytics'"
+        :class="activeTab === 'analytics' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+        class="whitespace-nowrap py-4 px-6 border-b-2 font-bold text-sm transition-all text-sm"
+      >
+        Statistiques Visiteurs
+      </button>
     </div>
 
     <!-- Main Content Area -->
@@ -828,6 +835,60 @@ const saveMarketing = async () => {
                           </tr>
                       </tbody>
                   </table>
+              </div>
+          </div>
+      </div>
+
+      <!-- TAB: ANALYTICS -->
+      <div v-if="activeTab === 'analytics'" class="p-8 animate-fade-in bg-white">
+          <div class="mb-8 border-b border-gray-100 pb-6">
+              <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">📊 Statistiques Visiteurs & Consentement</h3>
+              <p class="text-sm text-gray-500 mt-1">Surveillez l'activité de vos visiteurs et accédez à vos outils publicitaires externes.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <!-- Carte Google Analytics -->
+              <div class="border border-gray-200 rounded-3xl p-8 shadow-sm flex flex-col justify-between bg-gradient-to-br from-white to-gray-50">
+                  <div>
+                      <div class="flex items-center gap-4 mb-4">
+                          <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-xl">G</div>
+                          <div>
+                              <h4 class="text-lg font-black text-gray-900">Google Analytics 4</h4>
+                              <p class="text-xs text-gray-500 font-bold uppercase tracking-widest">ID: G-LDFN3G23KM</p>
+                          </div>
+                      </div>
+                      <p class="text-sm text-gray-600 leading-relaxed mb-6 font-medium">L'outil est correctement connecté. Il analyse en temps réel le nombre de visiteurs, leur provenance (villes), et les pages du catalogue les plus consultées.</p>
+                  </div>
+                  <a href="https://analytics.google.com/" target="_blank" class="w-full text-center bg-white text-blue-600 font-black border-2 border-blue-100 py-3 rounded-2xl hover:bg-blue-50 transition-colors">
+                      OUVRIR GOOGLE ANALYTICS
+                  </a>
+              </div>
+
+              <!-- Carte Meta Pixel -->
+              <div class="border border-gray-200 rounded-3xl p-8 shadow-sm flex flex-col justify-between bg-gradient-to-br from-white to-gray-50">
+                  <div>
+                      <div class="flex items-center gap-4 mb-4">
+                          <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-xl">M</div>
+                          <div>
+                              <h4 class="text-lg font-black text-gray-900">Meta Pixel (Facebook/Insta)</h4>
+                              <p class="text-xs text-gray-500 font-bold uppercase tracking-widest">ID: 1711259076714743</p>
+                          </div>
+                      </div>
+                      <p class="text-sm text-gray-600 leading-relaxed mb-6 font-medium">Le pixel est actif. Il enregistre les visites pour vous permettre de recibler (Retargeting) les médecins et cliniques avec des publicités sur les réseaux sociaux.</p>
+                  </div>
+                  <a href="https://business.facebook.com/" target="_blank" class="w-full text-center bg-white text-indigo-600 font-black border-2 border-indigo-100 py-3 rounded-2xl hover:bg-indigo-50 transition-colors">
+                      OUVRIR META BUSINESS
+                  </a>
+              </div>
+          </div>
+          
+          <div class="bg-emerald-50 rounded-2xl p-6 border border-emerald-100 flex items-start gap-4">
+              <div class="text-3xl">🛡️</div>
+              <div>
+                  <h4 class="text-sm font-black text-emerald-900 uppercase">Conformité RGPD / CNDP Garantie</h4>
+                  <p class="text-xs text-emerald-700 font-medium mt-1 leading-relaxed">
+                      Le système de consentement des cookies bloque strictement l'activation de ces outils de suivi tant que le visiteur n'a pas explicitement cliqué sur "Tout Accepter". Cela protège Kilatech de toute violation des données personnelles au Maroc et à l'international.
+                  </p>
               </div>
           </div>
       </div>
