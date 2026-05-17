@@ -235,7 +235,7 @@ ${form.value.description}
 
     try {
         // Post to public contact endpoint (Double prefix compatibility)
-        const response = await axios.post('/public/contact', payload)
+        await axios.post('/public/contact', payload)
         successMsg.value = 'Votre demande de partenariat a été enregistrée avec succès. Notre responsable B2B vous recontactera très rapidement !'
         
         // Reset form
