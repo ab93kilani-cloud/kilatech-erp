@@ -152,11 +152,11 @@
     <!-- Tab Content: Messages Contact -->
     <div v-if="activeTab === 'messages'" class="space-y-4">
       <div v-if="isLoading" class="py-12 text-center text-gray-400">Chargement des messages...</div>
-      <div v-else-if="messages.length === 0" class="py-20 bg-white rounded-xl border-2 border-dashed border-gray-100 text-center">
+      <div v-else-if="normalMessages.length === 0" class="py-20 bg-white rounded-xl border-2 border-dashed border-gray-100 text-center">
          <p class="text-gray-400">Aucun message de contact reçu.</p>
       </div>
       <div v-else class="space-y-4">
-         <div v-for="msg in messages" :key="msg.id" :class="['bg-white p-6 rounded-2xl border transition-all', msg.status === 'unread' ? 'border-brand-200 border-l-4 border-l-brand-600 shadow-sm' : 'border-gray-100']">
+         <div v-for="msg in normalMessages" :key="msg.id" :class="['bg-white p-6 rounded-2xl border transition-all', msg.status === 'unread' ? 'border-brand-200 border-l-4 border-l-brand-600 shadow-sm' : 'border-gray-100']">
             <div class="flex justify-between items-start mb-4">
                <div class="flex items-center gap-3">
                   <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center font-bold text-gray-500 uppercase">{{ msg.first_name[0] }}{{ msg.last_name[0] }}</div>
@@ -173,7 +173,64 @@
             <p class="text-sm text-gray-700 bg-gray-50 p-4 rounded-xl italic font-light">"{{ msg.message }}"</p>
             <div class="mt-4 flex justify-between items-center text-[10px] text-gray-400 uppercase tracking-widest">
                <span>Pays: {{ msg.country || 'N/A' }}</span>
-               <span>Recu le: {{ new Date(msg.created_at).toLocaleString() }}</span>
+               <span>Reçu le: {{ new Date(msg.created_at).toLocaleString() }}</span>
+            </div>
+         </div>
+      </div>
+    </div>
+
+    <!-- Tab Content: Demandes Partenaires -->
+    <div v-if="activeTab === 'partners'" class="space-y-4">
+      <div v-if="isLoading" class="py-12 text-center text-gray-400">Chargement des demandes de partenariat...</div>
+      <div v-else-if="partnerMessages.length === 0" class="py-20 bg-white rounded-xl border-2 border-dashed border-gray-100 text-center">
+         <p class="text-gray-400">Aucune demande de partenariat reçue pour le moment.</p>
+      </div>
+      <div v-else class="space-y-4">
+         <div v-for="msg in partnerMessages" :key="msg.id" :class="['bg-white p-6 rounded-2xl border transition-all', msg.status === 'unread' ? 'border-brand-200 border-l-4 border-l-brand-600 shadow-sm' : 'border-gray-100']">
+            <div class="flex justify-between items-start mb-6">
+               <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center font-bold text-lg uppercase">{{ msg.first_name[0] }}</div>
+                  <div>
+                     <div class="flex items-center gap-2">
+                       <h4 class="text-sm font-bold text-gray-900">{{ msg.first_name }}</h4>
+                       <span class="text-[9px] bg-brand-100 text-brand-800 font-extrabold px-2.5 py-0.5 rounded-full uppercase">B2B PARTENAIRE</span>
+                     </div>
+                     <p class="text-[11px] text-gray-400 mt-0.5">{{ msg.email }} • {{ msg.phone }}</p>
+                  </div>
+               </div>
+               <div class="flex items-center gap-2">
+                  <button v-if="msg.status === 'unread'" @click="markAsRead(msg.id)" class="text-[10px] text-brand-600 hover:underline uppercase font-bold px-2 py-1">Marquer lu</button>
+                  <button @click="deleteMessage(msg.id)" class="text-[10px] text-red-500 hover:text-red-700 uppercase font-bold px-2 py-1">Supprimer</button>
+               </div>
+            </div>
+            
+            <!-- Parsed B2B Info Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-xl mb-4 text-xs">
+              <div>
+                <span class="text-gray-400 block mb-0.5 font-bold uppercase tracking-tighter">Statut Juridique</span>
+                <span class="font-bold text-gray-900 capitalize">{{ parsePartnerMessage(msg.message).legalStatus }}</span>
+              </div>
+              <div>
+                <span class="text-gray-400 block mb-0.5 font-bold uppercase tracking-tighter">Taille de l'entreprise</span>
+                <span class="font-bold text-gray-900 capitalize">{{ parsePartnerMessage(msg.message).companySize }}</span>
+              </div>
+              <div>
+                <span class="text-gray-400 block mb-0.5 font-bold uppercase tracking-tighter">Pays d'activité</span>
+                <span class="font-bold text-gray-900">{{ msg.country || 'N/A' }}</span>
+              </div>
+              <div>
+                <span class="text-gray-400 block mb-0.5 font-bold uppercase tracking-tighter">Sujet de collaboration</span>
+                <span class="font-bold text-brand-700">{{ parsePartnerMessage(msg.message).subject }}</span>
+              </div>
+            </div>
+
+            <div class="bg-brand-50/20 p-4 rounded-xl border border-brand-50">
+              <h5 class="text-[10px] font-black text-brand-600 uppercase tracking-widest mb-2">Description du projet / collaboration :</h5>
+              <p class="text-sm text-gray-700 italic font-light whitespace-pre-line leading-relaxed">"{{ parsePartnerMessage(msg.message).description }}"</p>
+            </div>
+            
+            <div class="mt-4 flex justify-end text-[10px] text-gray-400 uppercase tracking-widest">
+               <span>Reçu le: {{ new Date(msg.created_at).toLocaleString() }}</span>
             </div>
          </div>
       </div>
@@ -218,12 +275,56 @@ const fetchData = async () => {
 const activeQuotes = computed(() => webQuotes.value.filter(q => q.status === 'pending_approval'))
 const archivedQuotes = computed(() => webQuotes.value.filter(q => q.status === 'validated'))
 
+const normalMessages = computed(() => {
+    return messages.value.filter(m => !m.message?.includes('[DEMANDE DE PARTENARIAT B2B]'))
+})
+
+const partnerMessages = computed(() => {
+    return messages.value.filter(m => m.message?.includes('[DEMANDE DE PARTENARIAT B2B]'))
+})
+
 const tabs = computed(() => [
   { id: 'quotes', name: 'Demandes de Devis', count: activeQuotes.value.length },
   { id: 'archives', name: 'Archives Web', count: archivedQuotes.value.length },
   { id: 'clients', name: 'Nouveaux Prospects', count: webClients.value.length },
-  { id: 'messages', name: 'Messages Contact', count: messages.value.filter(m => m.status === 'unread').length }
+  { id: 'messages', name: 'Messages Contact', count: normalMessages.value.filter(m => m.status === 'unread').length },
+  { id: 'partners', name: 'Demandes Partenaires', count: partnerMessages.value.filter(m => m.status === 'unread').length }
 ])
+
+const parsePartnerMessage = (text: string) => {
+    if (!text) return { subject: 'N/A', legalStatus: 'N/A', companySize: 'N/A', description: '' }
+    const lines = text.split('\n')
+    let subject = 'N/A'
+    let legalStatus = 'N/A'
+    let companySize = 'N/A'
+    let description = ''
+
+    let descStart = false
+    for (const line of lines) {
+        if (line.startsWith('Sujet :')) {
+            subject = line.replace('Sujet :', '').trim()
+        } else if (line.startsWith('Statut Juridique :')) {
+            legalStatus = line.replace('Statut Juridique :', '').trim()
+        } else if (line.startsWith('Taille de l\'entreprise :')) {
+            companySize = line.replace('Taille de l\'entreprise :', '').trim()
+        } else if (line.startsWith('Description :')) {
+            descStart = true
+        } else if (descStart) {
+            description += line + '\n'
+        }
+    }
+    
+    if (!descStart) {
+        description = text.replace('[DEMANDE DE PARTENARIAT B2B]', '').trim()
+    }
+
+    return {
+        subject,
+        legalStatus,
+        companySize,
+        description: description.trim()
+    }
+}
 
 const promoteClient = async (client: any) => {
     const result = await Swal.fire({
