@@ -6,14 +6,14 @@ const isMenuOpen = ref(false)
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 flex flex-col pt-28">
+  <div class="min-h-screen bg-gray-50 flex flex-col pt-16 md:pt-28">
     <!-- Navbar Premium Publique -->
     <header class="fixed w-full top-0 z-[60] bg-white border-b border-gray-100 shadow-sm transition-all duration-300">
-      <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between h-28">
+      <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 md:h-28">
         <!-- Logo -->
         <div class="flex-shrink-0 flex items-center">
           <router-link :to="{ name: 'storefront' }" class="flex items-center">
-            <img class="h-20 w-auto object-contain hover:scale-105 transition-transform duration-500" src="/logo.png" alt="Kilatech" />
+            <img class="h-10 md:h-20 w-auto object-contain hover:scale-105 transition-transform duration-500" src="/logo.png" alt="Kilatech" />
           </router-link>
         </div>
 
@@ -56,7 +56,7 @@ const isMenuOpen = ref(false)
         leave-from-class="transform translate-y-0"
         leave-to-class="transform -translate-y-full"
       >
-        <div v-if="isMenuOpen" class="md:hidden bg-white border-b border-gray-100 shadow-xl overflow-hidden absolute w-full top-28 left-0 z-40">
+        <div v-if="isMenuOpen" class="md:hidden bg-white border-b border-gray-100 shadow-xl overflow-hidden absolute w-full top-16 left-0 z-40">
           <div class="px-4 pt-4 pb-8 space-y-4">
             <router-link @click="isMenuOpen = false" :to="{ name: 'storefront' }" class="block text-lg font-black text-gray-900 uppercase tracking-widest border-l-4 border-transparent pl-4 py-2" active-class="text-brand-600 border-brand-600 bg-brand-50">Accueil</router-link>
             <router-link @click="isMenuOpen = false" :to="{ name: 'blog' }" class="block text-lg font-black text-gray-900 uppercase tracking-widest border-l-4 border-transparent pl-4 py-2" active-class="text-brand-600 border-brand-600 bg-brand-50">Blog</router-link>
