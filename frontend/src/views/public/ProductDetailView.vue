@@ -80,6 +80,12 @@ const selectedVariant = ref<Variant | null>(null)
 const mainImage = ref<string | null>(null)
 const quantity = ref(1)
 
+const getStep = () => {
+    return product.value?.sales_multiplier && product.value.sales_multiplier > 1
+        ? Number(product.value.sales_multiplier)
+        : 1
+}
+
 const formatPrice = (price: number | string | null | undefined) => {
     if (price === null || price === undefined || price === '') return 'Sur devis';
     const num = parseFloat(price.toString());
@@ -91,9 +97,27 @@ const getDisplayPrice = (variant: Variant | null) => {
     return parseFloat(variant.public_price.toString());
 }
 
-const incrementQty = () => quantity.value++
+const incrementQty = () => {
+    const step = getStep()
+    quantity.value += step
+}
+
 const decrementQty = () => {
-    if (quantity.value > 1) quantity.value--
+    const step = getStep()
+    if (quantity.value > step) {
+        quantity.value -= step
+    } else {
+        quantity.value = step
+    }
+}
+
+const sanitizeQuantity = () => {
+    const step = getStep()
+    if (quantity.value < step) {
+        quantity.value = step
+    } else {
+        quantity.value = Math.round(quantity.value / step) * step
+    }
 }
 
 const totalPrice = computed(() => {
@@ -109,6 +133,9 @@ const fetchProduct = async () => {
         
         if (product.value) {
             mainImage.value = product.value.image_path
+            quantity.value = product.value.sales_multiplier && product.value.sales_multiplier > 1
+                ? Number(product.value.sales_multiplier)
+                : 1
             if (product.value.variants && product.value.variants.length > 0) {
                 const firstVariant = product.value.variants[0];
                 if (firstVariant) {
@@ -245,13 +272,29 @@ onMounted(fetchProduct)
           <!-- Quantity Selector -->
           <div class="mb-10 p-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
             <h3 class="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">Quantité :</h3>
-            <div class="flex items-center gap-6">
-              <div class="flex items-center border-2 border-gray-100 rounded-2xl overflow-hidden bg-gray-50">
-                <button @click="decrementQty" class="px-5 py-3 hover:bg-gray-200 transition-colors text-gray-600 font-bold text-xl">-</button>
-                <input type="number" v-model="quantity" class="w-16 text-center bg-transparent border-none focus:ring-0 font-bold text-lg" min="1" />
-                <button @click="incrementQty" class="px-5 py-3 hover:bg-gray-200 transition-colors text-gray-600 font-bold text-xl">+</button>
+            <div class="flex flex-col gap-4">
+              <div class="flex items-center gap-6">
+                <div class="flex items-center border-2 border-gray-100 rounded-2xl overflow-hidden bg-gray-50">
+                  <button @click="decrementQty" class="px-5 py-3 hover:bg-gray-200 transition-colors text-gray-600 font-bold text-xl">-</button>
+                  <input 
+                    type="number" 
+                    v-model.number="quantity" 
+                    class="w-20 text-center bg-transparent border-none focus:ring-0 font-bold text-lg" 
+                    :min="getStep()" 
+                    :step="getStep()"
+                    @blur="sanitizeQuantity"
+                    @change="sanitizeQuantity"
+                  />
+                  <button @click="incrementQty" class="px-5 py-3 hover:bg-gray-200 transition-colors text-gray-600 font-bold text-xl">+</button>
+                </div>
+                <p class="text-xs text-gray-400 font-medium">Prix total : <span class="text-brand-600 font-bold">{{ formatPrice(totalPrice) }}</span></p>
               </div>
-              <p class="text-xs text-gray-400 font-medium">Prix total : <span class="text-brand-600 font-bold">{{ formatPrice(totalPrice) }}</span></p>
+              <div v-if="product.sales_multiplier > 1" class="text-xs font-bold text-brand-600 uppercase tracking-tighter">
+                Vendu par {{ product.packaging_unit || 'boîte' }} de {{ product.sales_multiplier }} 
+                <span class="text-gray-400 font-medium normal-case">
+                  (soit {{ (quantity / product.sales_multiplier).toFixed(0) }} {{ product.packaging_unit || 'boîte' }}{{ quantity / product.sales_multiplier > 1 ? 's' : '' }})
+                </span>
+              </div>
             </div>
           </div>
 
