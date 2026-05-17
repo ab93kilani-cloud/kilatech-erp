@@ -257,6 +257,39 @@ onMounted(fetchProduct)
               </svg>
               AJOUTER AU PANIER
             </button>
+
+            <!-- Trust badges/Conditions section -->
+            <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-5 mt-6">
+              <!-- Item 1: Free Shipping -->
+              <div class="flex items-center gap-4 text-gray-700">
+                <div class="flex-shrink-0 w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center bg-gray-50 text-gray-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span class="text-sm font-semibold text-gray-700">Livraison gratuite à partir de 600dh d'achats</span>
+              </div>
+              
+              <!-- Item 2: Quick Delivery -->
+              <div class="flex items-center gap-4 text-gray-700">
+                <div class="flex-shrink-0 w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center bg-gray-50 text-gray-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.75a1.125 1.125 0 01-1.125-1.125V11.25M15 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.5a1.5 1.5 0 001.5-1.5v-6a1.5 1.5 0 00-1.5-1.5H3.75m16.5 0h-3L18 9.75h3A1.5 1.5 0 0122.5 11.25v6a1.5 1.5 0 01-1.5 1.5H19.5" />
+                  </svg>
+                </div>
+                <span class="text-sm font-semibold text-gray-700">Livré en 1-2 jours ouvrables</span>
+              </div>
+
+              <!-- Item 3: Cash on Delivery -->
+              <div class="flex items-center gap-4 text-gray-700">
+                <div class="flex-shrink-0 w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center bg-gray-50 text-gray-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25l6-6m4.5-3.75h-15A2.25 2.25 0 001.5 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25zm-13.5 13.5h.008v.008h-.008v-.008zm0-3h.008v.008h-.008v-.008z" />
+                  </svg>
+                </div>
+                <span class="text-sm font-semibold text-gray-700">Paiement à la livraison</span>
+              </div>
+            </div>
             
             <div class="flex items-center justify-center gap-8 py-6 border-t border-gray-200 mt-8">
                <div class="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
