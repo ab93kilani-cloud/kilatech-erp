@@ -49,9 +49,6 @@ const handleSubmit = async () => {
   if (!form.value.client_phone) {
     errors.value.client_phone = ['Le numéro de téléphone est obligatoire.']
   }
-  if (form.value.client_type === 'individual' && !form.value.cin) {
-    errors.value.cin = ["Le CIN est obligatoire pour les particuliers."]
-  }
   if (Object.keys(errors.value).length > 0) return
   
   isSubmitting.value = true
@@ -101,7 +98,7 @@ const handleSubmit = async () => {
           
           <!-- Header -->
           <div class="p-8 border-b border-gray-100 flex items-center justify-between">
-            <h2 class="text-2xl font-black text-gray-900">Demande de Devis</h2>
+            <h2 class="text-2xl font-black text-gray-900">Ma Commande</h2>
             <button @click="emit('close')" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -199,11 +196,7 @@ const handleSubmit = async () => {
                       <p v-if="errors.client_name" class="mt-1 text-xs text-red-500 font-bold">{{ errors.client_name[0] }}</p>
                     </div>
 
-                    <div v-if="form.client_type === 'individual'">
-                      <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">CIN (Carte d'Identité Nationale) *</label>
-                      <input v-model="form.cin" type="text" placeholder="Ex: AB123456" :class="errors.cin ? 'border-red-500 bg-red-50' : 'bg-gray-50 border-transparent'" class="w-full p-4 border rounded-2xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition-all font-medium" />
-                      <p v-if="errors.cin" class="mt-1 text-xs text-red-500 font-bold">{{ errors.cin[0] }}</p>
-                    </div>
+
                     
                     <div class="grid grid-cols-2 gap-4">
                       <div>
@@ -265,7 +258,7 @@ const handleSubmit = async () => {
                 </svg>
                 Génération en cours...
               </span>
-              <span v-else>VALIDER MA DEMANDE DE DEVIS</span>
+              <span v-else>VALIDER MA COMMANDE</span>
             </button>
           </div>
 

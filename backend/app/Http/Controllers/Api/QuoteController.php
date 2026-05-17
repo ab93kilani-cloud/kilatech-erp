@@ -370,7 +370,7 @@ class QuoteController extends Controller
             'client_email' => 'required|email|max:255',
             'client_phone' => 'required|string|max:50',
             'company_name' => 'nullable|string|max:255',
-            'cin'          => 'required_if:client_type,individual|nullable|string|max:50',
+            'cin'          => 'nullable|string|max:50',
             'address'      => 'required|string|max:500',
             'city'         => 'required|string|max:100',
             'lines'        => 'required|array|min:1',
