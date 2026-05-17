@@ -426,7 +426,11 @@ const saveMarketing = async () => {
   if (!selectedProduct.value) return
   
   try {
-    const res = await api.put(`/products/${selectedProduct.value.id}`, editForm.value)
+    const dataToSave = { 
+        ...editForm.value,
+        seo_score: currentDiagnostic.value?.score || 0
+    }
+    const res = await api.put(`/products/${selectedProduct.value.id}`, dataToSave)
     selectedProduct.value = res.data
     fetchProducts()
     fetchDiagnostic(selectedProduct.value.id)

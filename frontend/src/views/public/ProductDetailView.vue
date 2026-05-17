@@ -129,7 +129,7 @@ const injectJsonLd = (p: Product) => {
             "@type": "Offer",
             "url": window.location.href,
             "priceCurrency": "MAD",
-            "price": selectedVariant.value?.public_price || 0,
+            "price": selectedVariant.value?.public_price ? parseFloat(selectedVariant.value.public_price.toString()) : 0,
             "availability": "https://schema.org/InStock",
             "seller": { "@type": "Organization", "name": "Kilatech Maroc" }
         }

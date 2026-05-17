@@ -110,7 +110,7 @@
             "values": [
               {
                 "role": "user",
-                "content": "=Tu es l'Intelligence SEO Suprême de Kilatech.ma.\n\nPRODUIT : {{ $node[\"PRODUIT\"].json.data[0].name }}\nAUDIT : {{ JSON.stringify($json.audit || {}) }}\nINFOS MARCHÉ (Espion) : {{ JSON.stringify($json.organic || []) }}\n\nMISSION :\n1. Rédige une fiche produit HTML premium (H2, H3, P).\n2. Intègre naturellement 2-3 liens vers des catégories médicales.\n3. Crée un Titre H1 puissant incluant 'Casablanca' ou 'Maroc'.\n4. Crée une Meta-Description de 150 caractères.\n5. Crée un post LinkedIn et un post Facebook.\n\nCONSIGNES ULTRA-STRICTES :\n- RÉPONDS UNIQUEMENT EN JSON VALIDE.\n- AUCUNE balise <img>.\n- AUCUN bloc markdown.\n- Langue : Français parfait.\n\nRÉPONDS EN JSON :\n{\n  \"h1_title\": \"...\",\n  \"meta_description\": \"...\",\n  \"html_content\": \"...\",\n  \"linkedin_post\": \"...\",\n  \"facebook_post\": \"...\"\n}"
+                "content": "=Tu es l'Intelligence SEO Suprême de Kilatech.ma.\n\nPRODUIT : {{ $node[\"PRODUIT\"].json.data[0].name }}\nAUDIT : {{ JSON.stringify($json.audit || {}) }}\nINFOS MARCHÉ (Espion) : {{ JSON.stringify($json.organic || []) }}\n\nMISSION :\n1. Rédige une fiche produit HTML premium (H2, H3, P).\n2. Intègre naturellement 2-3 liens vers des catégories médicales.\n3. Crée un Titre SEO (h1_title) COMMENÇANT impérativement par '{{ $node[\"PRODUIT\"].json.data[0].name }}' et incluant 'Maroc'.\n4. Crée une Meta-Description de 150 caractères.\n5. Crée un texte alternatif pour l'image (image_alt) décrivant le produit : {{ $node[\"PRODUIT\"].json.data[0].name }}.\n6. Crée un post LinkedIn et un post Facebook.\n\nCONSIGNES ULTRA-STRICTES :\n- RÉPONDS UNIQUEMENT EN JSON VALIDE.\n- AUCUNE balise <img>.\n- AUCUN bloc markdown.\n- Langue : Français parfait.\n\nRÉPONDS EN JSON :\n{\n  \"h1_title\": \"...\",\n  \"meta_description\": \"...\",\n  \"image_alt\": \"...\",\n  \"html_content\": \"...\",\n  \"linkedin_post\": \"...\",\n  \"facebook_post\": \"...\"\n}"
               }
             ]
           },
@@ -136,7 +136,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const data = $json;\nreturn {\n  product_id: $('PRODUIT').item.json.data[0].id,\n  seo_title: data.h1_title,\n  seo_description: data.meta_description,\n  seo_content: data.html_content,\n  social_linkedin_post: data.linkedin_post,\n  social_facebook_post: data.facebook_post,\n  seo_score: 95\n};"
+          "jsCode": "const data = $json;\nreturn {\n  product_id: $('PRODUIT').item.json.data[0].id,\n  seo_title: data.h1_title,\n  seo_description: data.meta_description,\n  seo_alt: data.image_alt,\n  seo_content: data.html_content,\n  social_linkedin_post: data.linkedin_post,\n  social_facebook_post: data.facebook_post,\n  seo_score: 95\n};"
         },
         "id": "prepa-v2-id",
         "name": "📦 Nettoyeur V2",
@@ -184,8 +184,12 @@
                 "value": "={{ $json.seo_description }}"
               },
               {
+                "name": "seo_alt",
+                "value": "={{ $json.seo_alt }}"
+              },
+              {
                 "name": "seo_title",
-                "value": "={{ $node[\"Dossier de Redaction Final\"].json.h1_title || $node[\"PRODUIT\"].json.name }}"
+                "value": "={{ $json.seo_title }}"
               }
             ]
           },

@@ -205,8 +205,8 @@ class ProductController extends Controller
             'social_instagram_post' => 'nullable|string',
             'local_geo_context' => 'nullable|string',
             'is_medical' => 'boolean',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'image' => 'nullable', // Allow existing path (string) or new file
+            'images.*' => 'nullable', 
             'images_to_delete' => 'nullable|array',
         ]);
 
@@ -291,6 +291,11 @@ class ProductController extends Controller
                 }
             }
             $product->update(['images' => array_values($currentImages)]);
+
+            // AUTO-UPDATE SEO SCORE
+            $marketingAi = app(\App\Services\MarketingAiService::class);
+            $diag = $marketingAi->diagnoseSeo($product);
+            $product->update(['seo_score' => $diag['score']]);
 
             DB::commit();
             return response()->json($product->load('variants'));

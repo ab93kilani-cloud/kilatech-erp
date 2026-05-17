@@ -4,7 +4,48 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Laravel</title>
+    @php
+        $url = request()->path();
+        $seo = [
+            'title' => 'Kilatech Medical | Équipements Médicaux & Solutions Santé au Maroc',
+            'description' => 'Kilatech est votre partenaire de confiance pour les dispositifs médicaux de haute qualité au Maroc. Commandez en ligne vos équipements biomédicaux.',
+            'image' => asset('logo.png')
+        ];
+
+        if (str_contains($url, 'produit/')) {
+            $slug = str_after($url, 'produit/');
+            $product = \App\Models\Product::where('slug', $slug)->first();
+            if ($product) {
+                $seo['title'] = ($product->seo_title ?: $product->name) . ' | Kilatech Maroc';
+                $seo['description'] = $product->seo_description ?: Str::limit(strip_tags($product->description), 160);
+                if ($product->image_path) $seo['image'] = asset('storage/' . $product->image_path);
+            }
+        } elseif (str_contains($url, 'actualites/')) {
+            $slug = str_after($url, 'actualites/');
+            $article = \App\Models\Article::where('slug', $slug)->first();
+            if ($article) {
+                $seo['title'] = ($article->meta_title ?: $article->title) . ' | Kilatech Blog';
+                $seo['description'] = $article->meta_description ?: Str::limit(strip_tags($article->content), 160);
+                if ($article->image) $seo['image'] = asset('storage/' . $article->image);
+            }
+        }
+    @endphp
+
+    <title>{{ $seo['title'] }}</title>
+    <meta name="description" content="{{ $seo['description'] }}">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ $seo['title'] }}">
+    <meta property="og:description" content="{{ $seo['description'] }}">
+    <meta property="og:image" content="{{ $seo['image'] }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $seo['title'] }}">
+    <meta name="twitter:description" content="{{ $seo['description'] }}">
+    <meta name="twitter:image" content="{{ $seo['image'] }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
