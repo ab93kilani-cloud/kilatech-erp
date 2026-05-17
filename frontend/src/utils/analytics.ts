@@ -6,7 +6,7 @@ export const initAnalytics = () => {
   console.log("Analytics and Tracking Initialized (Consent Granted)");
 
   // 1. Google Analytics 4 (GA4)
-  const gaId = 'G-XXXXXXXXXX'; // TODO: Remplacer par le vrai ID Kilatech
+  const gaId = 'G-LDFN3G23KM'; // ID Kilatech
   const gaScript = document.createElement('script');
   gaScript.async = true;
   gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
