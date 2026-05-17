@@ -84,6 +84,11 @@ const categories = computed(() => {
     return ['Tous', ...Array.from(cats).sort()]
 })
 
+const newArrivals = computed(() => {
+    const showcaseProds = products.value.filter(p => p.is_showcase)
+    return [...showcaseProds].sort((a, b) => b.id - a.id).slice(0, 4)
+})
+
 const filteredProducts = computed(() => {
     return products.value.filter(p => {
         // --- FILTRE VITRINE ---
@@ -188,6 +193,82 @@ onMounted(() => {
               </svg>
             </router-link>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- New Arrivals Section -->
+    <section v-if="newArrivals.length > 0" class="py-20 bg-white border-b border-gray-100">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <!-- Section Header -->
+        <div class="mb-12 border-b border-gray-100 pb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <span class="text-red-500 font-extrabold tracking-widest text-[10px] sm:text-xs uppercase flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+              Nouveautés Kilatech
+            </span>
+            <h2 class="text-3xl sm:text-4xl font-black text-gray-900 mt-2">Derniers Équipements Ajoutés</h2>
+            <p class="text-gray-500 mt-3 max-w-xl text-xs sm:text-sm font-medium leading-relaxed">
+              Découvrez en avant-première nos toutes dernières technologies médicales de pointe validées pour votre établissement.
+            </p>
+          </div>
+          <div>
+            <a href="#catalogue" class="text-xs sm:text-sm font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1 bg-brand-50 px-4 py-2.5 rounded-full transition-all">
+              Voir tout le catalogue
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- New Products Grid -->
+        <div class="grid grid-cols-2 gap-y-8 gap-x-4 sm:gap-x-8 lg:grid-cols-4">
+          <router-link v-for="product in newArrivals" :key="product.id" :to="{ name: 'product-detail', params: { slug: product.slug || product.id } }" class="group block cursor-pointer">
+            <div class="relative aspect-[4/5] overflow-hidden rounded-2xl bg-gray-200 shadow-sm border border-gray-100">
+              <!-- Cute "Nouveau" Badge overlay -->
+              <div class="absolute top-4 left-4 z-10">
+                <span class="text-[8px] sm:text-[10px] font-black bg-red-500 text-white px-3 py-1.5 rounded-full shadow-md uppercase tracking-wider">
+                  Nouveau
+                </span>
+              </div>
+              <img :src="getImageUrl(product.image_path)" 
+                   @error="handleImageError" 
+                   :alt="product.name" 
+                   class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div class="absolute bottom-6 left-6 right-6 text-white translate-y-8 group-hover:translate-y-0 transition-all duration-500">
+                <span class="text-[10px] font-bold bg-brand-600 px-3 py-1.5 rounded-lg shadow-lg uppercase tracking-widest">En savoir plus</span>
+              </div>
+            </div>
+            
+            <div class="mt-4 sm:mt-6 flex flex-col gap-4">
+              <div>
+                <div class="flex items-center justify-between mb-1 sm:mb-2">
+                  <span class="text-[8px] sm:text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-100 uppercase tracking-tighter">{{ product.category }}</span>
+                </div>
+                <h3 class="text-sm sm:text-lg font-bold text-gray-900 group-hover:text-brand-600 transition-colors line-clamp-1">
+                  {{ product.name }}
+                </h3>
+                <p class="mt-1 sm:mt-2 text-base sm:text-xl font-black text-brand-900 leading-tight">
+                  {{ formatTTCPrice(product) ? formatTTCPrice(product) + ' MAD' : 'Sur devis' }}
+                  <span v-if="formatTTCPrice(product)" class="text-[8px] sm:text-[10px] font-bold text-gray-400">/ {{ product.unit_name || 'unité' }}</span>
+                </p>
+                <div v-if="product.sales_multiplier > 1" class="mt-1 flex flex-col">
+                    <span class="text-[8px] sm:text-[10px] text-brand-600 font-bold uppercase tracking-tighter">Vendu par {{ product.packaging_unit }} de {{ product.sales_multiplier }}</span>
+                    <span class="text-[7px] sm:text-[9px] text-gray-400 font-medium">Soit {{ (parseFloat(String(formatTTCPrice(product) || 0)) * product.sales_multiplier).toFixed(2) }} MAD TTC</span>
+                </div>
+              </div>
+              
+              <button 
+                @click.stop.prevent="addToCart(product, $event)"
+                class="w-full py-3 bg-brand-600 text-white rounded-xl font-bold text-xs sm:text-sm shadow-lg shadow-brand-100 hover:bg-brand-700 hover:-translate-y-0.5 transition-all active:scale-95 flex items-center justify-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                AJOUTER AU PANIER
+              </button>
+            </div>
+          </router-link>
         </div>
       </div>
     </section>
