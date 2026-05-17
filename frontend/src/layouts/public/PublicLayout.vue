@@ -1,6 +1,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import CookieConsent from '@/components/public/CookieConsent.vue'
 
 const isMenuOpen = ref(false)
 </script>
@@ -87,5 +88,8 @@ const isMenuOpen = ref(false)
         </div>
       </div>
     </footer>
+
+    <!-- Analytics & Cookie Consent -->
+    <CookieConsent />
   </div>
 </template>
