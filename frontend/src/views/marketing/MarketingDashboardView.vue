@@ -408,13 +408,19 @@ const syncGsc = async () => {
   isSyncingGsc.value = true
   try {
     const res = await api.post(`/products/${selectedProduct.value.id}/sync-gsc`)
-    alert(res.data.message)
-    // Update local data
-    editForm.value.gsc_position = res.data.data.position
-    editForm.value.gsc_ctr = res.data.data.ctr
-    editForm.value.gsc_impressions = res.data.data.impressions
-    selectedProduct.value = { ...selectedProduct.value, ...res.data.data }
-    fetchProducts()
+    
+    if (res.data.success) {
+      alert(res.data.message)
+      // Update local data
+      editForm.value.gsc_position = res.data.data.position
+      editForm.value.gsc_ctr = res.data.data.ctr
+      editForm.value.gsc_impressions = res.data.data.impressions
+      selectedProduct.value = { ...selectedProduct.value, ...res.data.data }
+      fetchProducts()
+    } else {
+      // Show backend message and don't try to read data
+      alert(res.data.message)
+    }
   } catch (e: any) {
     alert(e.response?.data?.message || 'Erreur lors de la synchronisation GSC')
   } finally {
