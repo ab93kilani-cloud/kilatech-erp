@@ -345,4 +345,131 @@ class MarketingAiService
             'local_geo_context' => "Disponible à Casablanca, Tanger, Marrakech et Agadir.",
         ];
     }
+
+    /**
+     * Rephrase, extend, or optimize article content with specified tone using AI.
+     */
+    public function rephraseContent($text, $tone = 'professional', $action = 'rephrase')
+    {
+        $prompt = "Tu es un expert en copywriting médical et en référencement SEO au Maroc. 
+        Ta tâche est d'optimiser, reformuler ou enrichir le texte ci-dessous pour le site internet de Kilatech.
+        
+        Texte d'origine :
+        \"{$text}\"
+        
+        Instruction spécifique :
+        Action : {$action} (options possibles : rephrase, extend, shorten, improve_seo)
+        Ton à adopter : {$tone} (options possibles : professional, educational, marketing, simple)
+        
+        Règles de rédaction :
+        - Conserve la structure et les informations importantes.
+        - Évite le plagiat ou la répétition automatique de fiches techniques d'usine.
+        - Rends le texte engageant pour des médecins, cliniques ou professionnels de la santé.
+        - Utilise des balises HTML standards de mise en forme (h2, h3, p, strong, ul, li) mais uniquement pour structurer.
+        - Retourne uniquement le texte reformulé au format HTML propre sans balises markdown enveloppantes (comme ```html).";
+
+        if (empty($this->apiKey)) {
+            Log::warning('MARKETING_AI_API_KEY is missing. Using local rephraser mock.');
+            
+            if ($action === 'extend') {
+                return $text . " <p>De plus, l'adoption de cette technologie chez Kilatech s'accompagne d'une garantie constructeur étendue et d'une assistance technique disponible 24/7 partout au Maroc (Casablanca, Rabat, Fès, Marrakech). Nos experts s'assurent que votre plateau technique reste opérationnel à tout moment, augmentant ainsi l'efficacité de vos soins aux patients et la rentabilité de votre établissement de santé.</p>";
+            } elseif ($action === 'shorten') {
+                return "<p><strong>Version optimisée :</strong> " . strip_tags($text) . " (Kilatech assure l'installation et la maintenance de cette solution innovante partout au Maroc).</p>";
+            } elseif ($action === 'improve_seo') {
+                return "<h2>Optimisation SEO & Sémantique</h2>" . $text . "<p>En tant que distributeur de référence de matériel médical au Maroc, Kilatech s'engage sur la qualité supérieure et le support technique de chaque dispositif.</p>";
+            } else {
+                return "<p><strong>[Version reformulée en ton " . $tone . "] :</strong> " . $text . "</p>";
+            }
+        }
+
+        try {
+            $response = Http::withToken($this->apiKey)
+                ->post($this->apiUrl, [
+                    'model' => 'gpt-3.5-turbo',
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'Tu es un rédacteur web professionnel médical. Tu réponds UNIQUEMENT avec le texte HTML reformulé, sans enrobage.'],
+                        ['role' => 'user', 'content' => $prompt],
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                $content = $response->json('choices.0.message.content');
+                // Clean markdown wrappers if returned
+                $content = preg_replace('/^```html\s*/i', '', $content);
+                $content = preg_replace('/```$/', '', $content);
+                return trim($content);
+            }
+            throw new \Exception('AI API call failed: ' . $response->body());
+        } catch (\Exception $e) {
+            Log::error('AI Rephrase Failed: ' . $e->getMessage());
+            return $text; // Return original as fallback
+        }
+    }
+
+    /**
+     * Check blog post for repetitive descriptions and suggest unique angles.
+     */
+    public function checkRepetition($text)
+    {
+        $prompt = "Tu es un auditeur de contenu SEO senior spécialisé dans le secteur médical au Maroc.
+        Analyse l'article médical ci-dessous pour le site de Kilatech.
+        
+        Ton but est d'évaluer son originalité et sa valeur ajoutée pour les clients (médecins, hôpitaux) afin d'éviter la répétition de fiches techniques ou de manuels génériques.
+        
+        Texte à analyser :
+        \"{$text}\"
+        
+        Évalue le texte et génère un JSON contenant :
+        1. score (un entier entre 0 et 100 représentant la qualité d'originalité et d'engagement de l'article).
+        2. advice (une synthèse globale d'analyse en 2-3 phrases).
+        3. tips (un tableau de 3 suggestions concrètes d'optimisation en français pour rendre l'article unique).
+        
+        Réponds UNIQUEMENT au format JSON.";
+
+        if (empty($this->apiKey)) {
+            Log::warning('MARKETING_AI_API_KEY is missing. Using local checkRepetition mock.');
+            
+            $len = mb_strlen(strip_tags($text));
+            $score = 55;
+            if ($len > 800) $score += 20;
+            if (str_contains($text, '<h2>')) $score += 15;
+            if (str_contains($text, 'Casablanca') || str_contains($text, 'Maroc')) $score += 10;
+            $score = min(100, $score);
+            
+            return [
+                'score' => $score,
+                'advice' => "L'article présente une structure de base correcte mais reste un peu trop technique. Il s'apparente à une notice d'usine. Pour de meilleurs résultats SEO au Maroc, vous devez personnaliser l'approche commerciale.",
+                'tips' => [
+                    "Ajoutez un paragraphe sur le service après-vente (SAV) de Kilatech pour rassurer les acheteurs.",
+                    "Intégrez des exemples de villes marocaines (ex: installation de cliniques à Rabat ou Tanger) pour le SEO local.",
+                    "Améliorez l'accroche d'introduction en insistant sur le bénéfice patient immédiat."
+                ]
+            ];
+        }
+
+        try {
+            $response = Http::withToken($this->apiKey)
+                ->post($this->apiUrl, [
+                    'model' => 'gpt-3.5-turbo',
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'Tu es un auditeur de contenu SEO médical. Tu réponds UNIQUEMENT en JSON.'],
+                        ['role' => 'user', 'content' => $prompt],
+                    ],
+                    'response_format' => ['type' => 'json_object']
+                ]);
+
+            if ($response->successful()) {
+                return $response->json('choices.0.message.content') ? json_decode($response->json('choices.0.message.content'), true) : [];
+            }
+            throw new \Exception('AI API call failed: ' . $response->body());
+        } catch (\Exception $e) {
+            Log::error('AI Repetition check failed: ' . $e->getMessage());
+            return [
+                'score' => 60,
+                'advice' => 'Échec de l\'analyse en ligne. Voici une recommandation générale.',
+                'tips' => ['Structurez avec h2 et h3.', 'Ajoutez des images ALT.', 'Mentionnez le support Kilatech.']
+            ];
+        }
+    }
 }
+

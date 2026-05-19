@@ -190,4 +190,27 @@ class ArticleController extends Controller
 
         return response()->json($articleData);
     }
+
+    public function rephrase(Request $request, MarketingAiService $marketingAi)
+    {
+        $request->validate([
+            'text' => 'required|string',
+            'tone' => 'nullable|string',
+            'action' => 'nullable|string',
+        ]);
+
+        if ($request->action === 'check_repetition') {
+            $auditData = $marketingAi->checkRepetition($request->text);
+            return response()->json($auditData);
+        }
+
+        $rephrasedText = $marketingAi->rephraseContent(
+            $request->text,
+            $request->tone ?? 'professional',
+            $request->action ?? 'rephrase'
+        );
+
+        return response()->json(['rephrased' => $rephrasedText]);
+    }
 }
+
