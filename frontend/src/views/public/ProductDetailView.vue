@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// Trigger Hostinger Deploy Rebuild
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/plugins/axios'
