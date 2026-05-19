@@ -28,6 +28,38 @@ const hasCustomLayout = computed(() => {
     return content.includes('blog-article') || content.includes('blog-hero') || content.includes('blog-content') || content.includes('blog-content-layout')
 })
 
+const processedContent = computed(() => {
+    if (!article.value || !article.value.content) return ''
+    let html = article.value.content
+
+    // If an associated product exists, dynamically inject it into the custom layout
+    if (article.value.product) {
+        const prod = article.value.product
+        const prodName = prod.name || ''
+        const prodSlug = prod.slug || ''
+        const prodBrand = prod.brand || 'KILATECH'
+        const prodImageUrl = prod.image_path ? getStorageUrl(prod.image_path) : '/images/blog_placeholder.png'
+
+        // 1. Replace the hardcoded sumbow product image URL (both .png and .jpg)
+        html = html.replace(/\/images\/sonde-produit-sumbow\.(png|jpg)/g, prodImageUrl)
+
+        // 2. Replace the hardcoded product name in the bottom card & top header title
+        html = html.replace(/SONDE GASTRIQUE SILICONE STERILE/g, prodName.toUpperCase())
+        html = html.replace(/Sonde Gastrique Silicone Stérile/g, prodName)
+
+        // 3. Replace the brand names
+        html = html.replace(/SUMBOW MEDICAL/g, prodBrand.toUpperCase())
+        html = html.replace(/SUMBOW/g, prodBrand.toUpperCase())
+        html = html.replace(/Marque Officielle Sumbow/g, `Marque Officielle \${prodBrand}`)
+
+        // 4. Replace the link of the button
+        html = html.replace(/\/produit\/sonde-gastrique-silicone-sterile/g, `/produit/\${prodSlug}`)
+    }
+
+    return html
+})
+
+
 // Native JS handler for accordion transitions inside dynamic injected content
 const setupFaqAccordions = () => {
     nextTick(() => {
@@ -143,7 +175,7 @@ onMounted(fetchArticle)
             <!-- Injected Rich HTML Content -->
             <div 
               class="prose prose-lg prose-indigo mx-auto text-slate-700 font-light leading-relaxed blog-content max-w-none" 
-              v-html="article.content"
+              v-html="processedContent"
             ></div>
 
             <hr class="my-16 border-slate-100">
