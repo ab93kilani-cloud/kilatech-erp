@@ -83,10 +83,19 @@ watch(() => article.value.title, (newTitle) => {
 })
 
 const syncEditorContent = (content: string) => {
-    if (editorRef.value) {
+    if (editorRef.value && editorRef.value.innerHTML !== content) {
         editorRef.value.innerHTML = content
     }
 }
+
+// Watch both editorRef and article.content to sync robustly as soon as they are loaded
+watch([editorRef, () => article.value.content], ([newEditorRef, newContent]) => {
+    if (newEditorRef && newContent !== undefined) {
+        if (newEditorRef.innerHTML !== newContent) {
+            newEditorRef.innerHTML = newContent
+        }
+    }
+}, { immediate: true })
 
 const onEditorInput = (e: Event) => {
     const target = e.target as HTMLDivElement
