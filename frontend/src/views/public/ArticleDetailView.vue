@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import publicApi from '@/plugins/axios-public'
 import { useSEO } from '@/composables/useSEO'
@@ -21,6 +21,44 @@ const getImageUrl = (item: any) => {
     return '/images/blog_placeholder.png'
 }
 
+// Smart Layout Detector
+const hasCustomLayout = computed(() => {
+    if (!article.value || !article.value.content) return false
+    const content = article.value.content
+    return content.includes('blog-article') || content.includes('blog-hero') || content.includes('blog-content') || content.includes('blog-content-layout')
+})
+
+// Native JS handler for accordion transitions inside dynamic injected content
+const setupFaqAccordions = () => {
+    nextTick(() => {
+        document.querySelectorAll('.faq-question').forEach(btn => {
+            // Remove existing listener to prevent double triggers
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode?.replaceChild(newBtn, btn);
+            
+            newBtn.addEventListener('click', () => {
+                const parent = newBtn.parentElement
+                if (parent) {
+                    const isActive = parent.classList.contains('active')
+                    
+                    // Collapse all others
+                    document.querySelectorAll('.faq-item').forEach(item => {
+                        item.classList.remove('active')
+                        const ans = item.querySelector('.faq-answer') as HTMLElement
+                        if (ans) ans.style.maxHeight = '0'
+                    })
+
+                    if (!isActive) {
+                        parent.classList.add('active')
+                        const ans = parent.querySelector('.faq-answer') as HTMLElement
+                        if (ans) ans.style.maxHeight = ans.scrollHeight + 'px'
+                    }
+                }
+            })
+        })
+    })
+}
+
 const fetchArticle = async () => {
     try {
         const res = await publicApi.get(`/seo-v2/blog-detail/${route.params.slug}?api_token=KILA-SEO-PROD-2026-X9`)
@@ -31,6 +69,9 @@ const fetchArticle = async () => {
             description: article.value.meta_description || article.value.content.substring(0, 160).replace(/<[^>]*>/g, ''),
             image: getImageUrl(article.value)
         })
+        
+        // Setup FAQ click actions if custom layout exists
+        setupFaqAccordions()
     } catch (e) {
         console.error('Failed to load article')
     } finally {
@@ -53,8 +94,8 @@ onMounted(fetchArticle)
     </div>
 
     <article v-else class="w-full">
-        <!-- 1. PREMIUM HEADER BANNER (Soft Teal & Indigo Gradient) -->
-        <div class="bg-gradient-to-br from-teal-50 via-teal-50/30 to-sky-50 border-b border-teal-100/40 py-12 md:py-16 relative overflow-hidden">
+        <!-- 1. STANDARD HEADER BANNER (Only shows if NOT using the advanced blueprint structure) -->
+        <div v-if="!hasCustomLayout" class="bg-gradient-to-br from-teal-50 via-teal-50/30 to-sky-50 border-b border-teal-100/40 py-12 md:py-16 relative overflow-hidden">
             <div class="absolute -right-20 -top-20 w-80 h-80 bg-teal-200/10 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute -left-20 -bottom-20 w-80 h-80 bg-sky-200/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -96,8 +137,8 @@ onMounted(fetchArticle)
             </div>
         </div>
 
-        <!-- 2. MAIN CONTENT WRAPPER (Broad Max-w-6xl for beautiful grids) -->
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <!-- 2. MAIN CONTENT WRAPPER (Broad max-w-6xl for beautiful grids, or broad px-0 if custom full-width blueprint layout) -->
+        <div :class="hasCustomLayout ? 'max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-10' : 'max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16'">
             
             <!-- Injected Rich HTML Content -->
             <div 
@@ -172,5 +213,426 @@ onMounted(fetchArticle)
 .blog-content strong {
     font-weight: 700 !important;
     color: #0f172a !important;
+}
+
+/* --- BLUEPRINT DESIGN STYLES FOR DYNAMIC BLOGS --- */
+.blog-article {
+    background: #f8fafc;
+    padding: 32px 0;
+    color: #1f2937;
+}
+
+.blog-hero {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 32px;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    margin-bottom: 32px;
+    border: 1px solid #f1f5f9;
+}
+
+.blog-hero .badge {
+    display: inline-block;
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.blog-hero .blog-title {
+    font-size: 30px;
+    line-height: 1.25;
+    margin: 16px 0 12px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.blog-hero .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.blog-hero .meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.blog-hero .blog-excerpt {
+    color: #4b5563;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-top: 18px;
+}
+
+.blog-hero .hero-image {
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    display: block;
+    object-fit: contain;
+}
+
+.blog-summary-container {
+    margin: 24px 0 32px;
+}
+
+.blog-summary-container .summary-title {
+    font-weight: 800;
+    font-size: 16px;
+    color: #0f172a;
+    margin-bottom: 12px;
+}
+
+.blog-summary-container .summary-grid {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    border: 1px solid #f1f5f9;
+}
+
+.blog-summary-container .summary-grid a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 8px;
+    border-radius: 12px;
+    color: #475569;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 11px;
+    transition: all 0.25s ease;
+    border: 1px solid transparent;
+    text-align: center;
+}
+
+.blog-summary-container .summary-grid a:hover {
+    background: #f0fdf4;
+    color: #065f46;
+    border-color: #d1fae5;
+    transform: translateY(-2px);
+}
+
+.blog-summary-container .summary-grid a i {
+    font-size: 18px;
+    color: #0d9488;
+}
+
+.blog-content-layout {
+    display: grid;
+    grid-template-columns: 2.2fr .8fr;
+    gap: 32px;
+    margin-top: 20px;
+    align-items: start;
+}
+
+.content-section {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.015);
+    border: 1px solid #f1f5f9;
+    align-items: center;
+}
+
+.content-section:nth-child(even) {
+    grid-template-columns: .8fr 1.2fr;
+}
+
+.content-text h2 {
+    font-size: 22px !important;
+    margin: 0 0 12px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+}
+
+.content-media img {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    margin: 20px 0;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.table-wrapper table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    overflow: hidden !important;
+}
+
+.table-wrapper th, .table-wrapper td {
+    padding: 12px 16px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    text-align: left !important;
+}
+
+.table-wrapper th {
+    background: #f8fafc !important;
+    color: #334155 !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+}
+
+.table-wrapper tr:last-child td {
+    border-bottom: 0 !important;
+}
+
+.faq-container {
+    margin-top: 24px;
+}
+
+.faq-item {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.faq-item:last-child {
+    border-bottom: 0;
+}
+
+.faq-question {
+    width: 100% !important;
+    background: #fff !important;
+    border: 0 !important;
+    padding: 18px 16px !important;
+    text-align: left !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    color: #1e293b !important;
+    cursor: pointer !important;
+    transition: color 0.2s;
+}
+
+.faq-question:hover {
+    color: #0d9488;
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.faq-item.active .faq-answer {
+    padding: 0 16px 18px;
+}
+
+.blog-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.sidebar-widget {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.015);
+    border: 1px solid #f1f5f9;
+}
+
+.sidebar-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 16px;
+    border-left: 4px solid #0d9488;
+    padding-left: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.widget-categories {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.widget-categories li a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    color: #475569;
+    font-size: 13px;
+    text-decoration: none;
+    transition: all 0.2s;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.widget-categories li:last-child a {
+    border-bottom: 0;
+}
+
+.widget-categories li a:hover {
+    color: #0d9488;
+    padding-left: 4px;
+}
+
+.widget-recent-posts {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.recent-post-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    text-decoration: none;
+}
+
+.recent-post-item img {
+    width: 60px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #f1f5f9;
+}
+
+.recent-post-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.4;
+    transition: color 0.2s;
+}
+
+.recent-post-item:hover .recent-post-title {
+    color: #0d9488;
+}
+
+.recent-post-date {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+/* Sidebar Call to Action Banner */
+.sidebar-cta {
+    background: #007A78;
+    color: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+
+.sidebar-cta h4 {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    color: #fff !important;
+}
+
+.sidebar-cta p {
+    font-size: 12px;
+    color: #ccfbf1;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.sidebar-cta .btn-cta {
+    display: inline-block;
+    background: #fff;
+    color: #007A78;
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 13px;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+}
+
+.sidebar-cta .btn-cta:hover {
+    background: #f0fdf4;
+    transform: translateY(-1px);
+}
+
+.sidebar-cta .phone-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    font-weight: 700;
+    color: #fff;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+/* Responsiveness overrides */
+@media (max-width: 992px) {
+    .blog-hero {
+        grid-template-columns: 1fr !important;
+        text-align: center;
+    }
+    .blog-hero .meta {
+        justify-content: center;
+    }
+    .blog-hero .hero-image {
+        max-width: 260px;
+        order: -1;
+    }
+    .blog-summary-container .summary-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+    .blog-content-layout {
+        grid-template-columns: 1fr !important;
+    }
+    .content-section {
+        grid-template-columns: 1fr !important;
+    }
+    .content-section:nth-child(even) {
+        grid-template-columns: 1fr !important;
+    }
+    .content-media {
+        order: -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .blog-summary-container .summary-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .blog-summary-container .summary-grid {
+        grid-template-columns: 1fr !important;
+    }
 }
 </style>
