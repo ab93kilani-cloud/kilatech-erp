@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/plugins/axios'
 
@@ -88,14 +88,15 @@ const syncEditorContent = (content: string) => {
     }
 }
 
-// Watch both editorRef and article.content to sync robustly as soon as they are loaded
-watch([editorRef, () => article.value.content], ([newEditorRef, newContent]) => {
-    if (newEditorRef && newContent !== undefined) {
-        if (newEditorRef.innerHTML !== newContent) {
-            newEditorRef.innerHTML = newContent
-        }
+// Watch article.content and use nextTick if editorRef is not yet mounted to ensure sync
+watch(() => article.value.content, async (newContent) => {
+    if (!editorRef.value) {
+        await nextTick()
     }
-}, { immediate: true })
+    if (editorRef.value && editorRef.value.innerHTML !== newContent) {
+        editorRef.value.innerHTML = newContent || ''
+    }
+})
 
 const onEditorInput = (e: Event) => {
     const target = e.target as HTMLDivElement
