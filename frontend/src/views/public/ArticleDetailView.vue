@@ -50,10 +50,10 @@ const processedContent = computed(() => {
         // 3. Replace the brand names
         html = html.replace(/SUMBOW MEDICAL/g, prodBrand.toUpperCase())
         html = html.replace(/SUMBOW/g, prodBrand.toUpperCase())
-        html = html.replace(/Marque Officielle Sumbow/g, `Marque Officielle \${prodBrand}`)
+        html = html.replace(/Marque Officielle Sumbow/g, `Marque Officielle ${prodBrand}`)
 
         // 4. Replace the link of the button
-        html = html.replace(/\/produit\/sonde-gastrique-silicone-sterile/g, `/produit/\${prodSlug}`)
+        html = html.replace(/\/produit\/sonde-gastrique-silicone-sterile/g, `/produit/${prodSlug}`)
     }
 
     return html
