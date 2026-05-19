@@ -393,8 +393,8 @@ onMounted(fetchArticle)
 }
 
 .table-wrapper th {
-    background: #f8fafc !important;
-    color: #334155 !important;
+    background: #0d9488 !important;
+    color: #ffffff !important;
     font-weight: 700 !important;
     font-size: 13px !important;
 }
