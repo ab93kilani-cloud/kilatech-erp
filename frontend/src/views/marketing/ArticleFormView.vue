@@ -61,10 +61,10 @@ const fetchArticle = async () => {
     try {
         const res = await api.get(`/articles/${route.params.id}`)
         article.value = res.data
-        // Sync to visual editor div
-        setTimeout(() => {
+        // Sync to visual editor div with nextTick fallback
+        nextTick(() => {
             syncEditorContent(article.value.content || '')
-        }, 100)
+        })
     } catch (e) {
         alert('Erreur lors du chargement de l\'article')
     } finally {
@@ -96,7 +96,7 @@ watch(() => article.value.content, async (newContent) => {
     if (editorRef.value && editorRef.value.innerHTML !== newContent) {
         editorRef.value.innerHTML = newContent || ''
     }
-})
+}, { immediate: true })
 
 const onEditorInput = (e: Event) => {
     const target = e.target as HTMLDivElement
