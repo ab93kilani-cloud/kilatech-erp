@@ -44,25 +44,44 @@ const processedContent = computed(() => {
         const parser = new DOMParser()
         const doc = parser.parseFromString(html, 'text/html')
 
-        // Find the product card by looking for the product link
-        const productLinks = doc.querySelectorAll('a[href*="/produit/"]')
-        productLinks.forEach(link => {
-            // Update the link to the actual product slug
-            link.setAttribute('href', `/produit/${prodSlug}`)
-            
-            // Traverse up to find the card container that has an image
-            let container = link.parentElement
-            while (container && container.tagName.toLowerCase() !== 'body') {
-                const imgs = container.querySelectorAll('img')
-                if (imgs.length > 0) {
-                    // Replace all images within this product card with the actual product image
-                    imgs.forEach(img => img.setAttribute('src', prodImageUrl))
-                    break // Stop traversing up once we found and replaced the images
-                }
-                container = container.parentElement
-            }
+        // 1. Locate the product card by looking for the specific AI placeholder product name in uppercase
+        // The AI generates "SONDE GASTRIQUE SILICONE STERILE" in the product card.
+        const allDivs = Array.from(doc.querySelectorAll('div'))
+        const productCards = allDivs.filter(div => {
+            const text = div.textContent || ''
+            return text.includes('SONDE GASTRIQUE SILICONE STERILE') && div.querySelector('img')
         })
-        
+
+        if (productCards.length > 0) {
+            // Sort by text length to find the innermost container
+            productCards.sort((a, b) => (a.textContent || '').length - (b.textContent || '').length)
+            const targetCard = productCards[0]
+
+            // Replace image(s) in the card
+            const imgs = targetCard.querySelectorAll('img')
+            imgs.forEach(img => img.setAttribute('src', prodImageUrl))
+
+            // Replace link(s) in the card
+            const links = targetCard.querySelectorAll('a')
+            if (links.length > 0) {
+                links.forEach(link => link.setAttribute('href', `/produit/${prodSlug}`))
+            } else {
+                // If the AI didn't generate an <a> tag, find the button (teal circle with arrow) and wrap it
+                const svgs = targetCard.querySelectorAll('svg')
+                if (svgs.length > 0) {
+                    const btnOrSvgContainer = svgs[0].parentElement
+                    if (btnOrSvgContainer && btnOrSvgContainer.tagName.toLowerCase() !== 'a') {
+                        const wrapper = doc.createElement('a')
+                        wrapper.setAttribute('href', `/produit/${prodSlug}`)
+                        wrapper.setAttribute('class', 'block cursor-pointer')
+                        // wrap the button
+                        btnOrSvgContainer.parentNode?.insertBefore(wrapper, btnOrSvgContainer)
+                        wrapper.appendChild(btnOrSvgContainer)
+                    }
+                }
+            }
+        }
+
         // Retrieve the modified HTML
         html = doc.body.innerHTML
 
