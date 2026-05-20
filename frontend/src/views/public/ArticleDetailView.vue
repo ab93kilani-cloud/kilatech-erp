@@ -40,20 +40,43 @@ const processedContent = computed(() => {
         const prodBrand = prod.brand || 'KILATECH'
         const prodImageUrl = prod.image_path ? getStorageUrl(prod.image_path) : '/images/blog_placeholder.png'
 
-        // 1. Replace the hardcoded sumbow product image URL (both .png and .jpg)
+        // Use DOMParser for safer structural replacements
+        const parser = new DOMParser()
+        const doc = parser.parseFromString(html, 'text/html')
+
+        // Find the product card by looking for the product link
+        const productLinks = doc.querySelectorAll('a[href*="/produit/"]')
+        productLinks.forEach(link => {
+            // Update the link to the actual product slug
+            link.setAttribute('href', `/produit/${prodSlug}`)
+            
+            // Traverse up to find the card container that has an image
+            let container = link.parentElement
+            while (container && container.tagName.toLowerCase() !== 'body') {
+                const imgs = container.querySelectorAll('img')
+                if (imgs.length > 0) {
+                    // Replace all images within this product card with the actual product image
+                    imgs.forEach(img => img.setAttribute('src', prodImageUrl))
+                    break // Stop traversing up once we found and replaced the images
+                }
+                container = container.parentElement
+            }
+        })
+        
+        // Retrieve the modified HTML
+        html = doc.body.innerHTML
+
+        // 1. Fallback for the hardcoded sumbow product image URL if it was used elsewhere
         html = html.replace(/\/images\/sonde-produit-sumbow\.(png|jpg)/g, prodImageUrl)
 
         // 2. Replace the hardcoded product name in the bottom card & top header title
-        html = html.replace(/SONDE GASTRIQUE SILICONE STERILE/g, prodName.toUpperCase())
-        html = html.replace(/Sonde Gastrique Silicone Stérile/g, prodName)
+        html = html.replace(/SONDE GASTRIQUE SILICONE STERILE/gi, prodName.toUpperCase())
+        html = html.replace(/Sonde Gastrique Silicone St[ée]rile/gi, prodName)
 
         // 3. Replace the brand names
-        html = html.replace(/SUMBOW MEDICAL/g, prodBrand.toUpperCase())
-        html = html.replace(/SUMBOW/g, prodBrand.toUpperCase())
-        html = html.replace(/Marque Officielle Sumbow/g, `Marque Officielle ${prodBrand}`)
-
-        // 4. Replace the link of the button
-        html = html.replace(/\/produit\/sonde-gastrique-silicone-sterile/g, `/produit/${prodSlug}`)
+        html = html.replace(/SUMBOW MEDICAL/gi, prodBrand.toUpperCase())
+        html = html.replace(/SUMBOW/gi, prodBrand.toUpperCase())
+        html = html.replace(/Marque Officielle Sumbow/gi, `Marque Officielle ${prodBrand}`)
     }
 
     return html
