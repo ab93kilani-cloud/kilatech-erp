@@ -49,7 +49,12 @@ const router = createRouter({
                 },
                 {
                     path: 'actualites/:slug',
-                    name: 'article-detail',
+                    name: 'news-detail',
+                    component: () => import('../views/public/ArticleDetailView.vue')
+                },
+                {
+                    path: 'blog/:slug',
+                    name: 'blog-detail',
                     component: () => import('../views/public/ArticleDetailView.vue')
                 },
                 {

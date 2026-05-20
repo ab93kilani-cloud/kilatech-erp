@@ -363,7 +363,7 @@ class SeoController extends Controller
     public function sitemap()
     {
         $products = \App\Models\Product::select('slug', 'updated_at')->get();
-        $articles = \App\Models\Article::where('status', 'published')->select('slug', 'updated_at')->get();
+        $articles = \App\Models\Article::where('status', 'published')->select('slug', 'updated_at', 'category', 'image', 'title')->get();
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>';
         $xml .= "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">';
@@ -398,8 +398,9 @@ class SeoController extends Controller
         // Articles
         foreach ($articles as $article) {
             if (!$article->slug) continue;
+            $prefix = $article->category === 'blog' ? 'blog' : 'actualites';
             $xml .= "\n  " . '<url>';
-            $xml .= "\n    " . '<loc>https://kilatech.ma/actualites/' . $article->slug . '</loc>';
+            $xml .= "\n    " . '<loc>https://kilatech.ma/' . $prefix . '/' . $article->slug . '</loc>';
             if ($article->image) {
                 $xml .= "\n    " . '<image:image>';
                 $xml .= "\n      " . '<image:loc>https://kilatech.ma/storage/' . $article->image . '</image:loc>';
