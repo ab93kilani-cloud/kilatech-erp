@@ -49,6 +49,8 @@ class SeoController extends Controller
             $query->where('seo_priority', $request->priority);
         }
 
+        $query->orderBy('created_at', 'desc');
+
         $products = $query->paginate($request->input('per_page', 50));
 
         return response()->json($products);
