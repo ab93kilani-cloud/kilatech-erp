@@ -44,20 +44,24 @@ const processedContent = computed(() => {
         const parser = new DOMParser()
         const doc = parser.parseFromString(html, 'text/html')
 
-        // 1. Locate the product card by looking for the specific AI placeholder product name in uppercase
-        // The AI generates "SONDE GASTRIQUE SILICONE STERILE" in the product card.
-        const allDivs = Array.from(doc.querySelectorAll('div'))
-        const productCards = allDivs.filter(div => {
-            const text = div.textContent || ''
-            return text.includes('SONDE GASTRIQUE SILICONE STERILE') && div.querySelector('img')
-        })
+        // 1. Locate the product card
+        // First try to find a card explicitly marked with data-dynamic-product
+        let targetCard = doc.querySelector('[data-dynamic-product="true"]')
+        
+        // Fallback: look for the specific AI placeholder product name
+        if (!targetCard) {
+            const allDivs = Array.from(doc.querySelectorAll('div'))
+            const productCards = allDivs.filter(div => {
+                const text = div.textContent || ''
+                return text.includes('SONDE GASTRIQUE SILICONE STERILE') && div.querySelector('img')
+            })
+            if (productCards.length > 0) {
+                productCards.sort((a, b) => (a.textContent || '').length - (b.textContent || '').length)
+                targetCard = productCards[0]
+            }
+        }
 
-        if (productCards.length > 0) {
-            // Sort by text length to find the innermost container
-            productCards.sort((a, b) => (a.textContent || '').length - (b.textContent || '').length)
-            const targetCard = productCards[0]
-
-            if (targetCard) {
+        if (targetCard) {
                 // Replace image(s) in the card
                 const imgs = targetCard.querySelectorAll('img')
                 imgs.forEach(img => img.setAttribute('src', prodImageUrl))
