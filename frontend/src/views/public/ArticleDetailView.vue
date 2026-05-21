@@ -57,7 +57,7 @@ const processedContent = computed(() => {
             })
             if (productCards.length > 0) {
                 productCards.sort((a, b) => (a.textContent || '').length - (b.textContent || '').length)
-                targetCard = productCards[0]
+                targetCard = productCards[0] || null
             }
         }
 
@@ -88,7 +88,6 @@ const processedContent = computed(() => {
                     }
                 }
             }
-        }
 
         // Retrieve the modified HTML
         html = doc.body.innerHTML
@@ -98,7 +97,7 @@ const processedContent = computed(() => {
 
         // 2. Replace the hardcoded product name in the bottom card & top header title
         html = html.replace(/SONDE GASTRIQUE SILICONE STERILE/gi, prodName.toUpperCase())
-        html = html.replace(/Sonde Gastrique Silicone St[ée]rile/gi, prodName)
+        html = html.replace(/Sonde Gastrique Silicone St.rile/gi, prodName)
 
         // 3. Replace the brand names
         html = html.replace(/SUMBOW MEDICAL/gi, prodBrand.toUpperCase())
@@ -107,8 +106,8 @@ const processedContent = computed(() => {
 
         // 4. Replace generic placeholders from the new dynamic card template
         html = html.replace(/NOM DU PRODUIT/gi, prodName.toUpperCase())
-        html = html.replace(/KILATECH BRAND/gi, `${prodBrand.toUpperCase()} BRAND`)
-        html = html.replace(/R[ǸéE]F[ǸéE]RENCE KILATECH/gi, `RÉFÉRENCE ${prodBrand.toUpperCase()}`)
+        html = html.replace(/KILATECH BRAND/gi, prodBrand.toUpperCase() + " BRAND")
+        html = html.replace(/R.F.RENCE KILATECH/gi, "R\\u00C9F\\u00C9RENCE " + prodBrand.toUpperCase())
     }
 
     return html
@@ -723,3 +722,5 @@ onMounted(fetchArticle)
     }
 }
 </style>
+
+
