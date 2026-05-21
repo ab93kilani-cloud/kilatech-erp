@@ -104,6 +104,11 @@ const processedContent = computed(() => {
         html = html.replace(/SUMBOW MEDICAL/gi, prodBrand.toUpperCase())
         html = html.replace(/SUMBOW/gi, prodBrand.toUpperCase())
         html = html.replace(/Marque Officielle Sumbow/gi, `Marque Officielle ${prodBrand}`)
+
+        // 4. Replace generic placeholders from the new dynamic card template
+        html = html.replace(/NOM DU PRODUIT/gi, prodName.toUpperCase())
+        html = html.replace(/KILATECH BRAND/gi, `${prodBrand.toUpperCase()} BRAND`)
+        html = html.replace(/R[ǸéE]F[ǸéE]RENCE KILATECH/gi, `RÉFÉRENCE ${prodBrand.toUpperCase()}`)
     }
 
     return html
