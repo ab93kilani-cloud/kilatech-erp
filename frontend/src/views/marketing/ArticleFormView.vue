@@ -2,6 +2,9 @@
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/plugins/axios'
+import { useConfig } from '@/composables/useConfig'
+
+const { getImageUrl: getStorageUrl } = useConfig()
 
 const route = useRoute()
 const router = useRouter()
@@ -330,6 +333,74 @@ onMounted(() => {
 const getPreviewImage = computed(() => {
     if (!article.value.image) return '/images/blog_placeholder.png'
     return article.value.image
+})
+
+// Storefront matching processed content for Live Preview
+const processedContentPreview = computed(() => {
+    let html = article.value.content || '<p class="text-gray-300 italic">Aucun contenu rǸdigǸ pour le moment.</p>'
+    if (!article.value.product_id) return html
+
+    const prod = products.value.find(p => p.id === article.value.product_id)
+    if (!prod) return html
+
+    const prodName = prod.name || ''
+    const prodSlug = prod.slug || ''
+    const prodBrand = prod.brand || 'KILATECH'
+    const prodImageUrl = prod.image_path ? getStorageUrl(prod.image_path) : '/images/blog_placeholder.png'
+
+    // Use DOMParser for safer structural replacements
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(html, 'text/html')
+
+    // 1. Locate the product card by looking for the specific AI placeholder product name in uppercase
+    const allDivs = Array.from(doc.querySelectorAll('div'))
+    const productCards = allDivs.filter(div => {
+        const text = div.textContent || ''
+        return text.includes('SONDE GASTRIQUE SILICONE STERILE') && div.querySelector('img')
+    })
+
+    if (productCards.length > 0) {
+        // Sort by text length to find the innermost container
+        productCards.sort((a, b) => (a.textContent || '').length - (b.textContent || '').length)
+        const targetCard = productCards[0]
+
+        // Replace image(s) in the card
+        const imgs = targetCard.querySelectorAll('img')
+        imgs.forEach(img => img.setAttribute('src', prodImageUrl))
+
+        // Replace link(s) in the card
+        const links = targetCard.querySelectorAll('a')
+        if (links.length > 0) {
+            links.forEach(link => link.setAttribute('href', `/produit/${prodSlug}`))
+        } else {
+            // If the AI didn't generate an <a> tag, find the button (teal circle with arrow) and wrap it
+            const svgs = targetCard.querySelectorAll('svg')
+            if (svgs.length > 0) {
+                const btnOrSvgContainer = svgs[0].parentElement
+                if (btnOrSvgContainer && btnOrSvgContainer.tagName.toLowerCase() !== 'a') {
+                    const wrapper = doc.createElement('a')
+                    wrapper.setAttribute('href', `/produit/${prodSlug}`)
+                    wrapper.setAttribute('class', 'block cursor-pointer')
+                    // wrap the button
+                    btnOrSvgContainer.parentNode?.insertBefore(wrapper, btnOrSvgContainer)
+                    wrapper.appendChild(btnOrSvgContainer)
+                }
+            }
+        }
+    }
+
+    // Retrieve the modified HTML
+    html = doc.body.innerHTML
+
+    // 2. Perform text replacements for the associated product placeholders
+    html = html.replace(/\/images\/sonde-produit-sumbow\.(png|jpg)/g, prodImageUrl)
+    html = html.replace(/SONDE GASTRIQUE SILICONE STERILE/gi, prodName.toUpperCase())
+    html = html.replace(/Sonde Gastrique Silicone St[ée]rile/gi, prodName)
+    html = html.replace(/SUMBOW MEDICAL/gi, prodBrand.toUpperCase())
+    html = html.replace(/SUMBOW/gi, prodBrand.toUpperCase())
+    html = html.replace(/Marque Officielle Sumbow/gi, `Marque Officielle ${prodBrand}`)
+
+    return html
 })
 </script>
 
@@ -758,7 +829,7 @@ const getPreviewImage = computed(() => {
                         <!-- Rendered HTML Content -->
                         <div 
                           class="prose prose-sm prose-indigo blog-content text-gray-600 font-light leading-relaxed max-w-none text-xs break-words" 
-                          v-html="article.content || '<p class=\'text-gray-300 italic\'>Aucun contenu rédigé pour le moment.</p>'"
+                          v-html="processedContentPreview"
                         ></div>
                         
                         <div class="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between text-[9px] text-gray-400 font-bold uppercase tracking-wider">
