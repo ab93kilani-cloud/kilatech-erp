@@ -364,26 +364,30 @@ const processedContentPreview = computed(() => {
         productCards.sort((a, b) => (a.textContent || '').length - (b.textContent || '').length)
         const targetCard = productCards[0]
 
-        // Replace image(s) in the card
-        const imgs = targetCard.querySelectorAll('img')
-        imgs.forEach(img => img.setAttribute('src', prodImageUrl))
+        if (targetCard) {
+            // Replace image(s) in the card
+            const imgs = targetCard.querySelectorAll('img')
+            imgs.forEach(img => img.setAttribute('src', prodImageUrl))
 
-        // Replace link(s) in the card
-        const links = targetCard.querySelectorAll('a')
-        if (links.length > 0) {
-            links.forEach(link => link.setAttribute('href', `/produit/${prodSlug}`))
-        } else {
-            // If the AI didn't generate an <a> tag, find the button (teal circle with arrow) and wrap it
-            const svgs = targetCard.querySelectorAll('svg')
-            if (svgs.length > 0) {
-                const btnOrSvgContainer = svgs[0].parentElement
-                if (btnOrSvgContainer && btnOrSvgContainer.tagName.toLowerCase() !== 'a') {
-                    const wrapper = doc.createElement('a')
-                    wrapper.setAttribute('href', `/produit/${prodSlug}`)
-                    wrapper.setAttribute('class', 'block cursor-pointer')
-                    // wrap the button
-                    btnOrSvgContainer.parentNode?.insertBefore(wrapper, btnOrSvgContainer)
-                    wrapper.appendChild(btnOrSvgContainer)
+            // Replace link(s) in the card
+            const links = targetCard.querySelectorAll('a')
+            if (links.length > 0) {
+                links.forEach(link => link.setAttribute('href', `/produit/${prodSlug}`))
+            } else {
+                // If the AI didn't generate an <a> tag, find the button (teal circle with arrow) and wrap it
+                const svgs = targetCard.querySelectorAll('svg')
+                const firstSvg = svgs.length > 0 ? svgs[0] : null
+                if (firstSvg) {
+                    const btnOrSvgContainer = firstSvg.parentElement
+                    const parent = btnOrSvgContainer ? btnOrSvgContainer.parentNode : null
+                    if (btnOrSvgContainer && btnOrSvgContainer.tagName.toLowerCase() !== 'a' && parent) {
+                        const wrapper = doc.createElement('a')
+                        wrapper.setAttribute('href', `/produit/${prodSlug}`)
+                        wrapper.setAttribute('class', 'block cursor-pointer')
+                        // wrap the button
+                        parent.insertBefore(wrapper, btnOrSvgContainer)
+                        wrapper.appendChild(btnOrSvgContainer)
+                    }
                 }
             }
         }
