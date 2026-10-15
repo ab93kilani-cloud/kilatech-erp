@@ -34,6 +34,9 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: 21
+          timeout: 60000
           local-dir: ./frontend/dist/
           server-dir: /domains/kilatech.ma/public_html/
           dangerous-clean-slate: false
@@ -62,6 +65,9 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: 21
+          timeout: 60000
           local-dir: ./backend/
           server-dir: /domains/kilatech.ma/public_html/api/
           dangerous-clean-slate: false
