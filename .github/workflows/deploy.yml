@@ -28,22 +28,12 @@ jobs:
           npm install
           npm run build
 
-      - name: 🚀 Deploy Frontend to Hostinger via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
-          port: 21
-          timeout: 60000
-          local-dir: ./frontend/dist/
-          server-dir: /domains/kilatech.ma/public_html/
-          dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+      - name: 🛠️ Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: 🚀 Deploy Frontend to Hostinger
+        run: |
+          lftp -e "set ftp:ssl-allow no; set net:timeout 30; set net:max-retries 3; mirror -R --delete-first=false ./frontend/dist/ /; quit" -u "${{ secrets.FTP_USER }}","${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_HOST }}"
 
       # ──────────────────────────────────────────────────────────────
       # BACKEND — Install Composer + Upload via FTP
@@ -59,25 +49,6 @@ jobs:
           cd backend
           composer install --no-dev --optimize-autoloader --no-interaction
 
-      - name: 🚀 Deploy Backend (Laravel) to Hostinger via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
-          port: 21
-          timeout: 60000
-          local-dir: ./backend/
-          server-dir: /domains/kilatech.ma/public_html/api/
-          dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            **/storage/logs/**
-            **/storage/framework/cache/**
-            **/storage/framework/sessions/**
-            **/storage/framework/views/**
-            **/.env
-            **/tests/**
+      - name: 🚀 Deploy Backend (Laravel) to Hostinger
+        run: |
+          lftp -e "set ftp:ssl-allow no; set net:timeout 30; set net:max-retries 3; mirror -R -x '^\.git/' -x '^node_modules/' -x '^storage/logs/' -x '^storage/framework/cache/' -x '^storage/framework/sessions/' -x '^storage/framework/views/' -x '^\.env$' -x '^tests/' ./backend/ /api/; quit" -u "${{ secrets.FTP_USER }}","${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_HOST }}"
