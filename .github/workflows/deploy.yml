@@ -1,6 +1,4 @@
-
-# Force deployment trigger
-name: Deploy Hybrid Application (Vue.js + Laravel) to Hostinger
+name: Deploy Kilatech.ma to Hostinger (FTP - No SSH)
 
 on:
   push:
@@ -11,10 +9,14 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: 🛒 Checkout code
         uses: actions/checkout@v4
 
+      # ──────────────────────────────────────────────────────────────
+      # FRONTEND — Build Vue.js + Upload via FTP
+      # ──────────────────────────────────────────────────────────────
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -26,48 +28,50 @@ jobs:
           npm install
           npm run build
 
-      - name: 🚀 Copy Frontend to Hostinger (public_html)
-        uses: appleboy/scp-action@v0.1.7
+      - name: 🚀 Deploy Frontend to Hostinger via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          host: ${{ secrets.HOSTINGER_IP }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          password: ${{ secrets.HOSTINGER_PASSWORD }}
-          port: 65002
-          source: "frontend/dist/*"
-          target: "domains/kilatech.ma/public_html"
-          strip_components: 2
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./frontend/dist/
+          server-dir: /public_html/
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
 
-      - name: 📦 Archive Backend (Excluding vendor/storage)
+      # ──────────────────────────────────────────────────────────────
+      # BACKEND — Install Composer + Upload via FTP
+      # ──────────────────────────────────────────────────────────────
+      - name: 🐘 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+
+      - name: 📦 Install Composer Dependencies
         run: |
           cd backend
-          # On crée une archive zip du backend sans le dossier vendor pour un transfert ultra-rapide
-          zip -r ../backend.zip . -x "vendor/*" "storage/logs/*" ".git/*" "node_modules/*"
+          composer install --no-dev --optimize-autoloader --no-interaction
 
-      - name: 🚀 Upload Backend Archive
-        uses: appleboy/scp-action@v0.1.7
+      - name: 🚀 Deploy Backend (Laravel) to Hostinger via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          host: ${{ secrets.HOSTINGER_IP }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          password: ${{ secrets.HOSTINGER_PASSWORD }}
-          port: 65002
-          source: "backend.zip"
-          target: "domains/kilatech.ma/public_html/api"
-
-      - name: ⚙️ Extract & Setup on Hostinger
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HOSTINGER_IP }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          password: ${{ secrets.HOSTINGER_PASSWORD }}
-          port: 65002
-          script: |
-            cd domains/kilatech.ma/public_html/api
-            # Extraction propre
-            unzip -o backend.zip -d .
-            rm backend.zip
-            
-            # Installation des dépendances et migration
-            /opt/alt/php82/usr/bin/php /usr/local/bin/composer install --no-dev --optimize-autoloader
-            /opt/alt/php82/usr/bin/php artisan migrate --force || true
-            /opt/alt/php82/usr/bin/php artisan cache:clear
-            /opt/alt/php82/usr/bin/php artisan config:clear
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./backend/
+          server-dir: /public_html/api/
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/storage/logs/**
+            **/storage/framework/cache/**
+            **/storage/framework/sessions/**
+            **/storage/framework/views/**
+            **/.env
+            **/tests/**
